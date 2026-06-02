@@ -1,6 +1,6 @@
 from app.models.user import User
-from app.models.workspace import Workspace
-from app.models.document import Document
-from app.models.permission import Permission
-from app.models.embedding import Embedding
-from app.models.chat import Chat, ChatMessage
+from app.models.page import Page
+from app.models.chunk import Chunk
+from app.models.chat import Chat, Message
+
+__all__ = ["User", "Page", "Chunk", "Chat", "Message"]

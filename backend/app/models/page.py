@@ -1,17 +1,22 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum as SQLEnum
-from sqlalchemy.sql import func
+from sqlalchemy import Column, String, Text, Boolean, Integer, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
 from app.database import Base
-from app.schemas.page import PageCategory
+import uuid
+
 
 class Page(Base):
     __tablename__ = "pages"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True, nullable=False)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, nullable=False, index=True)
     content = Column(Text, nullable=False)
-    category = Column(SQLEnum(PageCategory), nullable=False)
-    
-    owner_id = Column(Integer, default=1) # On simulera l'ID de l'user pour le moment
-    
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    category = Column(String, nullable=False)  # rh | technique | commercial | guides
+    status = Column(String, default="published", nullable=False)
+    is_embedded = Column(Boolean, default=False, nullable=False)
+    view_count = Column(Integer, default=0, nullable=False)
+    creator_id = Column(String, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    creator = relationship("User", back_populates="pages")
+    chunks = relationship("Chunk", back_populates="page", cascade="all, delete-orphan")

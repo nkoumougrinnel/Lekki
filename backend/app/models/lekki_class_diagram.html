@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Lekki Wiki — Diagramme de classes MVP</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 24px; }
+  h1 { color: #1A3C5E; font-size: 22px; margin-bottom: 4px; }
+  p  { color: #4B5563; font-size: 13px; margin-bottom: 20px; }
+  #erd { width: 100%; overflow-x: auto; }
+  #erd svg { width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<h1>LEKKI WIKI — Diagramme de classes MVP</h1>
+<p>Stack : Python FastAPI · SQLite + SQLAlchemy · API Claude · React · JWT Auth</p>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: 'Arial, sans-serif',
+  themeVariables: {
+    fontSize: '13px',
+    fontFamily: 'Arial, sans-serif',
+    lineColor: '#2E86AB',
+    textColor: '#1A3C5E',
+    primaryColor: '#E8F4F8',
+    primaryBorderColor: '#2E86AB',
+    primaryTextColor: '#1A3C5E',
+    secondaryColor: '#D1FAE5',
+    secondaryBorderColor: '#065F46',
+    secondaryTextColor: '#065F46',
+    tertiaryColor: '#EDE9FE',
+    tertiaryBorderColor: '#5B21B6',
+    tertiaryTextColor: '#5B21B6',
+  },
+});
+
+const diagram = `classDiagram
+  class User {
+    +String id
+    +String email
+    +String username
+    +String passwordHash
+    +String role
+    +DateTime createdAt
+    +register()
+    +login()
+    +logout()
+    +updateProfile()
+  }
+
+  class Page {
+    +String id
+    +String title
+    +String content
+    +String category
+    +String status
+    +Boolean isEmbedded
+    +Int viewCount
+    +DateTime createdAt
+    +DateTime updatedAt
+    +save()
+    +delete()
+    +embed()
+    +generateSummary()
+  }
+
+  class Chunk {
+    +String id
+    +Int chunkIndex
+    +String chunkText
+    +String chunkHash
+    +Int tokenCount
+    +DateTime createdAt
+    +create()
+    +delete()
+    +isStale()
+  }
+
+  class Chat {
+    +String id
+    +String title
+    +DateTime createdAt
+    +DateTime updatedAt
+    +create()
+    +delete()
+    +getMessages()
+  }
+
+  class Message {
+    +String id
+    +String role
+    +String content
+    +String sources
+    +Int tokensUsed
+    +DateTime createdAt
+    +create()
+    +getSources()
+  }
+
+  class AuthService {
+    +String secretKey
+    +String algorithm
+    +createToken()
+    +verifyToken()
+    +hashPassword()
+    +verifyPassword()
+    +getCurrentUser()
+  }
+
+  class RAGService {
+    +String modelName
+    +ingestPage()
+    +chunkText()
+    +embedChunks()
+    +queryRelevantChunks()
+    +buildPrompt()
+  }
+
+  class EmbeddingService {
+    +String modelName
+    +embedText()
+    +embedBatch()
+    +cosineSimilarity()
+    +storeVector()
+  }
+
+  class LLMService {
+    +String provider
+    +String model
+    +generateResponse()
+    +buildPrompt()
+    +extractSources()
+    +streamResponse()
+  }
+
+  class SearchService {
+    +fullTextSearch()
+    +semanticSearch()
+    +rankResults()
+    +highlightExcerpts()
+  }
+
+  class Database {
+    +String url
+    +Engine engine
+    +Session session
+    +init()
+    +getSession()
+    +migrate()
+  }
+
+  User "1" --> "many" Page : creates
+  User "1" --> "many" Chat : owns
+  Page "1" --> "many" Chunk : hasChunks
+  Chat "1" --> "many" Message : contains
+  Message --> Page : cites
+  RAGService --> EmbeddingService : uses
+  RAGService --> LLMService : uses
+  RAGService --> SearchService : uses
+  RAGService --> Chunk : manages
+  SearchService --> Chunk : queries
+  SearchService --> Page : returns
+  AuthService --> User : authenticates
+  Database --> User : persists
+  Database --> Page : persists
+  Database --> Chunk : persists
+  Database --> Chat : persists
+  Database --> Message : persists
+`;
+
+const { svg } = await mermaid.render('erd-svg', diagram);
+document.getElementById('erd').innerHTML = svg;
+</script>
+</body>
+</html>
