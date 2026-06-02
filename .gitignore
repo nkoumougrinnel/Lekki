@@ -1,0 +1,16 @@
+# Environnement virtuel
+.venv/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnement et secrets
+.env
+
+# Données locales (spécifique à Lekki/WikiAI)
+*.db
+data/chroma/

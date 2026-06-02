@@ -342,7 +342,7 @@ Architecture système microservices · Guide JWT · Politique sécurité API · 
 
 ## Comparaison
 
-| Critère | WikiAI | Notion | Confluence | Guru |
+| Critère |Lekki | Notion | Confluence | Guru |
 |---|:---:|:---:|:---:|:---:|
 | Markdown natif | ✅ | ✅ | ⚠️ | ✅ |
 | RAG intégré | ✅ | ⚠️ Addon | ❌ | ✅ |
