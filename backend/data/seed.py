@@ -218,7 +218,7 @@ def seed() -> None:
         )
         db.add_all([admin, editor, reader])
         db.flush()
-        print("  ✅  3 utilisateurs créés (admin / alice / bob)")
+        print(" 3 utilisateurs créés (admin / alice / bob)")
 
         # ── 2. Pages ──────────────────────────────────────────────────────
         pages = []
@@ -233,7 +233,7 @@ def seed() -> None:
             db.add(p)
             pages.append(p)
         db.flush()
-        print(f"  ✅  {len(pages)} pages créées")
+        print(f" {len(pages)} pages créées")
 
         # ── 3. Chunks ─────────────────────────────────────────────────────
         total_chunks = 0
@@ -251,7 +251,7 @@ def seed() -> None:
                 total_chunks += 1
             page.is_embedded = True
         db.flush()
-        print(f"  ✅  {total_chunks} chunks créés")
+        print(f" {total_chunks} chunks créés")
 
         # ── 4. Chat + messages d'exemple ─────────────────────────────────
         chat = Chat(
@@ -282,7 +282,7 @@ def seed() -> None:
         ])
 
         db.commit()
-        print("  ✅  1 chat d'exemple avec 2 messages créé")
+        print(" 1 chat d'exemple avec 2 messages créé")
         print()
         print("🎉  Seed terminé avec succès !")
         print()
@@ -291,12 +291,12 @@ def seed() -> None:
         print("    alice@lekki.io  / Alice1234!  (editor)")
         print("    bob@lekki.io    / Bob1234!    (reader)")
         print()
-        print("  ⚠️  Mots de passe en SHA-256 placeholder.")
+        print(" Mots de passe en SHA-256 placeholder.")
         print("     Ils seront remplacés automatiquement quand bcrypt sera branché.")
 
     except Exception as e:
         db.rollback()
-        print(f"❌  Erreur seed : {e}")
+        print(f"Erreur seed : {e}")
         raise
     finally:
         db.close()
