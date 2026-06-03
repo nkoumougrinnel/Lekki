@@ -1,0 +1,32 @@
+@baseUrl = http://localhost:8000/api/v1
+@creatorId = a0000000-0000-4000-8000-000000000002
+
+### Liste des pages
+GET {{baseUrl}}/pages/
+Accept: application/json
+
+### Créer une page
+# @name createPage
+POST {{baseUrl}}/pages/?creator_id={{creatorId}}
+Content-Type: application/json
+
+{
+    "title": "Ma page de test HTTP",
+    "content": "## Introduction\nCeci est un test sans Swagger.",
+    "category": "technique"
+}
+
+### Récupérer l'ID de la page créée pour les tests suivants
+@pageId = {{createPage.response.body.id}}
+
+### Lire une page spécifique
+GET {{baseUrl}}/pages/{{pageId}}
+
+### Mettre à jour la page
+PUT {{baseUrl}}/pages/{{pageId}}
+Content-Type: application/json
+
+{
+    "title": "Titre mis à jour",
+    "content": "Nouveau contenu"
+}

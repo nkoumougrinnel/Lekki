@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy import select
 
 # backend/ sur le path
@@ -22,8 +22,6 @@ from app.database import AsyncSessionLocal, run_migrations
 from app.models.chunk import Chunk
 from app.models.page import Page
 from app.models.user import User
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # IDs fixes pour tests API / Swagger
 ADMIN_ID = "a0000000-0000-4000-8000-000000000001"
@@ -45,8 +43,9 @@ async def seed() -> None:
         if existing.scalar_one_or_none():
             print("Seed déjà appliqué — aucune modification.")
             return
-
-        password_hash = pwd_context.hash(DEFAULT_PASSWORD)
+        
+        # Utilisation directe de bcrypt pour éviter le bug de passlib sur Python 3.12
+        password_hash = bcrypt.hashpw(DEFAULT_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
         users = [
             User(

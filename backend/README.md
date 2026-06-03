@@ -12,6 +12,7 @@ API REST **FastAPI** pour le wiki d’entreprise Lekki : pages Markdown, RAG, ch
 | ORM | SQLAlchemy 2 (async) |
 | Base | SQLite (`data/wiki.db`) |
 | Migrations | Alembic |
+| Migrations | Alembic (dossier `migrations/`) |
 | Validation API | Pydantic v2 |
 | Auth (prévu) | JWT (`python-jose`, `passlib` / bcrypt) |
 
@@ -37,16 +38,22 @@ backend/
 │   ├── service/             # Logique métier (auth, RAG — à venir)
 │   └── middelware/          # JWT middleware (à venir)
 ├── alembic/                 # Migrations versionnées
+│   └── middleware/          # JWT middleware (à venir)
+├── migrations/              # Migrations versionnées (Alembic)
 │   ├── env.py
 │   └── versions/
 │       └── 001_initial_mvp_schema.py
 ├── scripts/
 │   └── seed.py              # Données de démo (users + pages)
+│   ├── seed.py              # Données de démo (users + pages)
+│   └── test_api.py          # Script de test automatisé
 ├── data/                    # SQLite (gitignored)
 │   └── wiki.db
 ├── API.md                   # Référence complète des endpoints MVP
 ├── alembic.ini
+├── alembic.ini              # Config pointant vers /migrations
 ├── .env.example
+├── api_tests.http           # Tests pour l'extension REST Client VS Code
 └── requirements.txt
 ```
 

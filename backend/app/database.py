@@ -39,7 +39,7 @@ def _alembic_config():
     from alembic.config import Config
 
     cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
-    cfg.set_main_option("script_location", str(BACKEND_ROOT / "alembic"))
+    cfg.set_main_option("script_location", str(BACKEND_ROOT / "migrations"))
     cfg.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
     return cfg
 
