@@ -193,19 +193,27 @@ async def test_ask_route_with_mocked_llm(client, sample_page: Page, admin_token:
     data = resp.json()
     assert data["answer"] == "Réponse simulée sans API."
     assert data["provider"] == "groq"
-    assert sample_page.id in data["sources"]
+    assert data["confidence"] == 0.9
+    assert data["sources"][0]["page_id"] == sample_page.id
 
 
 @pytest.mark.asyncio
-async def test_ask_route_no_chunks(client, reader_token: str):
-    resp = await client.post(
-        "/api/v1/ask",
-        json={"question": "Question sans contexte"},
-        headers={"Authorization": f"Bearer {reader_token}"},
-    )
+async def test_ask_route_no_chunks(client):
+    with patch(
+        "app.routers.rag.rag_service.get_relevant_chunks",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        resp = await client.post(
+            "/api/v1/ask",
+            json={"question": "Question sans contexte"},
+        )
     assert resp.status_code == 200
-    assert resp.json()["provider"] is None
-    assert "aucune information" in resp.json()["answer"].lower()
+    data = resp.json()
+    assert data["provider"] is None
+    assert data["confidence"] == 0.0
+    assert data["sources"] == []
+    assert "aucune information" in data["answer"].lower()
 
 
 @pytest.mark.asyncio

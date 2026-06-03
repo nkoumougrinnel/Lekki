@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BarreDeRecherche } from '../composants/BarreDeRecherche';
 import { InterfaceClavardage } from '../composants/InterfaceClavardage';
 import { CATEGORIES_PAGES } from '../config/api';
@@ -11,7 +11,6 @@ import {
 
 export const TableauDeBordWiki = ({ utilisateur, fonctionsApi, surDeconnexion }) => {
   const [pages, setPages] = useState([]);
-  const [pagesFiltrees, setPagesFiltrees] = useState([]);
   const [messagesChat, setMessagesChat] = useState([]);
   const [chatId, setChatId] = useState(null);
   const [pageSelectionnee, setPageSelectionnee] = useState(null);
@@ -25,7 +24,6 @@ export const TableauDeBordWiki = ({ utilisateur, fonctionsApi, surDeconnexion })
       const docs = await fonctionsApi.recupererPages();
       const { messages, chatId: idChat } = await fonctionsApi.recupererHistoriqueChat();
       setPages(docs);
-      setPagesFiltrees(docs);
       setMessagesChat(messages.map(normaliserMessage));
       setChatId(idChat);
       if (docs.length > 0) setPageSelectionnee(docs[0]);
@@ -34,13 +32,9 @@ export const TableauDeBordWiki = ({ utilisateur, fonctionsApi, surDeconnexion })
     chargerInitialisation();
   }, [fonctionsApi]);
 
-  useEffect(() => {
-    if (!categorieActive) {
-      setPagesFiltrees(pages);
-    } else {
-      setPagesFiltrees(pages.filter((p) => p.category === categorieActive));
-    }
-  }, [categorieActive, pages]);
+  const pagesFiltrees = categorieActive
+    ? pages.filter((p) => p.category === categorieActive)
+    : pages;
 
   const gererEnvoiMessageChat = async (question) => {
     setChargementMessageIa(true);

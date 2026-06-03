@@ -1,4 +1,8 @@
-"""Tests des routes /chats."""
+"""
+Tests des routes /chats — contrat frontend + isolation par utilisateur.
+"""
+
+import json
 
 import pytest
 from httpx import AsyncClient
@@ -6,103 +10,198 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat import Chat, Message
 from app.models.user import User
-from app.services.auth_service import create_token, hash_password
 
 
-async def _create_user(db: AsyncSession, email: str, username: str) -> User:
-    user = User(
-        email=email,
-        username=username,
-        password_hash=hash_password("password123"),
-        role="reader",
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-    return user
-
-
-def _auth_header(user: User) -> dict:
-    token = create_token({"sub": user.id, "role": user.role})
+def auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.mark.asyncio
-async def test_create_and_list_chats(client: AsyncClient, db: AsyncSession):
-    user = await _create_user(db, "chat@lekki.com", "chatuser")
-
-    create = await client.post(
-        "/api/v1/chats/",
-        json={"title": "Mon premier chat"},
-        headers=_auth_header(user),
-    )
-    assert create.status_code == 201
-    chat_id = create.json()["id"]
-    assert create.json()["title"] == "Mon premier chat"
-    assert create.json()["user_id"] == user.id
-
-    listing = await client.get("/api/v1/chats/", headers=_auth_header(user))
-    assert listing.status_code == 200
-    assert len(listing.json()) == 1
-    assert listing.json()[0]["id"] == chat_id
+async def test_list_chats_requires_auth(client: AsyncClient):
+    resp = await client.get("/api/v1/chats")
+    assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
-async def test_get_chat_forbidden_for_other_user(client: AsyncClient, db: AsyncSession):
-    owner = await _create_user(db, "owner@lekki.com", "owner")
-    other = await _create_user(db, "other@lekki.com", "other")
+async def test_list_chats_empty(client: AsyncClient, reader_token: str):
+    resp = await client.get("/api/v1/chats", headers=auth(reader_token))
+    assert resp.status_code == 200
+    assert resp.json() == []
 
-    chat = Chat(user_id=owner.id, title="Privé")
-    db.add(chat)
-    await db.commit()
-    await db.refresh(chat)
 
-    resp = await client.get(f"/api/v1/chats/{chat.id}", headers=_auth_header(other))
+@pytest.mark.asyncio
+async def test_create_chat(client: AsyncClient, reader_token: str, reader_user: User):
+    resp = await client.post(
+        "/api/v1/chats",
+        json={"title": "Ma nouvelle conversation"},
+        headers=auth(reader_token),
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["id"]
+    assert data["title"] == "Ma nouvelle conversation"
+    assert data["user_id"] == reader_user.id
+
+
+@pytest.mark.asyncio
+async def test_list_chats_returns_only_current_user(
+    client: AsyncClient,
+    reader_token: str,
+    admin_token: str,
+    reader_user: User,
+):
+    await client.post(
+        "/api/v1/chats",
+        json={"title": "Chat lecteur"},
+        headers=auth(reader_token),
+    )
+    await client.post(
+        "/api/v1/chats",
+        json={"title": "Chat admin"},
+        headers=auth(admin_token),
+    )
+
+    resp = await client.get("/api/v1/chats", headers=auth(reader_token))
+    chats = resp.json()
+    assert len(chats) == 1
+    assert chats[0]["title"] == "Chat lecteur"
+    assert chats[0]["user_id"] == reader_user.id
+
+
+@pytest.mark.asyncio
+async def test_get_chat(client: AsyncClient, reader_token: str, sample_chat: Chat):
+    resp = await client.get(
+        f"/api/v1/chats/{sample_chat.id}",
+        headers=auth(reader_token),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["id"] == sample_chat.id
+
+
+@pytest.mark.asyncio
+async def test_get_chat_forbidden(
+    client: AsyncClient, admin_token: str, sample_chat: Chat
+):
+    resp = await client.get(
+        f"/api/v1/chats/{sample_chat.id}",
+        headers=auth(admin_token),
+    )
     assert resp.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_delete_chat(client: AsyncClient, db: AsyncSession):
-    user = await _create_user(db, "del@lekki.com", "deluser")
-
-    create = await client.post(
-        "/api/v1/chats/",
-        json={"title": "À supprimer"},
-        headers=_auth_header(user),
+async def test_get_chat_not_found(client: AsyncClient, reader_token: str):
+    resp = await client.get(
+        "/api/v1/chats/00000000-0000-0000-0000-000000000000",
+        headers=auth(reader_token),
     )
-    chat_id = create.json()["id"]
+    assert resp.status_code == 404
 
-    delete = await client.delete(f"/api/v1/chats/{chat_id}", headers=_auth_header(user))
-    assert delete.status_code == 204
 
-    get_resp = await client.get(f"/api/v1/chats/{chat_id}", headers=_auth_header(user))
+@pytest.mark.asyncio
+async def test_delete_chat(client: AsyncClient, db: AsyncSession, reader_token: str, sample_chat: Chat):
+    resp = await client.delete(
+        f"/api/v1/chats/{sample_chat.id}",
+        headers=auth(reader_token),
+    )
+    assert resp.status_code == 204
+
+    get_resp = await client.get(
+        f"/api/v1/chats/{sample_chat.id}",
+        headers=auth(reader_token),
+    )
     assert get_resp.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_list_messages(client: AsyncClient, db: AsyncSession):
-    user = await _create_user(db, "msg@lekki.com", "msguser")
-    chat = Chat(user_id=user.id, title="Messages")
-    db.add(chat)
-    await db.flush()
+async def test_delete_chat_forbidden(
+    client: AsyncClient, admin_token: str, sample_chat: Chat
+):
+    resp = await client.delete(
+        f"/api/v1/chats/{sample_chat.id}",
+        headers=auth(admin_token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_list_messages(
+    client: AsyncClient,
+    db: AsyncSession,
+    reader_token: str,
+    sample_chat: Chat,
+):
     db.add_all([
-        Message(chat_id=chat.id, role="user", content="Bonjour"),
-        Message(chat_id=chat.id, role="assistant", content="Salut !"),
+        Message(chat_id=sample_chat.id, role="user", content="Question ?", tokens_used=2),
+        Message(
+            chat_id=sample_chat.id,
+            role="assistant",
+            content="Réponse.",
+            sources=json.dumps([{"page_id": "p1", "excerpt": "extrait", "score": 0.9}]),
+            tokens_used=5,
+        ),
     ])
     await db.commit()
 
     resp = await client.get(
-        f"/api/v1/chats/{chat.id}/messages",
-        headers=_auth_header(user),
+        f"/api/v1/chats/{sample_chat.id}/messages?limit=50",
+        headers=auth(reader_token),
     )
     assert resp.status_code == 200
     messages = resp.json()
     assert len(messages) == 2
     assert messages[0]["role"] == "user"
+    assert messages[0]["content"] == "Question ?"
     assert messages[1]["role"] == "assistant"
+    assert messages[1]["sources"] is not None
 
 
 @pytest.mark.asyncio
-async def test_chats_require_auth(client: AsyncClient):
-    resp = await client.get("/api/v1/chats/")
-    assert resp.status_code == 401
+async def test_list_messages_respects_limit(
+    client: AsyncClient,
+    db: AsyncSession,
+    reader_token: str,
+    sample_chat: Chat,
+):
+    for i in range(5):
+        db.add(Message(chat_id=sample_chat.id, role="user", content=f"msg {i}", tokens_used=1))
+    await db.commit()
+
+    resp = await client.get(
+        f"/api/v1/chats/{sample_chat.id}/messages?limit=2",
+        headers=auth(reader_token),
+    )
+    assert len(resp.json()) == 2
+
+
+@pytest.mark.asyncio
+async def test_list_messages_forbidden(
+    client: AsyncClient, admin_token: str, sample_chat: Chat
+):
+    resp = await client.get(
+        f"/api/v1/chats/{sample_chat.id}/messages",
+        headers=auth(admin_token),
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_frontend_flow_create_then_list(
+    client: AsyncClient, reader_token: str
+):
+    """Simule recupererHistoriqueChat + envoyerMessageChat (création chat)."""
+    create = await client.post(
+        "/api/v1/chats",
+        json={"title": "Comment déployer ?"},
+        headers=auth(reader_token),
+    )
+    chat_id = create.json()["id"]
+
+    chats = await client.get("/api/v1/chats", headers=auth(reader_token))
+    assert chats.json()[0]["id"] == chat_id
+
+    messages = await client.get(
+        f"/api/v1/chats/{chat_id}/messages?limit=50",
+        headers=auth(reader_token),
+    )
+    assert messages.json() == []

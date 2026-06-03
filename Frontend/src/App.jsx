@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PageConnexion } from './vues/PageConnexion';
 import { TableauDeBordWiki } from './vues/TableauDeBordWiki';
 import { useApi } from './crochets/useApi';

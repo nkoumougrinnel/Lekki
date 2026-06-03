@@ -23,6 +23,9 @@ from app.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login", auto_error=False
+)
 
 
 # ---------------------------------------------------------------------------
@@ -77,6 +80,19 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    return await _resolve_user_from_token(token, db)
+
+
+async def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    if not token:
+        return None
+    return await _resolve_user_from_token(token, db)
+
+
+async def _resolve_user_from_token(token: str, db: AsyncSession) -> User:
     # BYPASS DEV — retirer en prod
     if token == "dev":
         result = await db.execute(select(User).where(User.email == "admin@lekki.local"))

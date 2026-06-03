@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { libelleCategorie } from '../utils/affichage';
 
 export const BarreDeRecherche = ({ surRechercheApi, surSelectionPage }) => {
@@ -9,14 +9,14 @@ export const BarreDeRecherche = ({ surRechercheApi, surSelectionPage }) => {
   const conteneurRef = useRef(null);
 
   useEffect(() => {
-    if (requete.trim() === '') {
-      setResultats([]);
-      return undefined;
-    }
-
     const timer = setTimeout(async () => {
+      const q = requete.trim();
+      if (q === '') {
+        setResultats([]);
+        return;
+      }
       setRechercheEnCours(true);
-      const pages = await surRechercheApi(requete);
+      const pages = await surRechercheApi(q);
       setResultats(pages);
       setRechercheEnCours(false);
     }, 300);

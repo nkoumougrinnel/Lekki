@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.database import init_db
-from app.routers import pages, internal, auth, rag, chats, users
+from app.routers import pages, internal, auth, rag, chats
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,7 +46,6 @@ app.include_router(internal.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")  
 app.include_router(rag.router, prefix="/api/v1")
 app.include_router(chats.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

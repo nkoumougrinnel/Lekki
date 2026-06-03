@@ -97,3 +97,28 @@ async def get_relevant_chunks(db: AsyncSession, query: str, limit: int = 4):
 
     scored_chunks.sort(key=lambda x: x[0], reverse=True)
     return scored_chunks[:limit]
+
+
+def build_sources(scored_chunks: list, excerpt_len: int = 120) -> list[dict]:
+    """Sources enrichies pour le front et la colonne JSON `messages.sources`."""
+    by_page: dict[str, dict] = {}
+    for score, chunk in scored_chunks:
+        score_f = float(max(0.0, min(1.0, score)))
+        existing = by_page.get(chunk.page_id)
+        if existing is None or score_f > existing["score"]:
+            excerpt = chunk.chunk_text.strip().replace("\n", " ")
+            if len(excerpt) > excerpt_len:
+                excerpt = excerpt[: excerpt_len - 1].rstrip() + "…"
+            by_page[chunk.page_id] = {
+                "page_id": chunk.page_id,
+                "excerpt": excerpt,
+                "score": round(score_f, 4),
+            }
+    return sorted(by_page.values(), key=lambda x: x["score"], reverse=True)
+
+
+def compute_confidence(scored_chunks: list) -> float:
+    if not scored_chunks:
+        return 0.0
+    top = max(float(s) for s, _ in scored_chunks)
+    return round(max(0.0, min(1.0, top)), 4)
