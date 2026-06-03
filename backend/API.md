@@ -517,7 +517,7 @@ POST /ask     →  { question, chat_id: nouveau.id }
 
 ### `POST /internal/embed/{page_id}` ✓
 
-Force la ré-indexation RAG d’une page (chunking + embeddings Gemini).
+Force la ré-indexation RAG d’une page (chunking + embeddings MiniLM local, fallback Gemini).
 
 **Auth** : en-tête requis
 
@@ -546,20 +546,20 @@ X-Internal-Key: lekki-internal-secret-key
 
 > L’indexation est aussi déclenchée automatiquement sur `POST /pages/` et `PUT /pages/{id}`.
 
-### `DELETE /internal/embed/{page_id}` ○
+### `DELETE /internal/embed/{page_id}` ✓
 
 Suppression des chunks d’une page — **non implémenté**.
 
 ---
 
-## Users (admin) ○
+## Users (admin) ✓
 
 | Méthode | Route | Statut |
 |---------|-------|--------|
-| `GET` | `/users` | ○ |
-| `GET` | `/users/{id}` | ○ |
-| `PUT` | `/users/{id}/role` | ○ |
-| `DELETE` | `/users/{id}` | ○ |
+| `GET` | `/users` | ✓ |
+| `GET` | `/users/{id}` | ✓ |
+| `PUT` | `/users/{id}/role` | ✓ |
+| `DELETE` | `/users/{id}` | ✓ |
 
 Règles prévues :
 
@@ -601,7 +601,7 @@ Règles prévues :
 |---|---------|-------|--------|
 | 1 | `POST` | `/auth/login` | ✓ |
 | 2 | `GET` | `/auth/me` | ✓ |
-| 3 | `POST` | `/auth/register` | ○ |
+| 3 | `POST` | `/auth/register` | ✓ |
 | 4 | `GET` | `/pages/` | ✓ |
 | 5 | `GET` | `/pages/search` | ✓ |
 | 6 | `GET` | `/pages/{id}` | ✓ |
@@ -610,17 +610,18 @@ Règles prévues :
 | 9 | `DELETE` | `/pages/{id}` | ✓ |
 | 10 | `POST` | `/ask` | ✓ |
 | 11 | `GET` | `/llm/status` | ✓ |
+| 11b | `GET` | `/embedding/status` | ✓ |
 | 12 | `GET` | `/chats` | ✓ |
 | 13 | `GET` | `/chats/{id}` | ✓ |
 | 14 | `POST` | `/chats` | ✓ |
 | 15 | `DELETE` | `/chats/{id}` | ✓ |
 | 16 | `GET` | `/chats/{id}/messages` | ✓ |
 | 17 | `POST` | `/internal/embed/{page_id}` | ✓ |
-| 18 | `DELETE` | `/internal/embed/{page_id}` | ○ |
-| 19 | `GET` | `/users` | ○ |
-| 20 | `GET` | `/users/{id}` | ○ |
-| 21 | `PUT` | `/users/{id}/role` | ○ |
-| 22 | `DELETE` | `/users/{id}` | ○ |
+| 18 | `DELETE` | `/internal/embed/{page_id}` | ✓ |
+| 19 | `GET` | `/users` | ✓ |
+| 20 | `GET` | `/users/{id}` | ✓ |
+| 21 | `PUT` | `/users/{id}/role` | ✓ |
+| 22 | `DELETE` | `/users/{id}` | ✓ |
 
 **Hors préfixe `/api/v1`**
 

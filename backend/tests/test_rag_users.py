@@ -19,8 +19,23 @@ def _auth(user: User) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_ask_requires_auth(client: AsyncClient):
-    resp = await client.post("/api/v1/ask", json={"question": "Hello?"})
+async def test_ask_without_auth_allowed(client: AsyncClient):
+    """Sans chat_id, /ask est public (MVP)."""
+    with patch(
+        "app.routers.rag.rag_service.get_relevant_chunks",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        resp = await client.post("/api/v1/ask", json={"question": "Hello?"})
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_ask_with_chat_id_requires_auth(client: AsyncClient):
+    resp = await client.post(
+        "/api/v1/ask",
+        json={"question": "Hello?", "chat_id": "fake-id"},
+    )
     assert resp.status_code == 401
 
 
@@ -48,7 +63,9 @@ async def test_ask_persists_messages(client: AsyncClient, db: AsyncSession, read
             )
 
     assert resp.status_code == 200
-    assert resp.json()["chat_id"] == chat.id
+    data = resp.json()
+    assert data["message_id"] is not None
+    assert data["user_message_id"] is not None
 
     result = await db.execute(select(Message).where(Message.chat_id == chat.id))
     messages = result.scalars().all()
