@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { normaliserMessage } from '../utils/affichage';
 
-export const InterfaceClavardage = ({ historiqueInitial, surEnvoyerMessage, chargementIa }) => {
-  const [messages, setMessages] = useState([]);
+export const InterfaceClavardage = ({
+  messages,
+  surEnvoyerMessage,
+  chargementIa,
+  ragIndisponible,
+}) => {
   const [saisie, setSaisie] = useState('');
   const finDiscussionRef = useRef(null);
-
-  useEffect(() => {
-    setMessages(historiqueInitial);
-  }, [historiqueInitial]);
 
   useEffect(() => {
     finDiscussionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -15,21 +16,10 @@ export const InterfaceClavardage = ({ historiqueInitial, surEnvoyerMessage, char
 
   const gererSoumission = async (e) => {
     e.preventDefault();
-    if (!saisie.trim()) return;
-
-    const messageUtilisateur = {
-      id: `msg-user-${Date.now()}`,
-      expediteur: 'utilisateur',
-      texte: saisie
-    };
-
-    setMessages(prev => [...prev, messageUtilisateur]);
+    if (!saisie.trim() || chargementIa) return;
+    const texte = saisie.trim();
     setSaisie('');
-    
-    const reponsesGenerees = await surEnvoyerMessage(messageUtilisateur);
-    if (reponsesGenerees && reponsesGenerees.length > 1) {
-      setMessages(prev => [...prev, reponsesGenerees[1]]);
-    }
+    await surEnvoyerMessage(texte);
   };
 
   const obtenirCouleurConfiance = (score) => {
@@ -38,37 +28,58 @@ export const InterfaceClavardage = ({ historiqueInitial, surEnvoyerMessage, char
     return 'bg-[#EB355E] text-white';
   };
 
+  const messagesAffichables = messages.map(normaliserMessage);
+
   return (
     <div className="flex flex-col h-full bg-[#13171C] border-l border-[#232931] w-[380px]">
       <div className="p-4 border-b border-[#232931] flex items-center justify-between">
         <div>
           <h3 className="text-white font-bold text-sm">Lekki Chat IA</h3>
-          <p className="text-xs text-gray-400">Assistant propulsé par RAG local</p>
+          <p className="text-xs text-gray-400">POST /ask · RAG backend</p>
         </div>
         <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-[#00C896]/10 text-[#00C896] border border-[#00C896]/20">
-          Bêta
+          {ragIndisponible ? 'Hors ligne' : 'Bêta'}
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex flex-col ${msg.expediteur === 'utilisateur' ? 'items-end' : 'items-start'}`}>
-            <div className={`max-w-[90%] rounded-md p-3 text-xs leading-relaxed ${
-              msg.expediteur === 'utilisateur' 
-                ? 'bg-[#3B6EFF] text-white rounded-br-none' 
-                : 'bg-[#1A2026] text-gray-200 border border-[#232931] rounded-bl-none'
-            }`}>
-              {msg.texte}
+      {ragIndisponible && (
+        <div className="mx-4 mt-3 p-2 bg-[#F59B0B]/10 border border-[#F59B0B]/30 text-[#F59B0B] text-[10px] rounded-md">
+          Les routes /chats et /ask ne sont pas encore exposées par le serveur. Les messages restent locaux.
+        </div>
+      )}
 
-              {msg.expediteur === 'ia' && msg.score_confiance && (
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messagesAffichables.length === 0 && (
+          <p className="text-xs text-gray-500 text-center py-8">
+            Posez une question sur la base documentaire.
+          </p>
+        )}
+
+        {messagesAffichables.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+          >
+            <div
+              className={`max-w-[90%] rounded-md p-3 text-xs leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-[#3B6EFF] text-white rounded-br-none'
+                  : 'bg-[#1A2026] text-gray-200 border border-[#232931] rounded-bl-none'
+              }`}
+            >
+              {msg.content}
+
+              {msg.role === 'assistant' && msg.score_confiance != null && (
                 <div className="mt-3 pt-2 border-t border-[#232931] space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="text-gray-400">Score sémantique :</span>
-                    <span className={`px-1.5 py-0.5 rounded-md font-bold ${obtenirCouleurConfiance(msg.score_confiance)}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-md font-bold ${obtenirCouleurConfiance(msg.score_confiance)}`}
+                    >
                       {msg.score_confiance}%
                     </span>
                   </div>
-                  {msg.sources && msg.sources.length > 0 && (
+                  {msg.sources?.length > 0 && (
                     <div className="text-[10px]">
                       <span className="text-gray-400 block mb-1">Sources citées :</span>
                       {msg.sources.map((src, idx) => (
@@ -83,7 +94,7 @@ export const InterfaceClavardage = ({ historiqueInitial, surEnvoyerMessage, char
             </div>
           </div>
         ))}
-        
+
         {chargementIa && (
           <div className="flex flex-col items-start animate-pulse">
             <div className="bg-[#1A2026] text-gray-400 border border-[#232931] rounded-md rounded-bl-none p-3 text-xs w-[80%]">

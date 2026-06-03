@@ -1,60 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BarreDeRecherche } from '../composants/BarreDeRecherche';
 import { InterfaceClavardage } from '../composants/InterfaceClavardage';
+import { CATEGORIES_PAGES } from '../config/api';
+import {
+  libelleCategorie,
+  libelleRole,
+  formaterDateRelative,
+  normaliserMessage,
+} from '../utils/affichage';
 
-export const TableauDeBordWiki = ({ utilisateur, fonctionsApi }) => {
-  const [ouvrages, setOuvrages] = useState([]);
-  const [ouvragesFiltres, setOuvragesFiltres] = useState([]);
-  const [historiqueChat, setHistoriqueChat] = useState([]);
-  const [ouvrageSelectionne, setOuvrageSelectionne] = useState(null);
-  const [categorieActive, setCategorieActive] = useState('Tous');
+export const TableauDeBordWiki = ({ utilisateur, fonctionsApi, surDeconnexion }) => {
+  const [pages, setPages] = useState([]);
+  const [pagesFiltrees, setPagesFiltrees] = useState([]);
+  const [messagesChat, setMessagesChat] = useState([]);
+  const [chatId, setChatId] = useState(null);
+  const [pageSelectionnee, setPageSelectionnee] = useState(null);
+  const [categorieActive, setCategorieActive] = useState(null);
   const [chargementDonnees, setChargementDonnees] = useState(true);
   const [chargementMessageIa, setChargementMessageIa] = useState(false);
-
-  const categories = ['Tous', 'RH', 'Technique', 'Commercial'];
+  const [ragIndisponible, setRagIndisponible] = useState(false);
 
   useEffect(() => {
     const chargerInitialisation = async () => {
-      const docs = await fonctionsApi.recupererOuvrages();
-      const chat = await fonctionsApi.recupererHistoriqueChat();
-      setOuvrages(docs);
-      setOuvragesFiltres(docs);
-      setHistoriqueChat(chat);
-      if (docs.length > 0) setOuvrageSelectionne(docs[0]);
+      const docs = await fonctionsApi.recupererPages();
+      const { messages, chatId: idChat } = await fonctionsApi.recupererHistoriqueChat();
+      setPages(docs);
+      setPagesFiltrees(docs);
+      setMessagesChat(messages.map(normaliserMessage));
+      setChatId(idChat);
+      if (docs.length > 0) setPageSelectionnee(docs[0]);
       setChargementDonnees(false);
     };
     chargerInitialisation();
   }, [fonctionsApi]);
 
   useEffect(() => {
-    if (categorieActive === 'Tous') {
-      setOuvragesFiltres(ouvrages);
+    if (!categorieActive) {
+      setPagesFiltrees(pages);
     } else {
-      setOuvragesFiltres(ouvrages.filter(o => o.categorie === categorieActive));
+      setPagesFiltrees(pages.filter((p) => p.category === categorieActive));
     }
-  }, [categorieActive, ouvrages]);
+  }, [categorieActive, pages]);
 
-  const gererEnvoiMessageChat = async (nouveauMessage) => {
+  const gererEnvoiMessageChat = async (question) => {
     setChargementMessageIa(true);
-    const majThread = await fonctionsApi.envoyerMessageChat(nouveauMessage, historiqueChat);
-    setHistoriqueChat(prev => [...prev, nouveauMessage]);
-    
-    if (majThread.length > 1) {
-      setTimeout(() => {
-        setHistoriqueChat(prev => [...prev, majThread[1]]);
-        setChargementMessageIa(false);
-      }, 1000);
-    } else {
-      setChargementMessageIa(false);
+    const msgUser = {
+      id: `local-user-${Date.now()}`,
+      role: 'user',
+      content: question,
+    };
+    setMessagesChat((prev) => [...prev, msgUser]);
+
+    const resultat = await fonctionsApi.envoyerMessageChat(question, chatId);
+
+    if (resultat.indisponible) {
+      setRagIndisponible(true);
+      setMessagesChat((prev) => [
+        ...prev,
+        {
+          id: `local-info-${Date.now()}`,
+          role: 'assistant',
+          content: resultat.message,
+        },
+      ]);
+    } else if (resultat.messageAssistant) {
+      setRagIndisponible(false);
+      if (resultat.chatId) setChatId(resultat.chatId);
+      setMessagesChat((prev) => [...prev, normaliserMessage(resultat.messageAssistant)]);
+    } else if (resultat.erreur) {
+      setMessagesChat((prev) => [
+        ...prev,
+        {
+          id: `local-err-${Date.now()}`,
+          role: 'assistant',
+          content: resultat.erreur,
+        },
+      ]);
     }
-    return majThread;
+
+    setChargementMessageIa(false);
   };
 
-  const obtenirCouleurBadge = (cat) => {
-    switch (cat) {
-      case 'RH': return 'bg-[#00C896]/10 text-[#00C896] border-[#00C896]/20';
-      case 'Technique': return 'bg-[#3B6EFF]/10 text-[#3B6EFF] border-[#3B6EFF]/20';
-      default: return 'bg-[#F59B0B]/10 text-[#F59B0B] border-[#F59B0B]/20';
+  const surRechercheApi = useCallback(
+    (q) => fonctionsApi.rechercherPages(q),
+    [fonctionsApi]
+  );
+
+  const obtenirCouleurBadge = (category) => {
+    switch (category) {
+      case 'rh':
+        return 'bg-[#00C896]/10 text-[#00C896] border-[#00C896]/20';
+      case 'technique':
+        return 'bg-[#3B6EFF]/10 text-[#3B6EFF] border-[#3B6EFF]/20';
+      case 'guides':
+        return 'bg-[#A78BFA]/10 text-[#A78BFA] border-[#A78BFA]/20';
+      default:
+        return 'bg-[#F59B0B]/10 text-[#F59B0B] border-[#F59B0B]/20';
     }
   };
 
@@ -75,84 +116,135 @@ export const TableauDeBordWiki = ({ utilisateur, fonctionsApi }) => {
             <span className="text-white font-bold text-md font-sans">Lekki Wiki</span>
           </div>
           <div className="p-3">
-            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider px-2 mb-2">Espaces de travail</p>
+            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider px-2 mb-2">
+              Catégories API
+            </p>
             <nav className="space-y-1">
-              {categories.map((cat) => (
+              {CATEGORIES_PAGES.map(({ key, label }) => (
                 <button
-                  key={cat}
-                  onClick={() => setCategorieActive(cat)}
+                  key={label}
+                  type="button"
+                  onClick={() => setCategorieActive(key)}
                   className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center justify-between ${
-                    categorieActive === cat 
-                      ? 'bg-[#3B6EFF] text-white' 
+                    categorieActive === key
+                      ? 'bg-[#3B6EFF] text-white'
                       : 'text-gray-400 hover:bg-[#1A2026] hover:text-white'
                   }`}
                 >
-                  <span>{cat === 'Tous' ? '📂 Base globale' : `📁 ${cat}`}</span>
+                  <span>{key === null ? '📂 Toutes' : `📁 ${label}`}</span>
                   <span className="text-[10px] bg-[#0D0F12]/40 px-1.5 py-0.2 rounded-md">
-                    {cat === 'Tous' ? ouvrages.length : ouvrages.filter(o => o.categorie === cat).length}
+                    {key === null
+                      ? pages.length
+                      : pages.filter((p) => p.category === key).length}
                   </span>
                 </button>
               ))}
             </nav>
           </div>
         </div>
-        <div className="p-4 border-t border-[#232931] bg-[#0D0F12]/50 flex items-center justify-between">
-          <div className="truncate pr-2">
-            <p className="text-xs font-bold text-white truncate">{utilisateur.nom}</p>
-            <p className="text-[10px] text-gray-500 font-mono">{utilisateur.role}</p>
+        <div className="p-4 border-t border-[#232931] bg-[#0D0F12]/50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="truncate pr-2">
+              <p className="text-xs font-bold text-white truncate">{utilisateur.username}</p>
+              <p className="text-[10px] text-gray-500 font-mono">{libelleRole(utilisateur.role)}</p>
+            </div>
+            <span className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse shrink-0" />
           </div>
-          <span className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse"></span>
+          <button
+            type="button"
+            onClick={surDeconnexion}
+            className="w-full text-[10px] text-gray-500 hover:text-white font-mono uppercase tracking-wider"
+          >
+            Déconnexion
+          </button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-14 border-b border-[#232931] px-6 flex items-center justify-between bg-[#13171C]/40">
-          <BarreDeRecherche ouvrages={ouvrages} surSelectionOuvrage={(o) => setOuvrageSelectionne(o)} />
+          <BarreDeRecherche
+            surRechercheApi={surRechercheApi}
+            surSelectionPage={(p) => setPageSelectionnee(p)}
+          />
           <div className="text-xs text-gray-400 font-mono hidden md:block">
-            Souveraineté: <span className="text-[#00C896]">Locale</span>
+            {pages.length} page(s) · API v1
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           <div>
-            <h2 className="text-gray-400 text-xs uppercase tracking-widest font-mono mb-3">Index des documents ({ouvragesFiltres.length})</h2>
+            <h2 className="text-gray-400 text-xs uppercase tracking-widest font-mono mb-3">
+              Index des documents ({pagesFiltrees.length})
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {ouvragesFiltres.map((ouvrage) => (
+              {pagesFiltrees.map((page) => (
                 <div
-                  key={ouvrage.id}
-                  onClick={() => setOuvrageSelectionne(ouvrage)}
+                  key={page.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setPageSelectionnee(page)}
+                  onKeyDown={(e) => e.key === 'Enter' && setPageSelectionnee(page)}
                   className={`p-4 rounded-md border cursor-pointer transition-all ${
-                    ouvrageSelectionne?.id === ouvrage.id
+                    pageSelectionnee?.id === page.id
                       ? 'bg-[#1A2026] border-[#3B6EFF] shadow-lg'
                       : 'bg-[#13171C] border-[#232931] hover:border-gray-700'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${obtenirCouleurBadge(ouvrage.categorie)}`}>
-                      {ouvrage.categorie}
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${obtenirCouleurBadge(page.category)}`}
+                    >
+                      {libelleCategorie(page.category)}
                     </span>
-                    <span className="text-[10px] text-gray-500 font-mono">{ouvrage.derniere_activite}</span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {formaterDateRelative(page.updated_at ?? page.created_at)}
+                    </span>
                   </div>
-                  <h4 className="text-white text-xs font-bold truncate mb-1">{ouvrage.titre}</h4>
-                  <p className="text-[11px] text-gray-400 truncate">{ouvrage.auteur}</p>
+                  <h4 className="text-white text-xs font-bold truncate mb-1">{page.title}</h4>
+                  <p className="text-[11px] text-gray-400 truncate font-mono">
+                    vues: {page.view_count ?? 0}
+                    {page.is_embedded ? ' · indexé' : ''}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          {ouvrageSelectionne && (
+          {pageSelectionnee && (
             <div className="bg-[#13171C] border border-[#232931] rounded-md overflow-hidden flex flex-col min-h-[350px]">
               <div className="p-3 bg-[#1A2026] border-b border-[#232931] flex items-center justify-between">
-                <span className="text-xs font-bold text-white">Visualiseur Markdown Intégré</span>
-                <span className="text-[10px] text-gray-400 font-mono">ID: {ouvrageSelectionne.id}</span>
+                <span className="text-xs font-bold text-white">Visualiseur Markdown</span>
+                <span className="text-[10px] text-gray-400 font-mono">ID: {pageSelectionnee.id}</span>
               </div>
               <div className="p-6 prose prose-invert max-w-none overflow-y-auto text-xs text-gray-300 space-y-4">
-                {ouvrageSelectionne.contenu.split('\n').map((ligne, i) => {
-                  if (ligne.startsWith('# ')) return <h1 key={i} className="text-white text-lg font-bold border-b border-[#232931] pb-2 mt-2 font-sans">{ligne.replace('# ', '')}</h1>;
-                  if (ligne.startsWith('## ')) return <h2 key={i} className="text-white text-sm font-bold pt-2 font-sans text-[#3B6EFF]">{ligne.replace('## ', '')}</h2>;
-                  if (ligne.startsWith('- ')) return <li key={i} className="ml-4 list-disc text-gray-300">{ligne.replace('- ', '')}</li>;
+                {pageSelectionnee.content.split('\n').map((ligne, i) => {
+                  if (ligne.startsWith('# '))
+                    return (
+                      <h1
+                        key={i}
+                        className="text-white text-lg font-bold border-b border-[#232931] pb-2 mt-2 font-sans"
+                      >
+                        {ligne.replace('# ', '')}
+                      </h1>
+                    );
+                  if (ligne.startsWith('## '))
+                    return (
+                      <h2 key={i} className="text-white text-sm font-bold pt-2 font-sans text-[#3B6EFF]">
+                        {ligne.replace('## ', '')}
+                      </h2>
+                    );
+                  if (ligne.startsWith('- '))
+                    return (
+                      <li key={i} className="ml-4 list-disc text-gray-300">
+                        {ligne.replace('- ', '')}
+                      </li>
+                    );
                   if (ligne.trim() === '') return <div key={i} className="h-2" />;
-                  return <p key={i} className="leading-relaxed font-sans">{ligne}</p>;
+                  return (
+                    <p key={i} className="leading-relaxed font-sans">
+                      {ligne}
+                    </p>
+                  );
                 })}
               </div>
             </div>
@@ -161,9 +253,10 @@ export const TableauDeBordWiki = ({ utilisateur, fonctionsApi }) => {
       </div>
 
       <InterfaceClavardage
-        historiqueInitial={historiqueChat}
+        messages={messagesChat}
         surEnvoyerMessage={gererEnvoiMessageChat}
         chargementIa={chargementMessageIa}
+        ragIndisponible={ragIndisponible}
       />
     </div>
   );
