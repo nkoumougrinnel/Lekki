@@ -42,17 +42,24 @@ function App() {
     setDocumentCounter((prev) => prev + 1);
   };
 
-  const handleSaveDocument = (content: string) => {
+  const handleSaveDocument = (content: string, title: string) => {
     if (selectedDoc) {
       const updatedDoc = {
         ...selectedDoc,
         content,
+        title: title.trim() || 'Untitled',
         updatedAt: new Date(),
       };
       setSelectedDoc(updatedDoc);
-      setAllDocuments((prev) =>
-        prev.map((doc) => (doc.id === selectedDoc.id ? updatedDoc : doc))
-      );
+
+      const updateInTree = (docs: WikiDocument[]): WikiDocument[] =>
+        docs.map((doc) => {
+          if (doc.id === updatedDoc.id) return updatedDoc;
+          if (doc.children) return { ...doc, children: updateInTree(doc.children) };
+          return doc;
+        });
+
+      setAllDocuments((prev) => updateInTree(prev));
     }
   };
 

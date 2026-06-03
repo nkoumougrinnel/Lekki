@@ -19,16 +19,17 @@ import { Streamdown } from 'streamdown';
 
 interface MarkdownEditorV2Props {
   document: WikiDocument;
-  onSave: (content: string) => void;
+  onSave: (content: string, title: string) => void;
 }
 
 export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
   const [content, setContent] = useState(document.content);
+  const [title, setTitle] = useState(document.title);
   const [isSaved, setIsSaved] = useState(true);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
 
   const handleSave = () => {
-    onSave(content);
+    onSave(content, title);
     setIsSaved(true);
   };
 
@@ -56,12 +57,21 @@ export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
   };
 
   return (
-    <div className="flex flex-col h-screen flex-1 bg-background">
+    <div className="flex flex-col h-full flex-1 bg-background">
       {/* Header */}
       <div className="border-b border-border p-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{document.title}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+        <div className="flex-1 min-w-0">
+          <input
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setIsSaved(false);
+            }}
+            placeholder="Document title"
+            aria-label="Document title"
+            className="w-full text-2xl font-bold text-foreground bg-transparent border-0 outline-none focus:ring-0 p-0 hover:bg-secondary/50 focus:bg-secondary/50 rounded px-1 -mx-1 transition-colors"
+          />
+          <p className="text-sm text-muted-foreground mt-1 px-1">
             Last updated by {document.author} • {document.updatedAt.toLocaleDateString()}
           </p>
         </div>

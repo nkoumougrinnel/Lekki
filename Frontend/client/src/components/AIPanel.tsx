@@ -65,7 +65,7 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
   };
 
   return (
-    <div className="w-96 bg-background border-l border-border flex flex-col h-screen">
+    <div className="w-96 bg-background border-l border-border flex flex-col h-full">
       {/* Header */}
       <div className="border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
