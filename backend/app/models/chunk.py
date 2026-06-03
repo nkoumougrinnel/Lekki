@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, LargeBinary, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
@@ -13,5 +13,6 @@ class Chunk(Base):
     chunk_text = Column(Text, nullable=False)
     chunk_hash = Column(String, nullable=False)
     token_count = Column(Integer, nullable=False)
+    embedding = Column(LargeBinary, nullable=True)
 
     page = relationship("Page", back_populates="chunks")

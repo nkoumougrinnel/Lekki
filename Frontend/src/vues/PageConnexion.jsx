@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 
+/** Comptes du seed backend (data/seed.py) */
+const COMPTE_DEMO = { email: 'admin@lekki.io', password: 'Admin1234!' };
+
 export const PageConnexion = ({ surConnexionReussie, methodeConnexionApi, chargementApi, erreurApi }) => {
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -18,7 +21,7 @@ export const PageConnexion = ({ surConnexionReussie, methodeConnexionApi, charge
 
   const declencherAccesDemo = async () => {
     setErreurLocale(null);
-    const utilisateurDemo = await methodeConnexionApi('demo@lekki.cm', 'demo');
+    const utilisateurDemo = await methodeConnexionApi(COMPTE_DEMO.email, COMPTE_DEMO.password);
     if (utilisateurDemo) surConnexionReussie(utilisateurDemo);
   };
 
@@ -41,10 +44,10 @@ export const PageConnexion = ({ surConnexionReussie, methodeConnexionApi, charge
 
         <form onSubmit={executerConnexion} className="space-y-4">
           <div>
-            <label className="block text-gray-400 text-xs mb-1.5 font-medium">Email professionnel</label>
+            <label className="block text-gray-400 text-xs mb-1.5 font-medium">Email ou identifiant</label>
             <input
-              type="email"
-              placeholder="votre@email.com"
+              type="text"
+              placeholder="admin@lekki.io"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-[#0D0F12] border border-[#232931] text-white px-3 py-2 text-sm rounded-md focus:outline-none focus:border-[#3B6EFF] transition-colors"
@@ -77,11 +80,16 @@ export const PageConnexion = ({ surConnexionReussie, methodeConnexionApi, charge
         </div>
 
         <button
+          type="button"
           onClick={declencherAccesDemo}
-          className="w-full bg-[#3B6EFF] text-white font-bold text-sm py-2 px-4 rounded-md hover:bg-[#3B6EFF]/90 transition-colors"
+          disabled={chargementApi}
+          className="w-full bg-[#3B6EFF] text-white font-bold text-sm py-2 px-4 rounded-md hover:bg-[#3B6EFF]/90 transition-colors disabled:opacity-50"
         >
-          Accès démo (Jury)
+          Accès démo (admin seed)
         </button>
+        <p className="mt-3 text-[10px] text-gray-500 text-center font-mono">
+          API : localhost:8000 · {COMPTE_DEMO.email}
+        </p>
       </div>
     </div>
   );

@@ -28,6 +28,7 @@
 | `DELETE` | `/pages/{id}` | `id` (path) | admin |
 
 **Catégories valides** : `rh` · `technique` · `commercial` · `guides`
+**Note** : La création/modification déclenche automatiquement l'indexation RAG en arrière-plan.
 
 ---
 
@@ -35,7 +36,9 @@
 
 | Méthode | Route | Params | Rôle requis |
 |---------|-------|--------|-------------|
-| `GET` | `/search` | `?q=` (requis) · `?category=` · `?limit=` | lecteur+ |
+| `GET` | `/pages/search` | `?q=` (requis, min 1 char) | lecteur+ |
+
+L'endpoint utilise **SQLite FTS5**. La recherche est effectuée sur le titre et le contenu. Les résultats sont classés par pertinence (`rank`).
 
 ---
 
@@ -68,11 +71,11 @@ Si `chat_id` est fourni : vérifier `chat.user_id == current_user.id` avant d’
 > Non exposé au frontend. Déclenché automatiquement après `POST /pages` ou `PUT /pages/{id}` par le service documentaire (appel in-process ou HTTP interne).
 
 | Méthode | Route | Params body | Accès |
-|---------|-------|-------------|-------|
-| `POST` | `/internal/embed` | `page_id` | service interne uniquement |
+|---------|---------------------|-------------|-------|
+| `POST` | `/internal/embed/{page_id}` | — | clé interne uniquement |
 | `DELETE` | `/internal/embed/{page_id}` | `page_id` (path) | service interne uniquement |
 
-**Protection** : ces routes n’acceptent pas le JWT utilisateur standard. Authentification via en-tête `X-Internal-Key` (secret `INTERNAL_API_KEY` en `.env`), valide uniquement depuis le réseau interne / le même processus backend. Un admin connecté via le frontend ne peut pas forcer un recalcul. Réponse `401` si clé absente ou invalide.
+**Protection** : Authentification via l'en-tête `X-Internal-Key`.
 
 ---
 

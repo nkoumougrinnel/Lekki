@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User
 from app.schemas.page import PageCreate, PageUpdate, PageResponse, PageCategory
-from app.service.auth_service import get_current_user, require_role
+from app.services.auth_service import get_current_user, require_role
 from app.utils import pages as crud_pages
 
 router = APIRouter(prefix="/pages", tags=["pages"])
