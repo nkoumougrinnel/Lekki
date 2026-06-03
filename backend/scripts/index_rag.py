@@ -12,6 +12,13 @@ import asyncio
 import sys
 from pathlib import Path
 
+# Console en UTF-8 (évite les UnicodeEncodeError sous Windows / cp1252)
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
+
 from sqlalchemy import select
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

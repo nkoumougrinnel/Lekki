@@ -25,7 +25,7 @@ NO_CONTEXT_ANSWER = (
 )
 
 GREETING_ANSWER = (
-    "Bonjour ! 👋 Je suis l'assistant IA de Lekki. "
+    "Bonjour ! Je suis Lekki AI, l'assistant du wiki. "
     "Posez-moi une question sur le contenu du wiki (RH, technique, commercial, guides…) "
     "et je chercherai la réponse dans la base de connaissances."
 )
@@ -119,6 +119,7 @@ async def ask_lekki(
     else:
         scored_chunks = await rag_service.get_relevant_chunks(db, req.question)
         sources = rag_service.build_sources(scored_chunks)
+        sources = await rag_service.attach_page_titles(db, sources)
         confidence = rag_service.compute_confidence(scored_chunks)
 
         if not scored_chunks:

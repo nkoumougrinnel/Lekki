@@ -1,96 +1,119 @@
-# Lekki — Corporate Knowledge Base with RAG
+# Lekki Wiki — Base de connaissances d'entreprise avec RAG
 
-> **"Notre RAG ne devine pas — il cite."**
-> Une base de connaissances Markdown-first avec un moteur IA qui source chaque réponse, garde vos données sur votre infrastructure, et se déploie en une commande.
+> **« Notre RAG ne devine pas — il cite. »**
+> Un wiki Markdown-first avec un assistant IA (**Lekki AI**) qui source chaque réponse, garde les données sur votre infrastructure (SQLite local), et se déploie en une commande Docker.
 
 ---
 
 ## Table des matières
 
 1. [Vue d'ensemble](#vue-densemble)
-2. [Fonctionnalités](#fonctionnalités)
+2. [Fonctionnalités actuelles](#fonctionnalités-actuelles)
 3. [Architecture](#architecture)
 4. [Stack technique](#stack-technique)
 5. [Installation et démarrage](#installation-et-démarrage)
 6. [Configuration](#configuration)
 7. [Structure du projet](#structure-du-projet)
-8. [API Reference](#api-reference)
+8. [Référence API](#référence-api)
 9. [Pipeline RAG](#pipeline-rag)
-10. [Démo](#démo)
+10. [Comptes & données de démo](#comptes--données-de-démo)
 
 ---
 
 ## Vue d'ensemble
 
-Lekki est un wiki d'entreprise intelligent qui combine gestion documentaire Markdown et pipeline RAG (Retrieval-Augmented Generation). Contrairement aux wrappers ChatGPT classiques, l'IA est **intégrée dans le workflow documentaire** : chaque réponse cite ses sources avec un lien cliquable vers le passage exact, un score de confiance quantifie la certitude, et vos documents ne quittent jamais votre infrastructure.
+Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retrieval-Augmented Generation). L'assistant **Lekki AI** répond aux questions à partir du contenu du wiki, **cite ses sources** (cliquables, elles ouvrent la page dans l'éditeur) et affiche un **score de confiance**. Les embeddings sont calculés **en local** par défaut (MiniLM), avec bascule possible vers Gemini ; aucun document ne quitte votre infrastructure si vous restez sur le modèle local.
 
-**Conçu pour :** équipes techniques, DSI, départements RH — tout contexte où l'information est dispersée et introuvable.
+**Conçu pour :** équipes RH, techniques et commerciales — tout contexte où l'information est dispersée.
 
 ---
 
-## Fonctionnalités
+## Fonctionnalités actuelles
 
-### MVP (P0 — indispensable)
+### Authentification & rôles
+- Inscription, connexion et profil via **JWT** (HS256), mots de passe hachés avec **bcrypt**.
+- Connexion par **email ou nom d'utilisateur**.
+- Trois rôles : **admin**, **editor**, **reader**.
+  - `reader` : lecture seule.
+  - `editor` : crée des pages, modifie **ses propres** pages.
+  - `admin` : tout, y compris suppression de pages et gestion des utilisateurs.
+- Contexte d'authentification côté front (`AuthProvider`/`AuthGate`), token persisté en `localStorage`, écran de connexion dédié.
 
-| Fonctionnalité                    | Description                                                   |
-| --------------------------------- | ------------------------------------------------------------- |
-| Authentification JWT              | Login / register / logout, token 24h                          |
-| Workspaces multi-équipe           | Espaces isolés par département (IT, RH, Produit…)             |
-| Arborescence de documents         | Espaces → Dossiers → Pages, vue hiérarchique                  |
-| Éditeur Markdown                  | Split-view édition / prévisualisation                         |
-| CRUD documents                    | Création, lecture, mise à jour, suppression                   |
-| Chat RAG avec citations           | Réponses sourcées avec liens cliquables vers le passage exact |
-| Embeddings + recherche sémantique | `all-MiniLM-L6-v2`, ChromaDB, 384 dimensions                  |
-| Déploiement Docker                | `docker compose up` — fonctionne sur n'importe quelle machine |
+### Gestion des pages (wiki)
+- **CRUD complet** des pages Markdown (création, lecture, mise à jour, suppression) selon le rôle.
+- **Catégories** : `rh`, `technique`, `commercial`, `guides`.
+- **Statut** : `draft` (brouillon / « Privé ») ou `published` (« Public »).
+- **Éditeur Markdown** en vue scindée **édition / aperçu** en direct, avec **titre éditable** et bouton d'enregistrement (lecture seule pour les `reader`).
+- **Recherche plein-texte** (SQLite FTS5) exposée dans la barre de recherche **centrée** de l'en-tête (résultats en direct, déboncés).
+- **Compteur de vues** et indicateur d'indexation (`is_embedded`) par page.
 
-### Différenciateurs IA (P1 — vous gagnez des points)
+### Sidebar (style explorateur VS Code)
+- Sections : **Favoris** (étoile dorée), **Privés**, **Groupes** _(à venir)_, **Publics**.
+- **Favoris** gérés côté client (`localStorage`), étoile dorée par page pour ajouter/retirer.
+- Boutons d'ajout rapide de page (au survol des sections, + barre d'outils en haut), suppression de page pour les rôles autorisés.
 
-- **Citations sources cliquables** — chaque réponse pointe vers le document et le passage exact
-- **Confidence score** — badge `● 91% de confiance` avec tooltip sur le nombre de documents sources
-- **Résumé automatique** — TL;DR IA à l'ouverture d'un document
-- **Tags auto-générés** — 3 à 5 tags produits à la sauvegarde
-- **Documents liés** — sidebar suggérant 2-3 docs sémantiquement proches pendant l'édition
-- **Recherche hybride** — BM25 full-text + similarité cosinus, fusion RRF
-- **Permissions par rôle** — `viewer`, `editor`, `admin` par workspace
-- **Historique de versions** — lecture seule, comparaison de révisions
-- **Onboarding IA** — résumé de l'ensemble du wiki à la première connexion
+### Assistant IA — Lekki AI
+- Chat connecté au endpoint **`POST /ask`** (RAG réel).
+- **Sources cliquables** : chaque réponse liste les pages utilisées (titre + score) ; un clic **ouvre la page dans l'éditeur**.
+- **Score de confiance** affiché (basé sur la similarité cosinus du meilleur passage).
+- **Détection des salutations / small-talk** : répond poliment sans interroger inutilement le RAG.
+- Réponses **sans emoji**, message clair quand aucune information n'est trouvée.
+- Panneau refermable et **bouton flottant** pour le rouvrir.
 
-### Bonus (P2 — si le temps le permet)
+### Pipeline RAG & fournisseurs
+- **Chunking** via LangChain `RecursiveCharacterTextSplitter` (512 / overlap 64, séparateurs Markdown).
+- **Embeddings** stockés en base (vecteurs `float32`), recherche par **similarité cosinus** (top-4).
+- **Fournisseurs d'embeddings** avec bascule : **MiniLM** (`all-MiniLM-L6-v2`, local, sans clé) puis **Gemini** (fallback).
+- **Fournisseurs LLM** avec **failover automatique** et cooldown sur quota/429 : **Gemini → Groq → Cerebras**.
+- Endpoints d'état : `GET /llm/status` et `GET /embedding/status`.
 
-- Export PDF de conversation
-- Badge document obsolète (> 180 jours sans modification)
-- "Ask about this paragraph" — sélectionner un paragraphe, interroger l'IA en contexte
-- Dark mode
-- Streaming SSE des réponses IA
+### Conversations
+- Historique de conversations par utilisateur (`/chats`), persistance des messages et de leurs sources (JSON).
+
+### Administration
+- Gestion des utilisateurs réservée aux admins : liste, consultation, **changement de rôle**, suppression (protections anti auto-modification).
+
+### UI / UX
+- **React + Vite + TailwindCSS** avec composants shadcn/ui et icônes lucide-react.
+- **Mode clair / sombre** (clair par défaut), contrastes corrigés.
+- **Barre de défilement** discrète accordée au thème.
+- Rendu Markdown des réponses via **Streamdown**.
+
+### Déploiement
+- **Docker Compose** : services `backend` (FastAPI/Uvicorn) + `frontend` (build Vite servi par **Nginx**), volume persistant pour la base SQLite, healthcheck backend.
 
 ---
 
 ## Architecture
 
 ```
-Utilisateur pose une question
-        ↓
-Frontend → POST /api/chats/{chat_id}/messages
-        ↓
-RAG Service :
-  1. Embed la question (sentence-transformers/all-MiniLM-L6-v2)
-  2. Recherche cosinus top-5 dans ChromaDB (par workspace)
-  3. [Hybride] BM25 sur SQLite full-text top-5
-  4. Fusion RRF (Reciprocal Rank Fusion)
-  5. Construction du prompt avec contexte
-  6. Appel LLM (OpenAI / Groq / Ollama)
-  7. Parse réponse + extraction sources + calcul confidence score
-        ↓
-Retourne : { answer, sources: [{doc_id, title, chunk, score}], confidence }
-        ↓
-Frontend affiche la réponse avec les citations cliquables
+Utilisateur pose une question (Lekki AI)
+        │
+        ▼
+Frontend  ──►  POST /api/v1/ask  { question, chat_id? }
+        │
+        ▼
+RAG (rag_service + llm_service) :
+  1. Si salutation/small-talk  →  réponse conviviale (pas de RAG)
+  2. Embedding de la question (MiniLM local, sinon Gemini)
+  3. Similarité cosinus sur les chunks (top-4)
+  4. Construction des sources (page_id, titre, extrait, score)
+  5. Score de confiance = meilleure similarité
+  6. Appel LLM avec failover (Gemini → Groq → Cerebras)
+        │
+        ▼
+{ answer, sources: [{ page_id, title, excerpt, score }], confidence, provider }
+        │
+        ▼
+Frontend affiche la réponse + sources cliquables (ouvrent la page)
 ```
 
-**Ingestion (déclenchée à chaque sauvegarde de document)**
+**Ingestion (script d'indexation)**
 
 ```
-Document Markdown → Nettoyage → Chunking (512 tokens, overlap 64)
-    → Embedding (all-MiniLM-L6-v2) → ChromaDB + SQLite
+Page Markdown → Chunking (512 / overlap 64)
+   → Embedding (MiniLM local / Gemini) → table `chunks` (vecteurs float32)
+   → FTS5 (pages_fts) pour la recherche plein-texte
 ```
 
 ---
@@ -98,302 +121,274 @@ Document Markdown → Nettoyage → Chunking (512 tokens, overlap 64)
 ## Stack technique
 
 ### Backend
-
-| Composant         | Technologie                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------- |
-| Framework API     | FastAPI 0.111 + Uvicorn                                                               |
-| Base de données   | SQLite (mode WAL) + SQLAlchemy async                                                  |
-| Embeddings        | sentence-transformers `all-MiniLM-L6-v2`                                              |
-| Vector store      | ChromaDB 0.5.3 (une collection par workspace)                                         |
-| RAG orchestration | LangChain 0.2.5                                                                       |
-| BM25 full-text    | rank-bm25                                                                             |
-| Authentification  | JWT HS256, python-jose + passlib/bcrypt                                               |
-| LLM recommandé    | `gpt-4o-mini` (OpenAI) · `groq` API (fallback gratuit) · `ollama phi3:mini` (offline) |
+| Composant          | Technologie                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| Framework API      | FastAPI + Uvicorn (préfixe `/api/v1`)                        |
+| Base de données    | SQLite + SQLAlchemy **async**, migrations **Alembic**        |
+| Recherche texte    | SQLite **FTS5** (`pages_fts`)                                |
+| Embeddings         | `sentence-transformers` **all-MiniLM-L6-v2** (local) / Gemini |
+| Découpage RAG      | `langchain-text-splitters`                                   |
+| LLM                | **Gemini** (`google-genai`), **Groq**, **Cerebras** (failover) |
+| Authentification   | JWT HS256 (python-jose) + passlib/bcrypt                     |
 
 ### Frontend
-
-| Composant        | Technologie                  |
-| ---------------- | ---------------------------- |
-| Framework        | React 18 + TypeScript (Vite) |
-| Routing          | React Router DOM 6           |
-| State management | Zustand                      |
-| Data fetching    | TanStack Query v5            |
-| Éditeur Markdown | @uiw/react-md-editor         |
-| HTTP client      | Axios avec intercepteur JWT  |
-| UI components    | shadcn/ui + Tailwind CSS     |
-| Icons            | Lucide React                 |
+| Composant         | Technologie                          |
+| ----------------- | ------------------------------------ |
+| Framework         | React 18 + TypeScript (Vite)         |
+| Styles & UI       | TailwindCSS + shadcn/ui              |
+| Icônes            | lucide-react                         |
+| Rendu Markdown    | Streamdown                           |
+| Gestionnaire pkg  | pnpm                                 |
+| État / contextes  | React Context (auth, thème)          |
 
 ### Infrastructure
-
-- **Docker Compose** — backend + frontend + volumes persistants
-- **Nginx** — reverse proxy pour le frontend en production
-- **SQLite WAL** — pas de serveur DB à gérer
+- **Docker Compose** (backend + frontend), **Nginx** pour servir le SPA en production.
+- **SQLite WAL** : pas de serveur de base à gérer, données dans un volume.
 
 ---
 
 ## Installation et démarrage
 
 ### Prérequis
+- Docker ≥ 24 et Docker Compose ≥ 2.20, **ou**
+- Python 3.11+ et Node 20+ (+ `pnpm`) pour le développement local.
 
-- Docker ≥ 24 et Docker Compose ≥ 2.20
-- (optionnel) Python 3.11+ et Node 20+ pour le développement local
-
-### Démarrage rapide
+### Option A — Docker (recommandé)
 
 ```bash
-# Cloner le dépôt
-git clone https://github.com/votre-org/wikiai.git
-cd wikiai
-
-# Copier et configurer les variables d'environnement
-cp .env.example .env
-# Éditer .env : renseigner au minimum OPENAI_API_KEY ou GROQ_API_KEY
-
-# Lancer l'ensemble de la stack
+# À la racine du projet
+# (optionnel) renseigner les clés LLM dans backend/.env
 docker compose up --build
 ```
-
-L'application est disponible sur :
 
 - **Frontend** → http://localhost:3000
 - **API** → http://localhost:8000
 - **Swagger UI** → http://localhost:8000/docs
 
-> **Accès démo** : un bouton "Demo access" sur la page de connexion crée une session
-> avec les données de démonstration préchargées.
-
-### Développement local (sans Docker)
+### Option B — Développement local
 
 ```bash
-# Backend
+# 1) Backend (depuis backend/)
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+# Windows : .venv\Scripts\activate   |   Linux/macOS : source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
 
-# Frontend (dans un autre terminal)
-cd frontend
-npm install
-npm run dev
+# Configurer l'environnement
+copy .env.example .env        # Windows   (cp .env.example .env sur Linux/macOS)
+# Renseigner au moins une clé LLM (GEMINI_API_KEY, GROQ_API_KEY ou CEREBRAS_API_KEY)
+
+# Données de démo puis indexation RAG
+python -m scripts.seed
+python -m scripts.index_rag
+
+# Lancer l'API
+uvicorn app.main:app --reload --port 8000
 ```
+
+```bash
+# 2) Frontend (depuis Frontend/client/, autre terminal)
+cd Frontend/client
+pnpm install
+pnpm dev          # http://localhost:5173
+```
+
+> Le frontend lit `VITE_API_URL` (par défaut `http://localhost:8000/api/v1`).
 
 ---
 
 ## Configuration
 
-Toutes les variables sont dans `.env` à la racine. Exemple minimal :
+Variables d'environnement du backend (`backend/.env`) :
 
 ```env
 # Sécurité
-SECRET_KEY=changez-cette-valeur-en-production
+SECRET_KEY=change-this-in-production
+DEBUG=true
+SEED_PASSWORD=lekki123
 
-# LLM — choisir l'un des trois
-OPENAI_API_KEY=sk-...          # Option 1 : gpt-4o-mini (recommandé)
-GROQ_API_KEY=gsk_...           # Option 2 : gratuit, très rapide
-# Ollama sur localhost:11434   # Option 3 : 100% offline
+# Ordre de bascule LLM (/ask) : gemini → groq → cerebras
+LLM_PROVIDER_ORDER=gemini,groq,cerebras
+LLM_PROVIDER_COOLDOWN_MINUTES=60
 
-# Debug
-DEBUG=false
+# Gemini
+GEMINI_API_KEY=...
+GEMINI_LLM_MODEL=models/gemini-2.5-flash
+GEMINI_EMBEDDING_MODEL=models/gemini-embedding-001
+
+# Groq (optionnel)
+GROQ_API_KEY=
+GROQ_LLM_MODEL=llama-3.1-8b-instant
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+
+# Cerebras (optionnel)
+CEREBRAS_API_KEY=
+CEREBRAS_LLM_MODEL=llama-3.3-70b
+CEREBRAS_BASE_URL=https://api.cerebras.ai/v1
+
+# Embeddings : minilm (local, défaut) puis gemini (fallback)
+EMBEDDING_PROVIDER_ORDER=minilm,gemini
+LOCAL_EMBEDDING_MODEL=all-MiniLM-L6-v2
+
+# Interne
+INTERNAL_API_KEY=lekki-internal-secret-key
 ```
 
-**Choix LLM par ordre de recommandation :**
+Frontend (`Frontend/.env`) :
 
-1. **OpenAI `gpt-4o-mini`** — rapide, peu coûteux, meilleure qualité de réponse
-2. **Groq API** — gratuit, latence très faible, fallback idéal
-3. **Ollama `phi3:mini` ou `mistral:7b`** — zéro dépendance externe, fonctionne hors ligne
+```env
+VITE_API_URL=http://localhost:8000/api/v1
+```
 
 ---
 
 ## Structure du projet
 
 ```
-wikiai/
+Lekki/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # Entry point FastAPI, CORS, middleware
-│   │   ├── config.py            # Settings (pydantic-settings)
-│   │   ├── database.py          # SQLite async, session factory
-│   │   ├── models/              # Tables SQLAlchemy
-│   │   │   ├── user.py
-│   │   │   ├── workspace.py
-│   │   │   ├── document.py
-│   │   │   ├── permission.py
-│   │   │   ├── embedding.py
-│   │   │   └── chat.py
-│   │   ├── schemas/             # Validation Pydantic entrées/sorties
-│   │   ├── routers/             # Endpoints HTTP par domaine
-│   │   │   ├── auth.py
-│   │   │   ├── documents.py
-│   │   │   ├── workspaces.py
-│   │   │   ├── search.py
-│   │   │   ├── chat.py
-│   │   │   └── permissions.py
-│   │   └── services/            # Logique métier isolée
-│   │       ├── rag_service.py   # Orchestrateur RAG complet
-│   │       ├── embedding_service.py
-│   │       ├── llm_service.py
-│   │       ├── document_service.py
-│   │       └── auth_service.py
-│   ├── data/
-│   │   ├── wiki.db              # SQLite (gitignored)
-│   │   ├── chroma/              # ChromaDB persistant (gitignored)
-│   │   └── uploads/
+│   │   ├── main.py                 # FastAPI, CORS, routers (/api/v1)
+│   │   ├── config.py               # Settings (pydantic-settings)
+│   │   ├── database.py             # SQLite async, migrations, get_db
+│   │   ├── models/                 # user, page, chunk, chat, permission
+│   │   ├── schemas/                # Pydantic (auth, page, user, chat, rag)
+│   │   ├── routers/                # auth, pages, rag, chats, users, internal
+│   │   ├── middleware/             # auth, rôles, protection (clé interne)
+│   │   ├── utils/                  # CRUD pages / chats
+│   │   └── services/
+│   │       ├── rag_service.py      # chunking, embeddings, cosinus, sources
+│   │       ├── llm_service.py      # orchestration LLM
+│   │       ├── auth_service.py     # JWT, hash, dépendances de rôle
+│   │       ├── embedding_providers/ # router, minilm, gemini
+│   │       └── llm_providers/      # router, gemini, groq, cerebras
+│   ├── scripts/
+│   │   ├── seed.py                 # comptes + pages de démo (upsert + FTS)
+│   │   ├── seed_pages.py           # contenu Markdown des pages de démo
+│   │   └── index_rag.py            # indexation RAG (embeddings)
 │   ├── requirements.txt
 │   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/          # Sidebar, Header, Layout
-│   │   │   ├── editor/          # MarkdownEditor, DocumentSummary, RelatedDocs
-│   │   │   ├── chat/            # ChatPanel, MessageBubble, SourceCitation
-│   │   │   └── search/          # SearchBar, SearchResults
-│   │   ├── pages/               # LoginPage, DashboardPage, DocumentPage, SearchPage
-│   │   ├── hooks/               # useAuth, useDocuments, useRAG
-│   │   ├── stores/              # Zustand — authStore, documentStore
-│   │   └── api/client.ts        # Axios + intercepteur JWT
-│   └── Dockerfile
+├── Frontend/
+│   ├── client/
+│   │   └── src/
+│   │       ├── App.tsx             # layout, auth gate, CRUD, ouverture sources
+│   │       ├── components/         # SidebarV2, HeaderV2, MarkdownEditorV2,
+│   │       │                       # AIPanel (Lekki AI), DashboardV2, LoginScreen
+│   │       ├── contexts/           # AuthContext, ThemeContext
+│   │       ├── lib/api.ts          # client API (auth, pages, rag)
+│   │       └── types/wiki.ts
+│   ├── Dockerfile                  # build Vite + Nginx
+│   └── nginx.conf
 ├── docker-compose.yml
-├── .env.example
 └── README.md
 ```
 
 ---
 
-## API Reference
+## Référence API
+
+Toutes les routes sont préfixées par `/api/v1`. Documentation interactive sur `/docs`.
 
 ### Authentification
-
 ```
-POST   /api/auth/register     { email, username, password }
-POST   /api/auth/login        { email, password } → { access_token, user }
-GET    /api/auth/me           → { id, email, username, role, workspaces }
-```
-
-### Exemples d'authentification (curl)
-
-Linux / macOS / WSL:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "username=admin@lekki.local&password=Admin1234!"
+POST   /api/v1/auth/register     { email, username, password } → { access_token, user }
+POST   /api/v1/auth/login        (form: username, password)    → { access_token, user }
+GET    /api/v1/auth/me           → profil de l'utilisateur courant
 ```
 
-Windows (PowerShell) — utiliser `curl.exe` pour éviter l'alias `Invoke-WebRequest`:
+### Pages
+```
+GET    /api/v1/pages             ?category=&skip=&limit=        (authentifié)
+GET    /api/v1/pages/search      ?q=<texte>                     (FTS, authentifié)
+GET    /api/v1/pages/{id}
+POST   /api/v1/pages             { title, content, category }   (admin, editor)
+PUT    /api/v1/pages/{id}        (admin ; editor → ses pages)
+DELETE /api/v1/pages/{id}        (admin)
+```
 
+### Assistant (RAG)
+```
+POST   /api/v1/ask               { question, chat_id? }
+       → { answer, sources: [{ page_id, title, excerpt, score }], confidence, provider }
+GET    /api/v1/llm/status        état des fournisseurs LLM
+GET    /api/v1/embedding/status  état des fournisseurs d'embeddings
+```
+
+### Conversations
+```
+GET    /api/v1/chats
+POST   /api/v1/chats             { title }
+GET    /api/v1/chats/{id}
+DELETE /api/v1/chats/{id}
+GET    /api/v1/chats/{id}/messages   ?limit=
+```
+
+### Utilisateurs (admin)
+```
+GET    /api/v1/users/
+GET    /api/v1/users/{id}
+PUT    /api/v1/users/{id}/role   { role }
+DELETE /api/v1/users/{id}
+```
+
+### Exemple (PowerShell)
 ```powershell
-curl.exe -X POST "http://127.0.0.1:8000/api/v1/auth/login" -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin@lekki.local&password=Admin1234!"
-# Réponse attendue : JSON avec access_token
-
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/auth/login" -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin@lekki.local&password=lekki123"
 # Puis :
 curl.exe -H "Authorization: Bearer <token>" "http://127.0.0.1:8000/api/v1/auth/me"
 ```
-
-Note rapide : l'application accepte aussi le token spécial `dev` en environnement de développement (exemple : `-H \"Authorization: Bearer dev\"`) pour bypasser l'auth durant les tests locaux.
-
-### Workspaces
-
-```
-GET    /api/workspaces
-POST   /api/workspaces        { name, description, icon }
-GET    /api/workspaces/{id}   → { workspace, documents_tree }
-DELETE /api/workspaces/{id}
-```
-
-### Documents
-
-```
-GET    /api/workspaces/{id}/documents   ?tree=true
-POST   /api/workspaces/{id}/documents  { title, content, parent_id?, status }
-GET    /api/documents/{id}             → { ..., tags, ai_summary, related_docs[] }
-PUT    /api/documents/{id}
-DELETE /api/documents/{id}
-GET    /api/documents/{id}/versions
-POST   /api/documents/{id}/summarize   → { summary }
-POST   /api/documents/{id}/embed       → { chunks_created }
-```
-
-### Recherche
-
-```
-GET    /api/search   ?q=<query>&workspace_id=<id>&mode=hybrid|semantic|fulltext
-```
-
-### Chat RAG
-
-```
-POST   /api/workspaces/{id}/chats
-POST   /api/chats/{id}/messages   { question, doc_context_id? }
-       → { answer, sources: [{doc_id, title, chunk_text, similarity_score}], confidence }
-POST   /api/chats/{id}/messages/stream   (SSE — bonus)
-```
-
-La documentation interactive complète est disponible sur `/docs` (Swagger UI).
 
 ---
 
 ## Pipeline RAG
 
-### Paramètres de chunking
-
+### Découpage (chunking)
 ```python
 RecursiveCharacterTextSplitter(
-    chunk_size=512,       # bon équilibre précision / contexte
-    chunk_overlap=64,     # évite de couper les idées à cheval sur deux chunks
-    separators=["\n## ", "\n### ", "\n\n", "\n", " "]
+    chunk_size=512,
+    chunk_overlap=64,
+    separators=["\n## ", "\n### ", "\n\n", "\n", " "],
 )
 ```
 
-### Modèle d'embedding
-
+### Embeddings
 ```
-sentence-transformers/all-MiniLM-L6-v2
-~80 MB · 384 dimensions · init ~5s · inférence <10ms/requête
-```
-
-### Calcul du confidence score
-
-```python
-confidence = 0.7 * top_similarity + 0.3 * avg_similarity
-# Résultat en %, plafonné à 99%
+all-MiniLM-L6-v2  (local, 384 dimensions, sans clé API)  →  fallback Gemini
+Vecteurs stockés en float32 dans la table `chunks`.
 ```
 
-### Prompt système
+### Recherche & confiance
+```
+Similarité cosinus entre la requête et chaque chunk  →  top-4
+confidence = meilleure similarité (borné [0, 1])
+```
 
-Le LLM est contraint à répondre **uniquement** à partir des documents fournis en contexte. Si la réponse est absente des sources, il l'indique explicitement. Chaque réponse cite les documents sources au format `[Source: Titre du document]`.
+### Réindexation après modification de contenu
+```bash
+cd backend
+python -m scripts.seed        # rafraîchit le contenu des pages de démo + FTS
+python -m scripts.index_rag   # recalcule les embeddings de toutes les pages
+```
 
 ---
 
-## Démo
+## Comptes & données de démo
 
-### Dataset de démonstration
+`python -m scripts.seed` crée 3 comptes (mot de passe : valeur de `SEED_PASSWORD`, par défaut `lekki123`) et 7 pages wiki :
 
-10 documents réalistes sont préchargés via le bouton "Demo access" :
-Architecture système microservices · Guide JWT · Politique sécurité API · Onboarding RH · Guide Docker · Procédure incident P1 · Roadmap Q3 · Charte Git · Guide RGPD _(badge obsolète)_ · FAQ Technique
+| Compte               | Rôle   |
+| -------------------- | ------ |
+| admin@lekki.local    | admin  |
+| editor@lekki.local   | editor |
+| reader@lekki.local   | reader |
+
+Pages de démo : Politique de congés · Onboarding · Remboursement des frais · Charte IT · Guide télétravail · Recrutement interne · Architecture technique (Stack Lekki).
 
 ### Questions de démo recommandées
+- _« Combien de jours de congés payés par an ? »_
+- _« Que faire le premier jour d'onboarding ? »_
+- _« Quel est le plafond repas client ? »_
+- _« Quelle est la longueur minimale d'un mot de passe ? »_
+- _« Combien de jours de télétravail par semaine ? »_
 
-- _"Quelle est la procédure en cas d'incident P1 ?"_
-- _"Comment configurer l'authentification JWT ?"_
-- _"Quelles sont nos obligations RGPD sur les données personnelles ?"_
-- _"Résume notre architecture de déploiement."_
-
-> **Règle d'or :** ne jamais improviser les questions IA en démo. Testez chaque question à l'avance et vérifiez la qualité des réponses.
-
----
-
-## Comparaison
-
-| Critère               | Lekki |  Notion  | Confluence | Guru |
-| --------------------- | :---: | :------: | :--------: | :--: |
-| Markdown natif        |  ✅   |    ✅    |     ⚠️     |  ✅  |
-| RAG intégré           |  ✅   | ⚠️ Addon |     ❌     |  ✅  |
-| Citations sources     |  ✅   |    ❌    |     ❌     |  ⚠️  |
-| Confidence score      |  ✅   |    ❌    |     ❌     |  ❌  |
-| Open source           |  ✅   |    ❌    |     ❌     |  ❌  |
-| Self-hosted           |  ✅   |    ❌    |     ⚠️     |  ❌  |
-| Données 100% internes |  ✅   | ⚠️ Cloud |  ⚠️ Cloud  |  ❌  |
-
----
-
-_Construit en 8 heures. Voici ce que ça donne en 8 semaines._
+> Après le seed, lancez **`python -m scripts.index_rag`** pour que l'assistant puisse répondre.

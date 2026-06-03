@@ -99,6 +99,7 @@ export interface Page {
 
 export interface AskSource {
   page_id: string;
+  title?: string;
   excerpt: string;
   score: number;
 }

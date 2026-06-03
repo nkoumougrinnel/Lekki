@@ -117,6 +117,18 @@ def build_sources(scored_chunks: list, excerpt_len: int = 120) -> list[dict]:
     return sorted(by_page.values(), key=lambda x: x["score"], reverse=True)
 
 
+async def attach_page_titles(db: AsyncSession, sources: list[dict]) -> list[dict]:
+    """Ajoute le titre de la page à chaque source (le front affiche le titre, pas l'UUID)."""
+    if not sources:
+        return sources
+    page_ids = [s["page_id"] for s in sources]
+    result = await db.execute(select(Page.id, Page.title).where(Page.id.in_(page_ids)))
+    titles = {pid: title for pid, title in result.all()}
+    for s in sources:
+        s["title"] = titles.get(s["page_id"], "Document")
+    return sources
+
+
 def compute_confidence(scored_chunks: list) -> float:
     if not scored_chunks:
         return 0.0

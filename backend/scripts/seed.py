@@ -30,15 +30,19 @@ READER_ID = "a0000000-0000-4000-8000-000000000003"
 DEFAULT_PASSWORD = os.getenv("SEED_PASSWORD", "lekki123")
 
 
-async def _index_pages_fts(session, pages: list[Page]) -> None:
-    for page in pages:
-        await session.execute(
-            text(
-                "INSERT INTO pages_fts (page_id, title, content) "
-                "VALUES (:id, :title, :content)"
-            ),
-            {"id": page.id, "title": page.title, "content": page.content},
-        )
+async def _refresh_page_fts(session, page: Page) -> None:
+    """(Re)synchronise l'entrée FTS d'une page (delete + insert)."""
+    await session.execute(
+        text("DELETE FROM pages_fts WHERE page_id = :id"),
+        {"id": page.id},
+    )
+    await session.execute(
+        text(
+            "INSERT INTO pages_fts (page_id, title, content) "
+            "VALUES (:id, :title, :content)"
+        ),
+        {"id": page.id, "title": page.title, "content": page.content},
+    )
 
 
 async def seed() -> None:
@@ -46,12 +50,6 @@ async def seed() -> None:
 
     async with AsyncSessionLocal() as session:
         user_count = await session.scalar(select(func.count()).select_from(User))
-        page_count = await session.scalar(select(func.count()).select_from(Page))
-
-        if user_count and page_count:
-            print("Seed déjà appliqué — utilisateurs et pages présents.")
-            print("  Pour réindexer le RAG : python -m scripts.index_rag")
-            return
 
         password_hash = bcrypt.hashpw(
             DEFAULT_PASSWORD.encode("utf-8"), bcrypt.gensalt()
@@ -84,39 +82,53 @@ async def seed() -> None:
             await session.flush()
             print("  + 3 comptes démo créés")
 
-        if not page_count:
-            admin = await session.get(User, ADMIN_ID)
-            editor = await session.get(User, EDITOR_ID)
-            fallback = admin or editor or (
-                await session.execute(select(User).limit(1))
-            ).scalar_one_or_none()
-            if not fallback:
-                print("ERREUR : impossible de créer les pages sans utilisateur.")
-                return
+        admin = await session.get(User, ADMIN_ID)
+        editor = await session.get(User, EDITOR_ID)
+        fallback = admin or editor or (
+            await session.execute(select(User).limit(1))
+        ).scalar_one_or_none()
+        if not fallback:
+            print("ERREUR : impossible de créer les pages sans utilisateur.")
+            return
 
-            admin_id = admin.id if admin else fallback.id
-            editor_id = editor.id if editor else fallback.id
+        admin_id = admin.id if admin else fallback.id
+        editor_id = editor.id if editor else fallback.id
 
-            pages = []
-            for data in PME_PAGES:
-                creator = editor_id if data["category"] == "commercial" else admin_id
-                pages.append(
-                    Page(
-                        id=data["id"],
-                        title=data["title"],
-                        content=data["content"],
-                        category=data["category"],
-                        status="published",
-                        creator_id=creator,
-                    )
+        # Upsert des pages de démo (par ID fixe) : crée ou rafraîchit le contenu.
+        created = 0
+        updated = 0
+        for data in PME_PAGES:
+            creator = editor_id if data["category"] == "commercial" else admin_id
+            page = await session.get(Page, data["id"])
+            if page is None:
+                page = Page(
+                    id=data["id"],
+                    title=data["title"],
+                    content=data["content"],
+                    category=data["category"],
+                    status="published",
+                    creator_id=creator,
                 )
-            session.add_all(pages)
-            await session.commit()
-            await _index_pages_fts(session, pages)
-            await session.commit()
-            print(f"  + {len(PME_PAGES)} pages wiki créées")
-        else:
-            await session.commit()
+                session.add(page)
+                created += 1
+            else:
+                changed = (
+                    page.title != data["title"]
+                    or page.content != data["content"]
+                    or page.category != data["category"]
+                )
+                page.title = data["title"]
+                page.content = data["content"]
+                page.category = data["category"]
+                if changed:
+                    # Le contenu a évolué : forcer une réindexation RAG.
+                    page.is_embedded = False
+                    updated += 1
+            await session.flush()
+            await _refresh_page_fts(session, page)
+
+        await session.commit()
+        print(f"  pages wiki : {created} créées, {updated} mises à jour")
 
     print("\nSeed terminé.")
     if not user_count:

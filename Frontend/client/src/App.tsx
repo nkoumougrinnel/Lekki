@@ -100,6 +100,25 @@ function WikiApp() {
     }
   };
 
+  const openDocumentById = useCallback(
+    async (id: string) => {
+      const existing = documents.find((d) => d.id === id);
+      if (existing) {
+        setSelectedDoc(existing);
+        return;
+      }
+      try {
+        const page = await pagesApi.get(id);
+        const doc = pageToDoc(page, user);
+        setDocuments((prev) => (prev.some((d) => d.id === doc.id) ? prev : [...prev, doc]));
+        setSelectedDoc(doc);
+      } catch (err) {
+        toast.error(describeError(err, "Impossible d'ouvrir la page."));
+      }
+    },
+    [documents, user],
+  );
+
   const handleDeleteDocument = async (id: string) => {
     try {
       await pagesApi.remove(id);
@@ -147,14 +166,16 @@ function WikiApp() {
             )}
           </div>
 
-          {showAIPanel && <AIPanel onClose={() => setShowAIPanel(false)} />}
+          {showAIPanel && (
+            <AIPanel onClose={() => setShowAIPanel(false)} onOpenSource={openDocumentById} />
+          )}
         </div>
       </div>
 
       {!showAIPanel && (
         <Button
           onClick={() => setShowAIPanel(true)}
-          title="Ouvrir l'assistant IA"
+          title="Ouvrir Lekki AI"
           className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
         >
           <Bot size={24} />

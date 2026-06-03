@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import textwrap
+
 # IDs fixes (tests API / démo)
 PAGE_CONGES_ID = "b0000000-0000-4000-8000-000000000001"
 PAGE_ONBOARDING_ID = "b0000000-0000-4000-8000-000000000002"
@@ -16,121 +18,249 @@ PAGE_RH_ID = PAGE_TELETRAVAIL_ID
 PAGE_TECH_ID = PAGE_IT_ID
 PAGE_GUIDE_ID = PAGE_ONBOARDING_ID
 
+
+def _md(text: str) -> str:
+    """Nettoie l'indentation d'un bloc markdown multi-ligne."""
+    return textwrap.dedent(text).strip() + "\n"
+
+
+_CONGES = _md(
+    """
+    # Politique de congés
+
+    > **En bref** — 25 jours de congés payés par an, à poser au moins **2 semaines à l'avance** via le portail RH.
+
+    ## Acquisition et pose
+    - **25 jours** de congés payés par an pour tout employé en CDI.
+    - Les demandes se font via le **portail RH**, au moins **2 semaines à l'avance**.
+    - Le manager dispose de 5 jours ouvrés pour valider ou refuser la demande.
+
+    ## Report des congés
+    Les congés non pris au **31 décembre** peuvent être reportés jusqu'au
+    **31 mars** de l'année suivante, dans la limite de **5 jours**. Au-delà,
+    les jours non posés sont perdus.
+
+    ## Congés spéciaux
+    | Évènement | Durée |
+    |-----------|-------|
+    | Mariage / PACS | 4 jours |
+    | Naissance ou adoption | 3 jours |
+    | Décès d'un proche (conjoint / enfant) | 3 jours |
+    | Déménagement | 1 jour par an |
+
+    ## Contact
+    Pour toute demande exceptionnelle, contactez le service RH :
+    [rh@entreprise.fr](mailto:rh@entreprise.fr).
+    """
+)
+
+_ONBOARDING = _md(
+    """
+    # Bienvenue chez nous !
+
+    Ce guide résume les étapes clés de votre **première semaine**. Gardez-le
+    sous la main, il répond à la plupart des questions courantes.
+
+    ## Jour 1
+    - [ ] Récupérer votre **badge** à l'accueil (bâtiment A, **8h30**)
+    - [ ] Rendez-vous RH : signature du contrat et remise du matériel
+    - [ ] Déjeuner de bienvenue avec votre manager
+
+    ## Semaine 1
+    - [ ] Activation des accès : **Slack**, **Jira**, **GitHub**, **Google Workspace**
+    - [ ] Formation **sécurité informatique** (obligatoire, 2h en ligne)
+    - [ ] Présentation aux équipes (planning envoyé par votre manager)
+
+    ## Contacts utiles
+    | Service | Contact |
+    |---------|---------|
+    | RH | [rh@entreprise.fr](mailto:rh@entreprise.fr) |
+    | IT Support | [it-support@entreprise.fr](mailto:it-support@entreprise.fr) — ticket via Jira |
+
+    > Un doute ? Posez votre question sur le canal **#general** de Slack,
+    > l'équipe est là pour aider.
+    """
+)
+
+_FRAIS = _md(
+    """
+    # Remboursement des frais professionnels
+
+    > Tout frais doit être soumis dans les **30 jours** suivant la dépense,
+    > via le formulaire en ligne de l'intranet.
+
+    ## Procédure en 3 étapes
+    1. Remplir le **formulaire de note de frais** sur l'intranet.
+    2. Joindre les **reçus originaux** (photo ou scan lisible).
+    3. Soumettre pour validation à votre manager.
+
+    ## Plafonds
+    | Type de dépense | Plafond |
+    |-----------------|---------|
+    | Repas client | **80 € / personne** |
+    | Repas solo en déplacement | 25 € |
+    | Nuit d'hôtel (province) | 130 € |
+    | Nuit d'hôtel (Paris / étranger) | 200 € |
+    | Transport (taxi / VTC) | Sur justificatif |
+
+    ## Délais de paiement
+    Les remboursements validés sont traités le **10 de chaque mois** et versés
+    avec le salaire.
+
+    > **Important** — sans justificatif, le remboursement ne peut pas être traité.
+    """
+)
+
+_IT = _md(
+    """
+    # Charte d'utilisation des outils numériques
+
+    Cette charte s'applique à l'ensemble des collaborateurs et vise à protéger
+    les données de l'entreprise.
+
+    ## Règles fondamentales
+    - Ne **jamais partager** vos identifiants.
+    - **Verrouiller** votre session dès que vous quittez votre poste (`Win + L`).
+    - Ne pas installer de logiciels **sans autorisation IT**.
+    - **Signaler immédiatement** tout incident de sécurité.
+
+    ## Politique de mots de passe
+    | Critère | Règle |
+    |---------|-------|
+    | Longueur minimale | **12 caractères** |
+    | Renouvellement | tous les **90 jours** |
+    | Réutilisation | interdite (3 derniers) |
+
+    Gestionnaire recommandé : **Bitwarden** (licence entreprise fournie).
+
+    ## En cas d'incident
+    Contactez sans délai l'IT Support :
+    [it-support@entreprise.fr](mailto:it-support@entreprise.fr).
+    """
+)
+
+_TELETRAVAIL = _md(
+    """
+    # Télétravail — Règles et bonnes pratiques
+
+    > Jusqu'à **2 jours par semaine**, sur accord du manager. Le **lundi** reste
+    > présentiel pour toutes les équipes.
+
+    ## Conditions
+    - Maximum **2 jours par semaine** de télétravail.
+    - Accord préalable du **manager** requis.
+    - **Lundi** : journée présentielle obligatoire (rituels d'équipe).
+
+    ## Matériel et connexion
+    - L'entreprise fournit un **laptop**.
+    - Le salarié assure une connexion internet stable (**minimum 10 Mbps**).
+    - Indemnité forfaitaire de **15 €/mois** pour les frais à domicile.
+
+    ## Bonnes pratiques
+    - Indiquez votre statut (présentiel / distanciel) dans l'agenda partagé.
+    - Restez joignable sur Slack pendant les **plages communes** (10h–12h, 14h–17h).
+    """
+)
+
+_RECRUTEMENT = _md(
+    """
+    # Recrutement interne
+
+    L'entreprise privilégie la **mobilité interne** : tout poste ouvert est
+    d'abord proposé aux collaborateurs.
+
+    ## Processus
+    1. Le poste est publié **en interne pendant 5 jours ouvrés** avant toute
+       diffusion externe.
+    2. Les candidatures internes sont envoyées **directement au manager
+       recruteur**, avec copie à [rh@entreprise.fr](mailto:rh@entreprise.fr).
+    3. Un entretien est organisé sous 10 jours ouvrés.
+
+    ## Conditions d'éligibilité
+    - Être en poste depuis au moins **12 mois**.
+    - Informer son manager actuel de la démarche.
+
+    > La mobilité interne n'entraîne **aucune perte d'ancienneté**.
+    """
+)
+
+_STACK = _md(
+    """
+    # Architecture technique Lekki
+
+    Vue d'ensemble de la stack qui fait tourner **Lekki Wiki**.
+
+    ## Backend
+    - **FastAPI** (Python) — API REST asynchrone
+    - **SQLite** + **SQLAlchemy** (ORM) — persistance
+    - **JWT** — authentification et autorisation par rôle
+    - **RAG** — recherche sémantique : chunking, embeddings et **similarité cosinus**
+
+    ## Embeddings
+    | Fournisseur | Usage |
+    |-------------|-------|
+    | **MiniLM** (`all-MiniLM-L6-v2`, local) | par défaut, sans clé API |
+    | **Gemini** | fallback distant |
+
+    ## Frontend
+    - **React 18** + **TypeScript**
+    - **TailwindCSS** + composants shadcn/ui
+    - Éditeur **Markdown** avec aperçu en direct
+
+    ## Démarrage rapide
+    ```bash
+    # Backend
+    uvicorn app.main:app --reload
+
+    # Frontend
+    pnpm dev
+    ```
+    """
+)
+
+
 PME_PAGES: list[dict] = [
     {
         "id": PAGE_CONGES_ID,
         "title": "Politique de congés",
         "category": "rh",
-        "content": (
-            "# Politique de congés\n\n"
-            "Chaque employé bénéficie de 25 jours de congés payés par an. "
-            "Les congés doivent être posés au moins 2 semaines à l'avance "
-            "via le portail RH. Les congés non pris au 31 décembre peuvent "
-            "être reportés jusqu'au 31 mars de l'année suivante, dans la "
-            "limite de 5 jours. Pour toute demande exceptionnelle, contacter "
-            "directement le service RH à rh@entreprise.fr.\n\n"
-            "## Congés spéciaux\n"
-            "- Mariage : 4 jours\n"
-            "- Naissance / adoption : 3 jours\n"
-            "- Décès d'un proche (conjoint/enfant) : 3 jours\n"
-            "- Déménagement : 1 jour par an\n"
-        ),
+        "content": _CONGES,
     },
     {
         "id": PAGE_ONBOARDING_ID,
         "title": "Onboarding — Guide du nouveau collaborateur",
         "category": "rh",
-        "content": (
-            "# Bienvenue chez nous !\n\n"
-            "Ce guide résume les étapes clés de votre première semaine.\n\n"
-            "## Jour 1\n"
-            "- Récupérer votre badge à l'accueil (bâtiment A, 8h30)\n"
-            "- Rendez-vous RH pour signature du contrat et remise du matériel\n"
-            "- Déjeuner de bienvenue avec votre manager\n\n"
-            "## Semaine 1\n"
-            "- Accès aux outils : Slack, Jira, GitHub, Google Workspace\n"
-            "- Formation sécurité informatique (obligatoire, 2h en ligne)\n"
-            "- Présentation aux équipes : planning envoyé par votre manager\n\n"
-            "## Contacts utiles\n"
-            "- RH : rh@entreprise.fr\n"
-            "- IT Support : it-support@entreprise.fr (ticket via Jira)\n"
-        ),
+        "content": _ONBOARDING,
     },
     {
         "id": PAGE_FRAIS_ID,
         "title": "Procédure de remboursement des frais",
         "category": "commercial",
-        "content": (
-            "# Remboursement des frais professionnels\n\n"
-            "Tout frais professionnel doit être soumis dans les 30 jours "
-            "suivant la dépense via le formulaire en ligne disponible sur l'intranet.\n\n"
-            "## Plafonds\n"
-            "| Type | Plafond |\n"
-            "|------|---------|\n"
-            "| Repas client | 80 € / personne |\n"
-            "| Repas solo en déplacement | 25 € |\n"
-            "| Nuit d'hôtel (province) | 130 € |\n"
-            "| Nuit d'hôtel (Paris / étranger) | 200 € |\n"
-            "| Transport (taxi/VTC) | justificatif obligatoire |\n\n"
-            "## Pièces justificatives\n"
-            "Joindre obligatoirement les reçus originaux (photo ou scan). "
-            "Les remboursements sont traités le 10 de chaque mois.\n"
-        ),
+        "content": _FRAIS,
     },
     {
         "id": PAGE_IT_ID,
         "title": "Charte IT — Utilisation des outils numériques",
         "category": "technique",
-        "content": (
-            "# Charte d'utilisation des outils numériques\n\n"
-            "## Règles fondamentales\n"
-            "- Ne jamais partager vos identifiants\n"
-            "- Verrouiller votre session dès que vous quittez votre poste\n"
-            "- Ne pas installer de logiciels sans autorisation IT\n"
-            "- Signaler immédiatement tout incident de sécurité\n\n"
-            "## Mots de passe\n"
-            "Minimum 12 caractères, renouvellement tous les 90 jours. "
-            "Gestionnaire recommandé : Bitwarden (licence entreprise fournie).\n"
-        ),
+        "content": _IT,
     },
     {
         "id": PAGE_TELETRAVAIL_ID,
         "title": "Guide télétravail",
         "category": "rh",
-        "content": (
-            "# Télétravail — Règles et bonnes pratiques\n\n"
-            "Le télétravail est autorisé jusqu'à 2 jours par semaine, "
-            "sur accord du manager. La journée du lundi est obligatoirement "
-            "présentielle pour l'ensemble des équipes.\n\n"
-            "## Matériel\n"
-            "L'entreprise fournit un laptop. Le salarié est responsable "
-            "d'une connexion internet stable (minimum 10 Mbps). "
-            "Une indemnité forfaitaire de 15 €/mois est versée.\n"
-        ),
+        "content": _TELETRAVAIL,
     },
     {
         "id": PAGE_RECRUTEMENT_ID,
         "title": "Processus de recrutement interne",
         "category": "rh",
-        "content": (
-            "# Recrutement interne\n\n"
-            "Tout poste ouvert est d'abord publié en interne pendant 5 jours ouvrés "
-            "avant diffusion externe. Les candidatures internes sont à envoyer "
-            "directement au manager recruteur avec copie à rh@entreprise.fr.\n"
-        ),
+        "content": _RECRUTEMENT,
     },
     {
         "id": PAGE_STACK_ID,
         "title": "Architecture technique — Stack Lekki",
         "category": "technique",
-        "content": (
-            "# Architecture technique Lekki\n\n"
-            "## Backend\n"
-            "- FastAPI, SQLite, SQLAlchemy, JWT\n"
-            "- RAG : embeddings Gemini + similarité cosinus\n\n"
-            "## Frontend\n"
-            "- React 18 + TailwindCSS + CodeMirror\n"
-        ),
+        "content": _STACK,
     },
 ]
 

@@ -16,15 +16,16 @@ interface Message {
 
 interface AIPanelProps {
   onClose: () => void;
+  onOpenSource?: (pageId: string) => void;
 }
 
-export function AIPanel({ onClose }: AIPanelProps) {
+export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
       content:
-        "Bonjour ! Je suis l'assistant IA de Lekki. Posez-moi une question sur la base de connaissances.",
+        'Bonjour ! Je suis Lekki AI. Posez-moi une question sur la base de connaissances.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -68,7 +69,7 @@ export function AIPanel({ onClose }: AIPanelProps) {
           : "Une erreur est survenue lors de l'interrogation de l'IA.";
       setMessages((prev) => [
         ...prev,
-        { id: `${Date.now()}-e`, role: 'assistant', content: `⚠️ ${message}` },
+        { id: `${Date.now()}-e`, role: 'assistant', content: message },
       ]);
     } finally {
       setIsLoading(false);
@@ -81,7 +82,7 @@ export function AIPanel({ onClose }: AIPanelProps) {
       <div className="border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot size={20} className="text-primary" />
-          <h2 className="font-semibold text-foreground">Assistant IA</h2>
+          <h2 className="font-semibold text-foreground">Lekki AI</h2>
         </div>
         <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
           <X size={16} />
@@ -118,14 +119,23 @@ export function AIPanel({ onClose }: AIPanelProps) {
                     )}
                   </p>
                   {message.sources.map((source) => (
-                    <div
+                    <button
                       key={source.page_id}
-                      className="text-xs opacity-80 flex items-start gap-1"
+                      type="button"
+                      onClick={() => onOpenSource?.(source.page_id)}
+                      disabled={!onOpenSource}
+                      title="Ouvrir dans l'éditeur"
+                      className="w-full text-left text-xs opacity-80 -mx-1.5 rounded-md px-1.5 py-1 transition-colors enabled:cursor-pointer enabled:hover:bg-background/60 enabled:hover:opacity-100"
                     >
-                      <FileText size={12} className="mt-0.5 flex-shrink-0" />
-                      <span className="flex-1">{source.excerpt}</span>
-                      <span className="opacity-60">{Math.round(source.score * 100)}%</span>
-                    </div>
+                      <div className="flex items-center gap-1 font-medium">
+                        <FileText size={12} className="flex-shrink-0" />
+                        <span className="flex-1 truncate">{source.title ?? 'Document'}</span>
+                        <span className="opacity-60">{Math.round(source.score * 100)}%</span>
+                      </div>
+                      {source.excerpt && (
+                        <p className="mt-0.5 pl-4 opacity-70 italic">« {source.excerpt} »</p>
+                      )}
+                    </button>
                   ))}
                 </div>
               )}

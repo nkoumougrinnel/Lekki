@@ -8,10 +8,6 @@ import {
   Trash2,
   Loader2,
   Star,
-  Lock,
-  Users,
-  Globe,
-  type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,11 +23,11 @@ interface SidebarV2Props {
   selectedDocId?: string;
 }
 
-const SECTIONS: { key: SidebarSection; label: string; icon: LucideIcon; canAdd: boolean }[] = [
-  { key: 'favoris', label: 'Favoris', icon: Star, canAdd: false },
-  { key: 'prives', label: 'Privés', icon: Lock, canAdd: true },
-  { key: 'groupes', label: 'Groupes', icon: Users, canAdd: false },
-  { key: 'publics', label: 'Publics', icon: Globe, canAdd: true },
+const SECTIONS: { key: SidebarSection; label: string; canAdd: boolean }[] = [
+  { key: 'favoris', label: 'Favoris', canAdd: false },
+  { key: 'prives', label: 'Privés', canAdd: true },
+  { key: 'groupes', label: 'Groupes', canAdd: false },
+  { key: 'publics', label: 'Publics', canAdd: true },
 ];
 
 const FAVORITES_KEY = 'lekki_favorites';
@@ -115,7 +111,7 @@ export function SidebarV2({
         >
           <Star
             size={13}
-            className={isFav ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'}
+            className={isFav ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}
           />
         </button>
         {canEdit && onDeleteDocument && (
@@ -137,12 +133,10 @@ export function SidebarV2({
   const renderSection = ({
     key,
     label,
-    icon: Icon,
     canAdd,
   }: {
     key: SidebarSection;
     label: string;
-    icon: LucideIcon;
     canAdd: boolean;
   }) => {
     const isCollapsed = collapsed.has(key);
@@ -161,7 +155,9 @@ export function SidebarV2({
             ) : (
               <ChevronDown size={14} className="text-muted-foreground" />
             )}
-            <Icon size={14} className="text-muted-foreground" />
+            {key === 'favoris' && (
+              <Star size={13} className="flex-shrink-0 fill-amber-400 text-amber-400" />
+            )}
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               {label}
             </span>
