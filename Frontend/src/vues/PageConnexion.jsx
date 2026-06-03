@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 /** Comptes du seed backend (data/seed.py) */
 const COMPTE_DEMO = { email: 'admin@lekki.io', password: 'Admin1234!' };
