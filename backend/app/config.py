@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8h — durée hackathon
 
     # DB
-    DATABASE_URL: str = "sqlite:///./lekki.db"
+    DATABASE_URL: str = "sqlite:///./wiki.db"
 
     # Google Gemini
     GEMINI_API_KEY: str = ""
