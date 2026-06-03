@@ -1,17 +1,21 @@
+# Backend seul — depuis backend/ :
+#   docker compose up --build
+#
+# Ou depuis la racine :
+#   docker compose up --build backend
+
 services:
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     container_name: lekki-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/data:/app/data
+      - ./data:/app/data
     env_file:
       - path: .env
-        required: false
-      - path: ./backend/.env
         required: false
     environment:
       DATABASE_URL: sqlite+aiosqlite:///./data/wiki.db
@@ -23,17 +27,4 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./Frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
     restart: unless-stopped
