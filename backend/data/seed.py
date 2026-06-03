@@ -1,7 +1,10 @@
 """
-Lekki Wiki — Seed data
-Place : backend/data/seed.py
-Lance : cd backend && python -m data.seed
+DEPRECATED — Utiliser à la place :
+  cd backend
+  python -m scripts.seed
+  python -m scripts.index_rag
+
+Ce fichier est conservé pour référence ; le seed officiel est scripts/seed.py.
 """
 
 import hashlib

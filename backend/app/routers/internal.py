@@ -26,3 +26,17 @@ async def process_page_embedding(
         raise HTTPException(status_code=404, detail="Page non trouvée")
     
     return {"status": "success", "page_id": page_id, "chunks_created": chunks_count}
+
+
+@router.delete("/embed/{page_id}", status_code=200)
+async def delete_page_embedding(
+    page_id: str,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(verify_internal_key),
+):
+    """Supprime les chunks RAG d'une page."""
+    deleted = await rag_service.delete_page_embeddings(db, page_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Page non trouvée")
+
+    return {"status": "success", "page_id": page_id, "chunks_deleted": True}

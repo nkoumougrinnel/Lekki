@@ -54,12 +54,37 @@ async def embed_page(db: AsyncSession, page_id: str) -> int | None:
     return len(new_chunks)
 
 
+async def delete_page_embeddings(db: AsyncSession, page_id: str) -> bool:
+    """Supprime les chunks RAG d'une page et remet is_embedded à False."""
+    result = await db.execute(select(Page).where(Page.id == page_id))
+    page = result.scalar_one_or_none()
+    if not page:
+        return False
+
+    await db.execute(delete(Chunk).where(Chunk.page_id == page_id))
+    page.is_embedded = False
+    await db.commit()
+    return True
+
+
+async def count_indexed_chunks(db: AsyncSession) -> int:
+    """Nombre de chunks avec embedding (index RAG prêt)."""
+    result = await db.execute(
+        select(Chunk).where(Chunk.embedding.isnot(None))
+    )
+    return len(result.scalars().all())
+
+
 async def get_relevant_chunks(db: AsyncSession, query: str, limit: int = 4):
     """Recherche sémantique : embedding requête + similarité cosinus."""
-    query_vec = await _embedding_router.embed_query(query)
-
-    result = await db.execute(select(Chunk))
+    result = await db.execute(
+        select(Chunk).where(Chunk.embedding.isnot(None))
+    )
     chunks = result.scalars().all()
+    if not chunks:
+        return []
+
+    query_vec = await _embedding_router.embed_query(query)
 
     scored_chunks = []
     for chunk in chunks:

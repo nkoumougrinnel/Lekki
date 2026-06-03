@@ -40,6 +40,21 @@ async def override_get_db():
 app.dependency_overrides[get_db] = override_get_db
 
 
+def _init_test_schema(connection) -> None:
+    Base.metadata.create_all(connection)
+    connection.execute(
+        text(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
+                title,
+                content,
+                page_id UNINDEXED
+            )
+            """
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -48,16 +63,7 @@ app.dependency_overrides[get_db] = override_get_db
 async def setup_db():
     """Recrée les tables avant chaque test."""
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(
-            text(
-                """
-                CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
-                    title, content, page_id UNINDEXED
-                )
-                """
-            )
-        )
+        await conn.run_sync(_init_test_schema)
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

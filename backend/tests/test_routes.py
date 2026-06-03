@@ -112,6 +112,34 @@ async def test_get_page_by_id(
 
 
 @pytest.mark.asyncio
+async def test_search_pages_fts(
+    client: AsyncClient, reader_token: str, sample_page: Page, db
+):
+    from sqlalchemy import text
+
+    await db.execute(
+        text(
+            "INSERT INTO pages_fts (page_id, title, content) "
+            "VALUES (:id, :title, :content)"
+        ),
+        {
+            "id": sample_page.id,
+            "title": sample_page.title,
+            "content": sample_page.content,
+        },
+    )
+    await db.commit()
+
+    resp = await client.get(
+        "/api/v1/pages/search?q=test",
+        headers={"Authorization": f"Bearer {reader_token}"},
+    )
+    assert resp.status_code == 200
+    titles = [p["title"] for p in resp.json()]
+    assert "Page de test" in titles
+
+
+@pytest.mark.asyncio
 async def test_get_page_not_found(client: AsyncClient, reader_token: str):
     resp = await client.get(
         "/api/v1/pages/id-inexistant",
