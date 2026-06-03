@@ -19,9 +19,20 @@ async def create_page(db: AsyncSession, page_in: PageCreate, creator_id: str):
     data = page_in.model_dump()
     data["category"] = page_in.category.value
     new_page = Page(**data, creator_id=creator_id)
+    
     db.add(new_page)
     await db.commit()
     await db.refresh(new_page)
+
+    # Synchronisation manuelle FTS5
+    try:
+        await db.execute(
+            text("INSERT INTO pages_fts (page_id, title, content) VALUES (:id, :title, :content)"),
+            {"id": new_page.id, "title": new_page.title, "content": new_page.content}
+        )
+        await db.commit()
+    except Exception as e:
+        print(f"FTS5 Sync Error on creation: {e}")
 
     # Déclenchement automatique du pipeline RAG (Chunking + Embeddings)
     try:
@@ -29,6 +40,7 @@ async def create_page(db: AsyncSession, page_in: PageCreate, creator_id: str):
     except Exception as e:
         print(f"RAG Error on creation: {e}")
 
+    await db.refresh(new_page)
     return new_page
 
 async def update_page(db: AsyncSession, page_id: str, page_in: PageUpdate):
@@ -43,12 +55,23 @@ async def update_page(db: AsyncSession, page_id: str, page_in: PageUpdate):
     await db.commit()
     await db.refresh(page)
 
+    # Mise à jour manuelle FTS5
+    try:
+        await db.execute(
+            text("UPDATE pages_fts SET title = :title, content = :content WHERE page_id = :id"),
+            {"id": page_id, "title": page.title, "content": page.content}
+        )
+        await db.commit()
+    except Exception as e:
+        print(f"FTS5 Sync Error on update: {e}")
+
     # Mise à jour automatique du pipeline RAG (Recalcul des chunks)
     try:
         await rag_service.embed_page(db, page_id)
     except Exception as e:
         print(f"RAG Error on update: {e}")
 
+    await db.refresh(page)
     return page
 
 async def delete_page(db: AsyncSession, page_id: str):
@@ -56,16 +79,27 @@ async def delete_page(db: AsyncSession, page_id: str):
     if not page:
         return None
     
+    # Nettoyage FTS5
+    try:
+        await db.execute(
+            text("DELETE FROM pages_fts WHERE page_id = :id"),
+            {"id": page_id}
+        )
+    except Exception as e:
+        print(f"FTS5 Sync Error on delete: {e}")
+
     await db.delete(page)
     await db.commit()
     return page
 
 async def search_pages(db: AsyncSession, query: str):
-    fts_query = query.strip()
-    if not fts_query:
+    clean_query = query.strip()
+    if not clean_query:
         return []
-        
-    fts_query += "*"
+
+    # Recherche par préfixe sur chaque mot : "Test Auto" -> "Test* Auto*"
+    terms = [f"{term}*" for term in clean_query.split() if term]
+    fts_query = " ".join(terms)
 
     try:
         # Recherche via la table virtuelle pages_fts (join sur page_id)

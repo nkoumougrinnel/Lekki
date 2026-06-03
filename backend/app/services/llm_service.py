@@ -1,11 +1,11 @@
-import os
 from google import genai
 from typing import List
 from app.models.chunk import Chunk
+from app.config import settings
 
 class LLMService:
     def __init__(self):
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def _build_prompt(self, question: str, context_chunks: List[Chunk]) -> str:
         context_text = "\n---\n".join([c.chunk_text for c in context_chunks])
@@ -29,6 +29,6 @@ RÉPONSE :"""
     async def ask_question(self, question: str, chunks: List[Chunk]) -> str:
         prompt = self._build_prompt(question, chunks)
         response = self.client.models.generate_content(
-            model="gemini-1.5-flash", contents=prompt
+            model="models/gemini-2.0-flash", contents=prompt
         )
         return response.text

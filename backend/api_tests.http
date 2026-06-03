@@ -1,14 +1,29 @@
 @baseUrl = http://localhost:8000/api/v1
-@creatorId = a0000000-0000-4000-8000-000000000002
 @internalKey = lekki-internal-secret-key
+
+### Login (admin)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@lekki.local&password=lekki123
+
+###
+@token = {{login.response.body.access_token}}
+
+### Profil connecté
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
 
 ### Liste des pages
 GET {{baseUrl}}/pages/
+Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Créer une page
 # @name createPage
-POST {{baseUrl}}/pages/?creator_id={{creatorId}}
+POST {{baseUrl}}/pages/
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -17,14 +32,16 @@ Content-Type: application/json
     "category": "technique"
 }
 
-### Récupérer l'ID de la page créée pour les tests suivants
+### Récupérer l'ID de la page créée
 @pageId = {{createPage.response.body.id}}
 
-### Lire une page spécifique
+### Lire une page
 GET {{baseUrl}}/pages/{{pageId}}
+Authorization: Bearer {{token}}
 
 ### Mettre à jour la page
 PUT {{baseUrl}}/pages/{{pageId}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -32,10 +49,21 @@ Content-Type: application/json
     "content": "Nouveau contenu"
 }
 
-### Forcer l'embedding RAG (Interne)
+### Recherche FTS5
+GET {{baseUrl}}/pages/search?q=test
+Authorization: Bearer {{token}}
+
+### Forcer l'embedding RAG (interne)
 POST {{baseUrl}}/internal/embed/{{pageId}}
 X-Internal-Key: {{internalKey}}
 
-### Tester la recherche
-GET {{baseUrl}}/pages/search?q=test
-Accept: application/json
+### Question RAG
+POST {{baseUrl}}/ask
+Content-Type: application/json
+
+{
+    "question": "Comment déployer avec Docker ?"
+}
+
+### Santé (hors /api/v1)
+GET http://localhost:8000/health

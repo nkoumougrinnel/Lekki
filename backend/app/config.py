@@ -7,6 +7,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # App
+    DEBUG: bool = False
+    SEED_PASSWORD: str = "lekki123"
+
     # JWT
     SECRET_KEY: str = "change-me-in-production-use-openssl-rand-hex-32"
     ALGORITHM: str = "HS256"
@@ -15,8 +19,8 @@ class Settings(BaseSettings):
     # DB
     DATABASE_URL: str = "sqlite:///./lekki.db"
 
-    # Anthropic
-    ANTHROPIC_API_KEY: str = ""
+    # Google Gemini
+    GEMINI_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

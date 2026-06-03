@@ -1,125 +1,427 @@
-# Lekki Wiki — API Reference MVP
+# Lekki Wiki — Référence API HTTP
 
-> Base URL : `http://localhost:8000/api/v1`
-> Auth : Bearer JWT requis sur toutes les routes sauf `/auth/register` et `/auth/login`
+> **Base URL** : `http://localhost:8000/api/v1`  
+> **Documentation interactive** : `http://localhost:8000/docs`  
+> **Format** : JSON (sauf login en `application/x-www-form-urlencoded`)
+
+Légende : **✓ Implémenté** · **○ Planifié** (tables ou spec prêtes, route absente)
+
+---
+
+## Authentification
+
+### En-tête commun (routes protégées)
+
+```http
+Authorization: Bearer <access_token>
+```
+
+### Bypass développement ✓
+
+```http
+Authorization: Bearer dev
+```
+
+Connecte automatiquement `admin@lekki.local`. À désactiver en production.
 
 ---
 
 ## Auth
 
-| Méthode | Route | Params body | Rôle requis |
-|---------|-------|-------------|-------------|
-| `POST` | `/auth/register` | `email`, `username`, `password` | — |
-| `POST` | `/auth/login` | `email`, `password` | — |
-| `GET` | `/auth/me` | — | tout rôle |
+### `POST /auth/login` ✓
 
-**Logout** : pas d’endpoint backend. JWT stateless — le client supprime le token (localStorage / cookie). Une blacklist côté serveur n’est pas prévue au MVP.
+Authentification OAuth2 password flow (form-urlencoded).
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `username` | string | Email **ou** nom d’utilisateur |
+| `password` | string | Mot de passe |
+
+**Exemple — curl (Linux / macOS / WSL)**
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin@lekki.local&password=lekki123"
+```
+
+**Exemple — PowerShell**
+
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/auth/login" `
+  -H "Content-Type: application/x-www-form-urlencoded" `
+  -d "username=admin@lekki.local&password=lekki123"
+```
+
+**Réponse 200**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user": {
+    "id": "a0000000-0000-4000-8000-000000000001",
+    "username": "admin",
+    "email": "admin@lekki.local",
+    "role": "admin"
+  }
+}
+```
+
+**Erreurs**
+
+| Code | Détail |
+|------|--------|
+| `401` | Identifiants incorrects |
+
+---
+
+### `GET /auth/me` ✓
+
+Profil de l’utilisateur connecté. **JWT requis.**
+
+**Réponse 200**
+
+```json
+{
+  "id": "a0000000-0000-4000-8000-000000000001",
+  "username": "admin",
+  "email": "admin@lekki.local",
+  "role": "admin",
+  "created_at": "2026-06-03T12:00:00"
+}
+```
+
+---
+
+### `POST /auth/register` ○
+
+| Champ | Type |
+|-------|------|
+| `email` | string |
+| `username` | string |
+| `password` | string |
+
+**Non implémenté** — comptes créés via `python -m scripts.seed` uniquement.
+
+---
+
+### Déconnexion
+
+Pas d’endpoint backend. JWT stateless : le client supprime le token (`localStorage`, etc.).
 
 ---
 
 ## Pages
 
-| Méthode | Route | Params | Rôle requis |
-|---------|-------|--------|-------------|
-| `GET` | `/pages` | `?category=`, `?page=`, `?limit=` | lecteur+ |
-| `GET` | `/pages/{id}` | `id` (path) | lecteur+ |
-| `POST` | `/pages` | `title`, `content`, `category` | éditeur+ |
-| `PUT` | `/pages/{id}` | `id` (path) · `title`, `content`, `category` | éditeur+ |
-| `DELETE` | `/pages/{id}` | `id` (path) | admin |
+Toutes les routes ci-dessous nécessitent un **JWT valide** (sauf bypass `dev`).
 
-**Catégories valides** : `rh` · `technique` · `commercial` · `guides`
-**Note** : La création/modification déclenche automatiquement l'indexation RAG en arrière-plan.
+### Modèle `PageResponse`
+
+```json
+{
+  "id": "uuid",
+  "title": "string",
+  "content": "markdown",
+  "category": "rh | technique | commercial | guides",
+  "status": "published",
+  "is_embedded": true,
+  "view_count": 0,
+  "creator_id": "uuid",
+  "created_at": "datetime",
+  "updated_at": "datetime | null"
+}
+```
 
 ---
 
-## Recherche
+### `GET /pages/` ✓
 
-| Méthode | Route | Params | Rôle requis |
-|---------|-------|--------|-------------|
-| `GET` | `/pages/search` | `?q=` (requis, min 1 char) | lecteur+ |
+Liste paginée.
 
-L'endpoint utilise **SQLite FTS5**. La recherche est effectuée sur le titre et le contenu. Les résultats sont classés par pertinence (`rank`).
+| Query | Type | Défaut | Description |
+|-------|------|--------|-------------|
+| `category` | enum | — | Filtre catégorie |
+| `skip` | int | `0` | Offset |
+| `limit` | int | `20` | Max 100 |
+
+**Rôles** : `admin`, `editor`, `reader`
+
+**Réponse 200** : `PageResponse[]`
+
+---
+
+### `GET /pages/search` ✓
+
+Recherche full-text FTS5.
+
+| Query | Type | Description |
+|-------|------|-------------|
+| `q` | string | Requis, min. 1 caractère |
+
+**Rôles** : tous authentifiés
+
+**Réponse 200** : `PageResponse[]` (pertinence FTS `rank`)
+
+---
+
+### `GET /pages/{id}` ✓
+
+**Rôles** : tous authentifiés
+
+**Réponse 200** : `PageResponse`  
+**Erreurs** : `404` page introuvable
+
+---
+
+### `POST /pages/` ✓
+
+Création d’une page. Déclenche **FTS5 + embedding Gemini** en arrière-plan.
+
+**Rôles** : `admin`, `editor`
+
+**Corps**
+
+```json
+{
+  "title": "Ma page",
+  "content": "## Contenu\n\nTexte markdown.",
+  "category": "technique"
+}
+```
+
+**Réponse 201** : `PageResponse`
+
+**Erreurs** : `403` rôle insuffisant · `422` validation Pydantic
+
+---
+
+### `PUT /pages/{id}` ✓
+
+Mise à jour partielle.
+
+**Rôles** : `admin`, ou `editor` **uniquement sur ses propres pages**
+
+**Corps** (tous champs optionnels)
+
+```json
+{
+  "title": "Nouveau titre",
+  "content": "...",
+  "category": "rh",
+  "status": "draft"
+}
+```
+
+**Réponse 200** : `PageResponse`  
+**Erreurs** : `403` editor sur page d’un autre · `404`
+
+---
+
+### `DELETE /pages/{id}` ✓
+
+**Rôles** : `admin` uniquement
+
+**Réponse 204** (sans corps)  
+**Erreurs** : `404`
 
 ---
 
 ## RAG — Chatbot
 
-| Méthode | Route | Params body | Rôle requis |
-|---------|-------|-------------|-------------|
-| `POST` | `/ask` | `question`, `chat_id` (optionnel) | lecteur+ |
+### `POST /ask` ✓
 
-Si `chat_id` est fourni : vérifier `chat.user_id == current_user.id` avant d’ajouter le message.
+Pose une question au wiki. Pipeline : embedding requête → top 4 chunks (cosinus) → génération Gemini.
+
+**Auth** : aucune pour l’instant (○ JWT planifié)
+
+**Corps**
+
+```json
+{
+  "question": "Comment déployer avec Docker ?"
+}
+```
+
+**Réponse 200 — succès**
+
+```json
+{
+  "answer": "Pour déployer, exécutez docker compose up -d depuis la racine...",
+  "sources": [
+    "b0000000-0000-4000-8000-000000000002"
+  ]
+}
+```
+
+**Réponse 200 — aucun contexte**
+
+```json
+{
+  "answer": "Je n'ai trouvé aucune information dans le wiki pour répondre à votre question.",
+  "sources": []
+}
+```
+
+**Erreurs**
+
+| Code | Cause typique |
+|------|----------------|
+| `500` | `GEMINI_API_KEY` manquante ou modèle API indisponible |
+
+**Champs planifiés (non renvoyés aujourd’hui)**
+
+- `confidence` (score de confiance)
+- `sources[]` enrichies (`title`, `chunk_text`, `similarity_score`)
+- `chat_id`, `message_id` (persistance)
 
 ---
 
-## Chats
+## Chats ○
 
-| Méthode | Route | Params | Rôle requis |
-|---------|-------|--------|-------------|
-| `GET` | `/chats` | — | tout rôle |
-| `GET` | `/chats/{id}` | `id` (path) | tout rôle |
-| `POST` | `/chats` | `title` | tout rôle |
-| `DELETE` | `/chats/{id}` | `id` (path) | tout rôle |
-| `GET` | `/chats/{id}/messages` | `id` (path) · `?limit=` | tout rôle |
+Tables `chats` et `messages` présentes en base. **Routes non implémentées.**
 
-**Propriété** : pour toute route sur `/chats/{id}` (lecture, suppression, messages), le backend doit vérifier `chat.user_id == current_user.id`. Sinon `403 Forbidden`. `GET /chats` ne retourne que les chats de l’utilisateur connecté.
+| Méthode | Route | Statut |
+|---------|-------|--------|
+| `GET` | `/chats` | ○ |
+| `GET` | `/chats/{id}` | ○ |
+| `POST` | `/chats` | ○ |
+| `DELETE` | `/chats/{id}` | ○ |
+| `GET` | `/chats/{id}/messages` | ○ |
+
+Règles prévues :
+
+- `GET /chats` : uniquement les chats de `current_user`
+- Routes `/{id}` : `chat.user_id == current_user.id` sinon `403`
+
+Corps attendu `POST /chats` : `{ "title": "..." }`
 
 ---
 
 ## Embeddings (interne)
 
-> Non exposé au frontend. Déclenché automatiquement après `POST /pages` ou `PUT /pages/{id}` par le service documentaire (appel in-process ou HTTP interne).
+### `POST /internal/embed/{page_id}` ✓
 
-| Méthode | Route | Params body | Accès |
-|---------|---------------------|-------------|-------|
-| `POST` | `/internal/embed/{page_id}` | — | clé interne uniquement |
-| `DELETE` | `/internal/embed/{page_id}` | `page_id` (path) | service interne uniquement |
+Force la ré-indexation RAG d’une page (chunking + embeddings Gemini).
 
-**Protection** : Authentification via l'en-tête `X-Internal-Key`.
+**Auth** : en-tête requis
 
----
+```http
+X-Internal-Key: lekki-internal-secret-key
+```
 
-## Users (admin)
+(Valeur par défaut ; surcharge via variable d’environnement `INTERNAL_API_KEY`.)
 
-| Méthode | Route | Params | Rôle requis |
-|---------|-------|--------|-------------|
-| `GET` | `/users` | `?page=` · `?limit=` | admin |
-| `GET` | `/users/{id}` | `id` (path) | admin |
-| `PUT` | `/users/{id}/role` | `id` (path) · `role` | admin |
-| `DELETE` | `/users/{id}` | `id` (path) | admin |
+**Réponse 200**
 
-**`PUT /users/{id}/role`**
+```json
+{
+  "status": "success",
+  "page_id": "uuid",
+  "chunks_created": 2
+}
+```
 
-- Réservé au rôle `admin` (middleware + contrôle handler).
-- Interdit si `id == current_user.id` : un admin ne peut pas modifier son propre rôle (évite de se rétrograder et de perdre tous les admins). Réponse `403` avec message explicite.
-- `role` ∈ `admin` · `editor` · `reader`.
+**Erreurs**
 
-**`DELETE /users/{id}`**
-
-- Réservé au rôle `admin`.
-- Interdit si `id == current_user.id` : un admin ne peut pas supprimer son propre compte. Réponse `403`.
-
----
-
-## Codes de rôle
-
-| Rôle | Valeur |
+| Code | Détail |
 |------|--------|
-| Administrateur | `admin` |
-| Éditeur | `editor` |
-| Lecteur | `reader` |
+| `401` | Clé interne invalide |
+| `404` | Page introuvable |
+
+> L’indexation est aussi déclenchée automatiquement sur `POST /pages/` et `PUT /pages/{id}`.
+
+### `DELETE /internal/embed/{page_id}` ○
+
+Suppression des chunks d’une page — **non implémenté**.
 
 ---
 
-## Résumé des endpoints (21 au total)
+## Users (admin) ○
 
-| Module | Count |
-|--------|-------|
-| Auth | 3 |
-| Pages | 5 |
-| Recherche | 1 |
-| RAG | 1 |
-| Chats | 5 |
-| Embeddings (interne) | 2 |
-| Users | 4 |
-| **Total** | **21** |
+| Méthode | Route | Statut |
+|---------|-------|--------|
+| `GET` | `/users` | ○ |
+| `GET` | `/users/{id}` | ○ |
+| `PUT` | `/users/{id}/role` | ○ |
+| `DELETE` | `/users/{id}` | ○ |
+
+Règles prévues :
+
+- `PUT /users/{id}/role` : interdit si `id == current_user.id`
+- `DELETE /users/{id}` : interdit de supprimer son propre compte
+- `role` ∈ `admin` · `editor` · `reader`
+
+---
+
+## Rôles
+
+| Rôle | Valeur API | Description |
+|------|------------|-------------|
+| Administrateur | `admin` | CRUD complet, suppression pages |
+| Éditeur | `editor` | Création ; modification de **ses** pages |
+| Lecteur | `reader` | Lecture et recherche uniquement |
+
+---
+
+## Codes HTTP courants
+
+| Code | Signification |
+|------|----------------|
+| `200` | Succès |
+| `201` | Ressource créée |
+| `204` | Succès sans corps (DELETE) |
+| `401` | Non authentifié / token invalide |
+| `403` | Rôle ou propriété insuffisante |
+| `404` | Ressource introuvable |
+| `422` | Erreur de validation (Pydantic) |
+| `500` | Erreur serveur (JSON : `detail`, `type`, `message`) |
+
+---
+
+## Récapitulatif des endpoints
+
+| # | Méthode | Route | Statut |
+|---|---------|-------|--------|
+| 1 | `POST` | `/auth/login` | ✓ |
+| 2 | `GET` | `/auth/me` | ✓ |
+| 3 | `POST` | `/auth/register` | ○ |
+| 4 | `GET` | `/pages/` | ✓ |
+| 5 | `GET` | `/pages/search` | ✓ |
+| 6 | `GET` | `/pages/{id}` | ✓ |
+| 7 | `POST` | `/pages/` | ✓ |
+| 8 | `PUT` | `/pages/{id}` | ✓ |
+| 9 | `DELETE` | `/pages/{id}` | ✓ |
+| 10 | `POST` | `/ask` | ✓ |
+| 11 | `GET` | `/chats` | ○ |
+| 12 | `GET` | `/chats/{id}` | ○ |
+| 13 | `POST` | `/chats` | ○ |
+| 14 | `DELETE` | `/chats/{id}` | ○ |
+| 15 | `GET` | `/chats/{id}/messages` | ○ |
+| 16 | `POST` | `/internal/embed/{page_id}` | ✓ |
+| 17 | `DELETE` | `/internal/embed/{page_id}` | ○ |
+| 18 | `GET` | `/users` | ○ |
+| 19 | `GET` | `/users/{id}` | ○ |
+| 20 | `PUT` | `/users/{id}/role` | ○ |
+| 21 | `DELETE` | `/users/{id}` | ○ |
+
+**Hors préfixe `/api/v1`**
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| `GET` | `/` | Accueil |
+| `GET` | `/health` | Santé `{"status":"ok"}` |
+
+---
+
+## Comptes de démo (seed)
+
+Mot de passe par défaut : `lekki123` (ou `SEED_PASSWORD` dans `.env`).
+
+| Email | Rôle |
+|-------|------|
+| admin@lekki.local | admin |
+| editor@lekki.local | editor |
+| reader@lekki.local | reader |
+
+Voir [README.md](./README.md) pour l’installation, le pipeline RAG Gemini et le dépannage.

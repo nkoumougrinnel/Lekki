@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import bcrypt
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 # backend/ sur le path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -113,11 +113,20 @@ async def seed() -> None:
 
         await session.commit()
 
+        for page in pages:
+            await session.execute(
+                text(
+                    "INSERT INTO pages_fts (page_id, title, content) VALUES (:id, :title, :content)"
+                ),
+                {"id": page.id, "title": page.title, "content": page.content},
+            )
+        await session.commit()
+
     print("Seed terminé.")
     print(f"  Mot de passe (tous les comptes) : {DEFAULT_PASSWORD}")
-    print("  admin  →", ADMIN_ID, "| admin@lekki.local")
-    print("  editor →", EDITOR_ID, "| editor@lekki.local")
-    print("  reader →", READER_ID, "| reader@lekki.local")
+    print("  admin  ->", ADMIN_ID, "| admin@lekki.local")
+    print("  editor ->", EDITOR_ID, "| editor@lekki.local")
+    print("  reader ->", READER_ID, "| reader@lekki.local")
     print("  Pages  →", PAGE_RH_ID, PAGE_TECH_ID, PAGE_GUIDE_ID)
     print("  POST /api/v1/pages?creator_id=", EDITOR_ID)
 
