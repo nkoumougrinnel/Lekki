@@ -110,7 +110,7 @@ async def test_me_protected(client: AsyncClient, db: AsyncSession):
 @pytest.mark.asyncio
 async def test_role_viewer_cannot_create(client: AsyncClient, reader_token: str):
     response = await client.post(
-        "/api/v1/pages/",
+        "/api/v1/pages",
         json={"title": "Test", "content": "contenu", "category": "technique"},
         headers={"Authorization": f"Bearer {reader_token}"},
     )

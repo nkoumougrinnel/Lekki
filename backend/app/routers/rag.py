@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -48,7 +48,7 @@ async def _persist_messages(
     result = await db.execute(select(Chat).where(Chat.id == chat_id))
     chat = result.scalar_one_or_none()
     if chat:
-        chat.updated_at = datetime.utcnow()
+        chat.updated_at = datetime.now(UTC)
 
     user_msg = Message(
         chat_id=chat_id,

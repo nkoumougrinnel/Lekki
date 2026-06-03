@@ -17,7 +17,7 @@ router = APIRouter(prefix="/pages", tags=["pages"])
 
 # ── Lecture — tous les rôles authentifiés ────────────────────────────────────
 
-@router.get("/", response_model=List[PageResponse])
+@router.get("", response_model=List[PageResponse])
 async def list_pages(
     category: Optional[PageCategory] = None,
     skip: int = Query(0, ge=0),
@@ -54,7 +54,7 @@ async def read_page(
 
 # ── Création — admin + editor ────────────────────────────────────────────────
 
-@router.post("/", response_model=PageResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PageResponse, status_code=status.HTTP_201_CREATED)
 async def create_page(
     page_in: PageCreate,
     db: AsyncSession = Depends(get_db),

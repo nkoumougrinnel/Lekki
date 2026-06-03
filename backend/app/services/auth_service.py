@@ -3,7 +3,7 @@ Lekki Wiki — AuthService (async)
 Couvre : hashPassword, verifyPassword, createToken, verifyToken, getCurrentUser
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -54,7 +54,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     payload = data.copy()
-    expire = datetime.utcnow() + (
+    expire = datetime.now(UTC) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     payload.update({"exp": expire})
@@ -93,10 +93,15 @@ async def get_optional_user(
 
 
 async def _resolve_user_from_token(token: str, db: AsyncSession) -> User:
-    # BYPASS DEV — retirer en prod
-    if token == "dev":
+    if token == "dev" and settings.DEBUG:
         result = await db.execute(select(User).where(User.email == "admin@lekki.local"))
-        return result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Utilisateur dev introuvable — lancez le seed",
+            )
+        return user
 
     payload = verify_token(token)
     user_id: str = payload.get("sub")
