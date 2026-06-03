@@ -172,7 +172,7 @@ async def test_llm_service_returns_provider_name():
 
 
 @pytest.mark.asyncio
-async def test_ask_route_with_mocked_llm(client, sample_page: Page):
+async def test_ask_route_with_mocked_llm(client, sample_page: Page, admin_token: str):
     with patch(
         "app.routers.rag.llm.ask_question",
         new_callable=AsyncMock,
@@ -186,6 +186,7 @@ async def test_ask_route_with_mocked_llm(client, sample_page: Page):
             resp = await client.post(
                 "/api/v1/ask",
                 json={"question": "Test sans API ?"},
+                headers={"Authorization": f"Bearer {admin_token}"},
             )
 
     assert resp.status_code == 200
@@ -196,10 +197,11 @@ async def test_ask_route_with_mocked_llm(client, sample_page: Page):
 
 
 @pytest.mark.asyncio
-async def test_ask_route_no_chunks(client):
+async def test_ask_route_no_chunks(client, reader_token: str):
     resp = await client.post(
         "/api/v1/ask",
         json={"question": "Question sans contexte"},
+        headers={"Authorization": f"Bearer {reader_token}"},
     )
     assert resp.status_code == 200
     assert resp.json()["provider"] is None
@@ -221,6 +223,7 @@ async def test_ask_route_all_providers_down(client, admin_token: str):
             resp = await client.post(
                 "/api/v1/ask",
                 json={"question": "Test 503"},
+                headers={"Authorization": f"Bearer {admin_token}"},
             )
 
     assert resp.status_code == 503

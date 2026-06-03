@@ -19,18 +19,49 @@ async def _create_user(db: AsyncSession, email: str, username: str, password: st
 
 
 @pytest.mark.asyncio
-async def test_register(client: AsyncClient, db: AsyncSession):
-    """Pas d'endpoint register — on vérifie la connexion d'un nouvel utilisateur."""
-    await _create_user(db, "test@lekki.com", "testuser", "password123")
-
+async def test_register(client: AsyncClient):
     response = await client.post(
-        "/api/v1/auth/login",
-        data={"username": "test@lekki.com", "password": "password123"},
+        "/api/v1/auth/register",
+        json={
+            "email": "test@lekki.com",
+            "username": "testuser",
+            "password": "password123",
+        },
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
     assert "access_token" in data
     assert data["user"]["email"] == "test@lekki.com"
+    assert data["user"]["username"] == "testuser"
+    assert data["user"]["role"] == "reader"
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_email(client: AsyncClient):
+    payload = {
+        "email": "dup@lekki.com",
+        "username": "userone",
+        "password": "password123",
+    }
+    assert (await client.post("/api/v1/auth/register", json=payload)).status_code == 201
+
+    payload["username"] = "usertwo"
+    response = await client.post("/api/v1/auth/register", json=payload)
+    assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_username(client: AsyncClient):
+    payload = {
+        "email": "one@lekki.com",
+        "username": "sameuser",
+        "password": "password123",
+    }
+    assert (await client.post("/api/v1/auth/register", json=payload)).status_code == 201
+
+    payload["email"] = "two@lekki.com"
+    response = await client.post("/api/v1/auth/register", json=payload)
+    assert response.status_code == 409
 
 
 @pytest.mark.asyncio

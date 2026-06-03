@@ -1,18 +1,70 @@
 """
 Lekki Wiki — Router Auth (async)
-Endpoints : POST /auth/login, GET /auth/me
+Endpoints : POST /auth/register, POST /auth/login, GET /auth/me
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.services.auth_service import create_token, get_current_user, verify_password
+from app.schemas.auth import RegisterRequest, TokenResponse
+from app.services.auth_service import create_token, get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _user_payload(user: User) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/register
+# ---------------------------------------------------------------------------
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register(
+    body: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Crée un compte utilisateur (rôle reader par défaut) et retourne un JWT."""
+    result = await db.execute(
+        select(User).where(
+            or_(User.email == body.email, User.username == body.username)
+        )
+    )
+    existing = result.scalar_one_or_none()
+    if existing:
+        if existing.email == body.email:
+            detail = "Cet email est déjà utilisé"
+        else:
+            detail = "Ce nom d'utilisateur est déjà pris"
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+
+    user = User(
+        email=body.email,
+        username=body.username,
+        password_hash=hash_password(body.password),
+        role="reader",
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    token = create_token(data={"sub": user.id, "role": user.role})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": _user_payload(user),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -47,12 +99,7 @@ async def login(
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "role": user.role,
-        },
+        "user": _user_payload(user),
     }
 
 
