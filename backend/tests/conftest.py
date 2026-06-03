@@ -14,7 +14,7 @@ from app.models.user import User
 from app.models.page import Page
 from app.models.chunk import Chunk
 from app.models.chat import Chat, Message
-from app.service.auth_service import hash_password, create_token
+from app.services.auth_service import hash_password, create_token
 
 # ---------------------------------------------------------------------------
 # Base de données in-memory pour les tests
@@ -117,18 +117,18 @@ async def reader_user(db: AsyncSession) -> User:
 # Tokens JWT de test
 # ---------------------------------------------------------------------------
 
-@pytest.fixture
-def admin_token(admin_user: User) -> str:
+@pytest_asyncio.fixture
+async def admin_token(admin_user: User) -> str:
     return create_token({"sub": admin_user.id, "role": admin_user.role})
 
 
-@pytest.fixture
-def editor_token(editor_user: User) -> str:
+@pytest_asyncio.fixture
+async def editor_token(editor_user: User) -> str:
     return create_token({"sub": editor_user.id, "role": editor_user.role})
 
 
-@pytest.fixture
-def reader_token(reader_user: User) -> str:
+@pytest_asyncio.fixture
+async def reader_token(reader_user: User) -> str:
     return create_token({"sub": reader_user.id, "role": reader_user.role})
 
 

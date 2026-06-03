@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.page import Page
 from app.models.chunk import Chunk
 from app.models.chat import Chat, Message
-from app.service.auth_service import hash_password, verify_password
+from app.services.auth_service import hash_password, verify_password
 
 
 # ---------------------------------------------------------------------------

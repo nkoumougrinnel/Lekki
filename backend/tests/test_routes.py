@@ -133,7 +133,6 @@ async def test_create_page_as_admin(client: AsyncClient, admin_token: str):
             "title": "Nouvelle page",
             "content": "Contenu de la page.",
             "category": "technique",
-            "status": "published",
         },
     )
     assert resp.status_code == 201
@@ -149,7 +148,6 @@ async def test_create_page_as_editor(client: AsyncClient, editor_token: str):
             "title": "Page éditeur",
             "content": "Contenu.",
             "category": "rh",
-            "status": "published",
         },
     )
     assert resp.status_code == 201
@@ -164,7 +162,6 @@ async def test_create_page_as_reader_forbidden(client: AsyncClient, reader_token
             "title": "Tentative",
             "content": "...",
             "category": "rh",
-            "status": "published",
         },
     )
     assert resp.status_code == 403
