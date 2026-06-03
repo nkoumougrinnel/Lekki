@@ -16,13 +16,13 @@ GET {{baseUrl}}/auth/me
 Authorization: Bearer {{token}}
 
 ### Liste des pages
-GET {{baseUrl}}/pages/
+GET {{baseUrl}}/pages
 Authorization: Bearer {{token}}
 Accept: application/json
 
 ### Créer une page
 # @name createPage
-POST {{baseUrl}}/pages/
+POST {{baseUrl}}/pages
 Authorization: Bearer {{token}}
 Content-Type: application/json
 

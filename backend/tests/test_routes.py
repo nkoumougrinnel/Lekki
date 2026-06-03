@@ -86,7 +86,7 @@ async def test_list_pages_authenticated(
     client: AsyncClient, reader_token: str, sample_page: Page
 ):
     resp = await client.get(
-        "/api/v1/pages/",
+        "/api/v1/pages",
         headers={"Authorization": f"Bearer {reader_token}"},
     )
     assert resp.status_code == 200
@@ -95,7 +95,7 @@ async def test_list_pages_authenticated(
 
 @pytest.mark.asyncio
 async def test_list_pages_unauthenticated(client: AsyncClient):
-    resp = await client.get("/api/v1/pages/")
+    resp = await client.get("/api/v1/pages")
     assert resp.status_code == 401
 
 
@@ -127,7 +127,7 @@ async def test_get_page_not_found(client: AsyncClient, reader_token: str):
 @pytest.mark.asyncio
 async def test_create_page_as_admin(client: AsyncClient, admin_token: str):
     resp = await client.post(
-        "/api/v1/pages/",
+        "/api/v1/pages",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={
             "title": "Nouvelle page",
@@ -142,7 +142,7 @@ async def test_create_page_as_admin(client: AsyncClient, admin_token: str):
 @pytest.mark.asyncio
 async def test_create_page_as_editor(client: AsyncClient, editor_token: str):
     resp = await client.post(
-        "/api/v1/pages/",
+        "/api/v1/pages",
         headers={"Authorization": f"Bearer {editor_token}"},
         json={
             "title": "Page éditeur",
@@ -156,7 +156,7 @@ async def test_create_page_as_editor(client: AsyncClient, editor_token: str):
 @pytest.mark.asyncio
 async def test_create_page_as_reader_forbidden(client: AsyncClient, reader_token: str):
     resp = await client.post(
-        "/api/v1/pages/",
+        "/api/v1/pages",
         headers={"Authorization": f"Bearer {reader_token}"},
         json={
             "title": "Tentative",
@@ -202,3 +202,94 @@ async def test_delete_page_as_reader_forbidden(
         headers={"Authorization": f"Bearer {reader_token}"},
     )
     assert resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Pages — routes sans slash (contrat frontend)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_list_pages_no_trailing_slash(
+    client: AsyncClient, reader_token: str, sample_page: Page
+):
+    resp = await client.get(
+        "/api/v1/pages",
+        headers={"Authorization": f"Bearer {reader_token}"},
+    )
+    assert resp.status_code == 200
+    assert len(resp.json()) >= 1
+
+
+@pytest.mark.asyncio
+async def test_create_page_no_trailing_slash(client: AsyncClient, admin_token: str):
+    resp = await client.post(
+        "/api/v1/pages",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "title": "Page sans slash",
+            "content": "Contenu test.",
+            "category": "guides",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["title"] == "Page sans slash"
+
+
+# ---------------------------------------------------------------------------
+# Pages — mise à jour
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_update_page_as_admin(
+    client: AsyncClient, admin_token: str, sample_page: Page
+):
+    resp = await client.put(
+        f"/api/v1/pages/{sample_page.id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"title": "Titre mis à jour", "content": "Nouveau contenu."},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "Titre mis à jour"
+
+
+@pytest.mark.asyncio
+async def test_update_page_as_editor_forbidden(
+    client: AsyncClient, editor_token: str, sample_page: Page
+):
+    resp = await client.put(
+        f"/api/v1/pages/{sample_page.id}",
+        headers={"Authorization": f"Bearer {editor_token}"},
+        json={"title": "Tentative"},
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_search_pages(
+    client: AsyncClient, reader_token: str, sample_page: Page
+):
+    resp = await client.get(
+        "/api/v1/pages/search?q=test",
+        headers={"Authorization": f"Bearer {reader_token}"},
+    )
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
+# ---------------------------------------------------------------------------
+# Santé & racine
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_health(client: AsyncClient):
+    resp = await client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_root(client: AsyncClient):
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    assert "docs" in resp.json()
+

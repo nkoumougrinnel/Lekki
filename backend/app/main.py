@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from app.config import settings
 from app.database import init_db
 from app.routers import pages, internal, auth, rag, chats
 
@@ -31,14 +32,11 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     print(f"Global Error: {type(exc).__name__} - {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "Une erreur interne est survenue.",
-            "type": type(exc).__name__,
-            "message": str(exc)
-        },
-    )
+    content: dict = {"detail": "Une erreur interne est survenue."}
+    if settings.DEBUG:
+        content["type"] = type(exc).__name__
+        content["message"] = str(exc)
+    return JSONResponse(status_code=500, content=content)
 
 # Inclusion des routeurs (Préfixe global API v1)
 app.include_router(pages.router, prefix="/api/v1")
