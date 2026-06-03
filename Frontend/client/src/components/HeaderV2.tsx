@@ -21,23 +21,21 @@ export function HeaderV2({ user, onLogout }: HeaderV2Props) {
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-40">
-      <div className="flex items-center justify-between px-6 py-4 gap-4">
+      <div className="flex items-center px-6 py-4 gap-4">
         {/* Left - Empty for balance */}
-        <div className="w-64" />
+        <div className="flex-1" />
 
         {/* Center - Search Bar */}
-        <div className="flex-1 max-w-md">
-          <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
-            <Sparkles size={16} className="text-primary flex-shrink-0" />
-            <Input
-              placeholder="Search or ask..."
-              className="bg-transparent border-0 focus:ring-0 text-sm"
-            />
-          </div>
+        <div className="w-full max-w-md flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
+          <Sparkles size={16} className="text-primary flex-shrink-0" />
+          <Input
+            placeholder="Search or ask..."
+            className="bg-transparent border-0 focus:ring-0 text-sm"
+          />
         </div>
 
         {/* Right - Theme Toggle & User Menu */}
-        <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -57,7 +55,12 @@ export function HeaderV2({ user, onLogout }: HeaderV2Props) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-semibold">
-                  {user.avatar}
+                  {user.name
+                    .split(' ')
+                    .map((part) => part[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()}
                 </div>
               </Button>
             </DropdownMenuTrigger>

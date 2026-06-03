@@ -176,9 +176,9 @@ export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
             placeholder="Write your markdown here..."
           />
         ) : (
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="h-full overflow-y-auto p-4">
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <Streamdown>{content}</Streamdown>
+              <Streamdown>{content || '*Nothing to preview yet. Switch to Edit and start writing.*'}</Streamdown>
             </div>
           </div>
         )}

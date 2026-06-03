@@ -8,6 +8,8 @@ import { HeaderV2 } from "./components/HeaderV2";
 import { DashboardV2 } from "./components/DashboardV2";
 import { MarkdownEditorV2 } from "./components/MarkdownEditorV2";
 import { AIPanel } from "./components/AIPanel";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import { mockDocuments, mockUser, mockStats } from "./lib/mockData";
 import { WikiDocument } from "./types/wiki";
 
@@ -80,6 +82,7 @@ function App() {
                 <div className="flex-1 overflow-hidden">
                   {selectedDoc && !selectedDoc.isFolder ? (
                     <MarkdownEditorV2
+                      key={selectedDoc.id}
                       document={selectedDoc}
                       onSave={handleSaveDocument}
                     />
@@ -100,6 +103,17 @@ function App() {
                 )}
               </div>
             </div>
+
+            {/* Bouton flottant pour rouvrir l'IA quand le panneau est fermé */}
+            {!showAIPanel && (
+              <Button
+                onClick={() => setShowAIPanel(true)}
+                title="Ouvrir l'assistant IA"
+                className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+              >
+                <Sparkles size={24} />
+              </Button>
+            )}
           </div>
         </TooltipProvider>
       </ThemeProvider>

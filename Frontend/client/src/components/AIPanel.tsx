@@ -134,26 +134,7 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-4 space-y-3">
-        {/* Document Index */}
-        <div className="bg-secondary rounded-lg p-3">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Indexed Documents</p>
-          <div className="space-y-1 max-h-20 overflow-y-auto">
-            {documents.slice(0, 5).map((doc) => (
-              <div key={doc.id} className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileText size={12} />
-                <span className="truncate">{doc.title}</span>
-              </div>
-            ))}
-            {documents.length > 5 && (
-              <p className="text-xs text-muted-foreground italic">
-                +{documents.length - 5} more documents
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Input Field */}
+      <div className="border-t border-border p-4">
         <div className="flex gap-2">
           <Input
             value={input}
