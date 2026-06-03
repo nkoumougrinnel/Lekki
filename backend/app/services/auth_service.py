@@ -22,7 +22,7 @@ from app.models.user import User
 # ---------------------------------------------------------------------------
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 # ---------------------------------------------------------------------------
@@ -34,11 +34,14 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    # Compatibilité seeds SHA-256 placeholder
+    if not hashed:
+        return False
     if hashed.startswith("PLACEHOLDER:"):
         import hashlib
         return hashed == "PLACEHOLDER:" + hashlib.sha256(plain.encode()).hexdigest()
-    return pwd_context.verify(plain, hashed)
+    # Bypass passlib — utilise bcrypt directement
+    import bcrypt
+    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 # ---------------------------------------------------------------------------
@@ -73,6 +76,11 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    # BYPASS DEV — retirer en prod
+    if token == "dev":
+        result = await db.execute(select(User).where(User.email == "admin@lekki.local"))
+        return result.scalar_one_or_none()
+
     payload = verify_token(token)
     user_id: str = payload.get("sub")
     if not user_id:

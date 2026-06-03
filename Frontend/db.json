@@ -44,7 +44,24 @@
       "expediteur": "ia",
       "texte": "D'après le document Contrat de prestation - Acme Corp, le montant global s'élève à 5 000 000 FCFA HT. Le règlement s'effectue en deux versements distincts : 50% dès la validation de la signature du document et les 50% restants dès la livraison effective de la solution complète.",
       "score_confiance": 91,
-      "sources": ["Contrat de prestation - Acme Corp (p. 2)"]
+      "sources": [
+        "Contrat de prestation - Acme Corp (p. 2)"
+      ]
+    },
+    {
+      "id": "dITIqhj959I",
+      "expediteur": "utilisateur",
+      "texte": "hello"
+    },
+    {
+      "id": "tpCgDFmS0U0",
+      "expediteur": "ia",
+      "texte": "Réponse simulée sémantiquement à propos de: \"hello\". Les chunks de 512 tokens ont été correctement indexés localement par Lekki.",
+      "score_confiance": 88,
+      "sources": [
+        "Architecture Système Lekki AI (p. 1)"
+      ]
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

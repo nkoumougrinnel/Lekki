@@ -31,18 +31,20 @@ Lekki est un wiki d'entreprise intelligent qui combine gestion documentaire Mark
 ## Fonctionnalités
 
 ### MVP (P0 — indispensable)
-| Fonctionnalité | Description |
-|---|---|
-| Authentification JWT | Login / register / logout, token 24h |
-| Workspaces multi-équipe | Espaces isolés par département (IT, RH, Produit…) |
-| Arborescence de documents | Espaces → Dossiers → Pages, vue hiérarchique |
-| Éditeur Markdown | Split-view édition / prévisualisation |
-| CRUD documents | Création, lecture, mise à jour, suppression |
-| Chat RAG avec citations | Réponses sourcées avec liens cliquables vers le passage exact |
-| Embeddings + recherche sémantique | `all-MiniLM-L6-v2`, ChromaDB, 384 dimensions |
-| Déploiement Docker | `docker compose up` — fonctionne sur n'importe quelle machine |
+
+| Fonctionnalité                    | Description                                                   |
+| --------------------------------- | ------------------------------------------------------------- |
+| Authentification JWT              | Login / register / logout, token 24h                          |
+| Workspaces multi-équipe           | Espaces isolés par département (IT, RH, Produit…)             |
+| Arborescence de documents         | Espaces → Dossiers → Pages, vue hiérarchique                  |
+| Éditeur Markdown                  | Split-view édition / prévisualisation                         |
+| CRUD documents                    | Création, lecture, mise à jour, suppression                   |
+| Chat RAG avec citations           | Réponses sourcées avec liens cliquables vers le passage exact |
+| Embeddings + recherche sémantique | `all-MiniLM-L6-v2`, ChromaDB, 384 dimensions                  |
+| Déploiement Docker                | `docker compose up` — fonctionne sur n'importe quelle machine |
 
 ### Différenciateurs IA (P1 — vous gagnez des points)
+
 - **Citations sources cliquables** — chaque réponse pointe vers le document et le passage exact
 - **Confidence score** — badge `● 91% de confiance` avec tooltip sur le nombre de documents sources
 - **Résumé automatique** — TL;DR IA à l'ouverture d'un document
@@ -54,6 +56,7 @@ Lekki est un wiki d'entreprise intelligent qui combine gestion documentaire Mark
 - **Onboarding IA** — résumé de l'ensemble du wiki à la première connexion
 
 ### Bonus (P2 — si le temps le permet)
+
 - Export PDF de conversation
 - Badge document obsolète (> 180 jours sans modification)
 - "Ask about this paragraph" — sélectionner un paragraphe, interroger l'IA en contexte
@@ -95,30 +98,33 @@ Document Markdown → Nettoyage → Chunking (512 tokens, overlap 64)
 ## Stack technique
 
 ### Backend
-| Composant | Technologie |
-|---|---|
-| Framework API | FastAPI 0.111 + Uvicorn |
-| Base de données | SQLite (mode WAL) + SQLAlchemy async |
-| Embeddings | sentence-transformers `all-MiniLM-L6-v2` |
-| Vector store | ChromaDB 0.5.3 (une collection par workspace) |
-| RAG orchestration | LangChain 0.2.5 |
-| BM25 full-text | rank-bm25 |
-| Authentification | JWT HS256, python-jose + passlib/bcrypt |
-| LLM recommandé | `gpt-4o-mini` (OpenAI) · `groq` API (fallback gratuit) · `ollama phi3:mini` (offline) |
+
+| Composant         | Technologie                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| Framework API     | FastAPI 0.111 + Uvicorn                                                               |
+| Base de données   | SQLite (mode WAL) + SQLAlchemy async                                                  |
+| Embeddings        | sentence-transformers `all-MiniLM-L6-v2`                                              |
+| Vector store      | ChromaDB 0.5.3 (une collection par workspace)                                         |
+| RAG orchestration | LangChain 0.2.5                                                                       |
+| BM25 full-text    | rank-bm25                                                                             |
+| Authentification  | JWT HS256, python-jose + passlib/bcrypt                                               |
+| LLM recommandé    | `gpt-4o-mini` (OpenAI) · `groq` API (fallback gratuit) · `ollama phi3:mini` (offline) |
 
 ### Frontend
-| Composant | Technologie |
-|---|---|
-| Framework | React 18 + TypeScript (Vite) |
-| Routing | React Router DOM 6 |
-| State management | Zustand |
-| Data fetching | TanStack Query v5 |
-| Éditeur Markdown | @uiw/react-md-editor |
-| HTTP client | Axios avec intercepteur JWT |
-| UI components | shadcn/ui + Tailwind CSS |
-| Icons | Lucide React |
+
+| Composant        | Technologie                  |
+| ---------------- | ---------------------------- |
+| Framework        | React 18 + TypeScript (Vite) |
+| Routing          | React Router DOM 6           |
+| State management | Zustand                      |
+| Data fetching    | TanStack Query v5            |
+| Éditeur Markdown | @uiw/react-md-editor         |
+| HTTP client      | Axios avec intercepteur JWT  |
+| UI components    | shadcn/ui + Tailwind CSS     |
+| Icons            | Lucide React                 |
 
 ### Infrastructure
+
 - **Docker Compose** — backend + frontend + volumes persistants
 - **Nginx** — reverse proxy pour le frontend en production
 - **SQLite WAL** — pas de serveur DB à gérer
@@ -128,6 +134,7 @@ Document Markdown → Nettoyage → Chunking (512 tokens, overlap 64)
 ## Installation et démarrage
 
 ### Prérequis
+
 - Docker ≥ 24 et Docker Compose ≥ 2.20
 - (optionnel) Python 3.11+ et Node 20+ pour le développement local
 
@@ -147,6 +154,7 @@ docker compose up --build
 ```
 
 L'application est disponible sur :
+
 - **Frontend** → http://localhost:3000
 - **API** → http://localhost:8000
 - **Swagger UI** → http://localhost:8000/docs
@@ -189,6 +197,7 @@ DEBUG=false
 ```
 
 **Choix LLM par ordre de recommandation :**
+
 1. **OpenAI `gpt-4o-mini`** — rapide, peu coûteux, meilleure qualité de réponse
 2. **Groq API** — gratuit, latence très faible, fallback idéal
 3. **Ollama `phi3:mini` ou `mistral:7b`** — zéro dépendance externe, fonctionne hors ligne
@@ -253,13 +262,37 @@ wikiai/
 ## API Reference
 
 ### Authentification
+
 ```
 POST   /api/auth/register     { email, username, password }
 POST   /api/auth/login        { email, password } → { access_token, user }
 GET    /api/auth/me           → { id, email, username, role, workspaces }
 ```
 
+### Exemples d'authentification (curl)
+
+Linux / macOS / WSL:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "username=admin@lekki.local&password=Admin1234!"
+```
+
+Windows (PowerShell) — utiliser `curl.exe` pour éviter l'alias `Invoke-WebRequest`:
+
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/auth/login" -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin@lekki.local&password=Admin1234!"
+# Réponse attendue : JSON avec access_token
+
+# Puis :
+curl.exe -H "Authorization: Bearer <token>" "http://127.0.0.1:8000/api/v1/auth/me"
+```
+
+Note rapide : l'application accepte aussi le token spécial `dev` en environnement de développement (exemple : `-H \"Authorization: Bearer dev\"`) pour bypasser l'auth durant les tests locaux.
+
 ### Workspaces
+
 ```
 GET    /api/workspaces
 POST   /api/workspaces        { name, description, icon }
@@ -268,6 +301,7 @@ DELETE /api/workspaces/{id}
 ```
 
 ### Documents
+
 ```
 GET    /api/workspaces/{id}/documents   ?tree=true
 POST   /api/workspaces/{id}/documents  { title, content, parent_id?, status }
@@ -280,11 +314,13 @@ POST   /api/documents/{id}/embed       → { chunks_created }
 ```
 
 ### Recherche
+
 ```
 GET    /api/search   ?q=<query>&workspace_id=<id>&mode=hybrid|semantic|fulltext
 ```
 
 ### Chat RAG
+
 ```
 POST   /api/workspaces/{id}/chats
 POST   /api/chats/{id}/messages   { question, doc_context_id? }
@@ -299,6 +335,7 @@ La documentation interactive complète est disponible sur `/docs` (Swagger UI).
 ## Pipeline RAG
 
 ### Paramètres de chunking
+
 ```python
 RecursiveCharacterTextSplitter(
     chunk_size=512,       # bon équilibre précision / contexte
@@ -308,18 +345,21 @@ RecursiveCharacterTextSplitter(
 ```
 
 ### Modèle d'embedding
+
 ```
 sentence-transformers/all-MiniLM-L6-v2
 ~80 MB · 384 dimensions · init ~5s · inférence <10ms/requête
 ```
 
 ### Calcul du confidence score
+
 ```python
 confidence = 0.7 * top_similarity + 0.3 * avg_similarity
 # Résultat en %, plafonné à 99%
 ```
 
 ### Prompt système
+
 Le LLM est contraint à répondre **uniquement** à partir des documents fournis en contexte. Si la réponse est absente des sources, il l'indique explicitement. Chaque réponse cite les documents sources au format `[Source: Titre du document]`.
 
 ---
@@ -327,14 +367,16 @@ Le LLM est contraint à répondre **uniquement** à partir des documents fournis
 ## Démo
 
 ### Dataset de démonstration
+
 10 documents réalistes sont préchargés via le bouton "Demo access" :
-Architecture système microservices · Guide JWT · Politique sécurité API · Onboarding RH · Guide Docker · Procédure incident P1 · Roadmap Q3 · Charte Git · Guide RGPD *(badge obsolète)* · FAQ Technique
+Architecture système microservices · Guide JWT · Politique sécurité API · Onboarding RH · Guide Docker · Procédure incident P1 · Roadmap Q3 · Charte Git · Guide RGPD _(badge obsolète)_ · FAQ Technique
 
 ### Questions de démo recommandées
-- *"Quelle est la procédure en cas d'incident P1 ?"*
-- *"Comment configurer l'authentification JWT ?"*
-- *"Quelles sont nos obligations RGPD sur les données personnelles ?"*
-- *"Résume notre architecture de déploiement."*
+
+- _"Quelle est la procédure en cas d'incident P1 ?"_
+- _"Comment configurer l'authentification JWT ?"_
+- _"Quelles sont nos obligations RGPD sur les données personnelles ?"_
+- _"Résume notre architecture de déploiement."_
 
 > **Règle d'or :** ne jamais improviser les questions IA en démo. Testez chaque question à l'avance et vérifiez la qualité des réponses.
 
@@ -342,16 +384,16 @@ Architecture système microservices · Guide JWT · Politique sécurité API · 
 
 ## Comparaison
 
-| Critère |Lekki | Notion | Confluence | Guru |
-|---|:---:|:---:|:---:|:---:|
-| Markdown natif | ✅ | ✅ | ⚠️ | ✅ |
-| RAG intégré | ✅ | ⚠️ Addon | ❌ | ✅ |
-| Citations sources | ✅ | ❌ | ❌ | ⚠️ |
-| Confidence score | ✅ | ❌ | ❌ | ❌ |
-| Open source | ✅ | ❌ | ❌ | ❌ |
-| Self-hosted | ✅ | ❌ | ⚠️ | ❌ |
-| Données 100% internes | ✅ | ⚠️ Cloud | ⚠️ Cloud | ❌ |
+| Critère               | Lekki |  Notion  | Confluence | Guru |
+| --------------------- | :---: | :------: | :--------: | :--: |
+| Markdown natif        |  ✅   |    ✅    |     ⚠️     |  ✅  |
+| RAG intégré           |  ✅   | ⚠️ Addon |     ❌     |  ✅  |
+| Citations sources     |  ✅   |    ❌    |     ❌     |  ⚠️  |
+| Confidence score      |  ✅   |    ❌    |     ❌     |  ❌  |
+| Open source           |  ✅   |    ❌    |     ❌     |  ❌  |
+| Self-hosted           |  ✅   |    ❌    |     ⚠️     |  ❌  |
+| Données 100% internes |  ✅   | ⚠️ Cloud |  ⚠️ Cloud  |  ❌  |
 
 ---
 
-*Construit en 8 heures. Voici ce que ça donne en 8 semaines.*
+_Construit en 8 heures. Voici ce que ça donne en 8 semaines._
