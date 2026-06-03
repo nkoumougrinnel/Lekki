@@ -37,8 +37,13 @@ class Settings(BaseSettings):
     CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
 
     # --- Bascule embeddings (indexation + recherche) ---
-    EMBEDDING_PROVIDER_ORDER: str = "gemini"
+    # minilm = local (sentence-transformers) ; gemini = distant (fallback)
+    EMBEDDING_PROVIDER_ORDER: str = "minilm,gemini"
+    LOCAL_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     GEMINI_EMBEDDING_MODEL: str = "models/gemini-embedding-001"
+
+    # --- Routes internes (/internal/*) ---
+    INTERNAL_API_KEY: str = "lekki-internal-secret-key"
 
     model_config = SettingsConfigDict(
         env_file=".env",

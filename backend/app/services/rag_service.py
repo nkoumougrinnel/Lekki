@@ -20,7 +20,7 @@ _embedding_router = EmbeddingProviderRouter()
 
 async def embed_page(db: AsyncSession, page_id: str) -> int | None:
     """
-    Pipeline d'ingestion : découpe la page, embeddings (bascule Gemini), stockage.
+    Pipeline d'ingestion : découpe la page, embeddings (MiniLM local / Gemini), stockage.
     """
     result = await db.execute(select(Page).where(Page.id == page_id))
     page = result.scalar_one_or_none()
