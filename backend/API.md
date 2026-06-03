@@ -231,7 +231,9 @@ Mise à jour partielle.
 
 ### `POST /ask` ✓
 
-Pose une question au wiki. Pipeline : embedding requête → top 4 chunks (cosinus) → génération Gemini.
+Pose une question au wiki.
+
+**Pipeline** : embedding requête (Gemini) → top 4 chunks (cosinus) → génération avec **bascule** `gemini` → `groq` → `cerebras`.
 
 **Auth** : aucune pour l’instant (○ JWT planifié)
 
@@ -248,18 +250,38 @@ Pose une question au wiki. Pipeline : embedding requête → top 4 chunks (cosin
 ```json
 {
   "answer": "Pour déployer, exécutez docker compose up -d depuis la racine...",
-  "sources": [
-    "b0000000-0000-4000-8000-000000000002"
-  ]
+  "sources": ["b0000000-0000-4000-8000-000000000002"],
+  "provider": "gemini"
 }
 ```
+
+| Champ | Description |
+|-------|-------------|
+| `answer` | Texte généré |
+| `sources` | IDs des pages sources (top chunks) |
+| `provider` | Fournisseur ayant répondu : `gemini`, `groq` ou `cerebras` |
 
 **Réponse 200 — aucun contexte**
 
 ```json
 {
   "answer": "Je n'ai trouvé aucune information dans le wiki pour répondre à votre question.",
-  "sources": []
+  "sources": [],
+  "provider": null
+}
+```
+
+**Réponse 503 — tous fournisseurs indisponibles**
+
+```json
+{
+  "detail": {
+    "message": "Tous les fournisseurs LLM sont indisponibles (quota ou erreur).",
+    "errors": [
+      ["gemini", "429 RESOURCE_EXHAUSTED..."],
+      ["groq", "cooldown actif (quota précédent)"]
+    ]
+  }
 }
 ```
 
@@ -267,13 +289,37 @@ Pose une question au wiki. Pipeline : embedding requête → top 4 chunks (cosin
 
 | Code | Cause typique |
 |------|----------------|
-| `500` | `GEMINI_API_KEY` manquante ou modèle API indisponible |
+| `503` | Quota / erreur sur tous les fournisseurs **configurés** |
+| `500` | Erreur non gérée (vérifier logs serveur) |
 
-**Champs planifiés (non renvoyés aujourd’hui)**
+**Champs planifiés**
 
-- `confidence` (score de confiance)
-- `sources[]` enrichies (`title`, `chunk_text`, `similarity_score`)
-- `chat_id`, `message_id` (persistance)
+- `confidence`, sources enrichies, persistance `chat_id`
+
+---
+
+### `GET /llm/status` ✓
+
+État des fournisseurs de génération (debug, monitoring).
+
+**Auth** : aucune
+
+**Réponse 200**
+
+```json
+{
+  "providers": [
+    {"name": "gemini", "configured": true, "in_cooldown": false},
+    {"name": "groq", "configured": true, "in_cooldown": false},
+    {"name": "cerebras", "configured": false, "in_cooldown": false}
+  ]
+}
+```
+
+| Champ | Description |
+|-------|-------------|
+| `configured` | Clé API présente dans `.env` |
+| `in_cooldown` | Quota / 429 récent — fournisseur temporairement ignoré |
 
 ---
 
@@ -376,6 +422,7 @@ Règles prévues :
 | `404` | Ressource introuvable |
 | `422` | Erreur de validation (Pydantic) |
 | `500` | Erreur serveur (JSON : `detail`, `type`, `message`) |
+| `503` | Tous les fournisseurs LLM indisponibles (`POST /ask`) |
 
 ---
 
@@ -393,17 +440,18 @@ Règles prévues :
 | 8 | `PUT` | `/pages/{id}` | ✓ |
 | 9 | `DELETE` | `/pages/{id}` | ✓ |
 | 10 | `POST` | `/ask` | ✓ |
-| 11 | `GET` | `/chats` | ○ |
-| 12 | `GET` | `/chats/{id}` | ○ |
-| 13 | `POST` | `/chats` | ○ |
-| 14 | `DELETE` | `/chats/{id}` | ○ |
-| 15 | `GET` | `/chats/{id}/messages` | ○ |
-| 16 | `POST` | `/internal/embed/{page_id}` | ✓ |
-| 17 | `DELETE` | `/internal/embed/{page_id}` | ○ |
-| 18 | `GET` | `/users` | ○ |
-| 19 | `GET` | `/users/{id}` | ○ |
-| 20 | `PUT` | `/users/{id}/role` | ○ |
-| 21 | `DELETE` | `/users/{id}` | ○ |
+| 11 | `GET` | `/llm/status` | ✓ |
+| 12 | `GET` | `/chats` | ○ |
+| 13 | `GET` | `/chats/{id}` | ○ |
+| 14 | `POST` | `/chats` | ○ |
+| 15 | `DELETE` | `/chats/{id}` | ○ |
+| 16 | `GET` | `/chats/{id}/messages` | ○ |
+| 17 | `POST` | `/internal/embed/{page_id}` | ✓ |
+| 18 | `DELETE` | `/internal/embed/{page_id}` | ○ |
+| 19 | `GET` | `/users` | ○ |
+| 20 | `GET` | `/users/{id}` | ○ |
+| 21 | `PUT` | `/users/{id}/role` | ○ |
+| 22 | `DELETE` | `/users/{id}` | ○ |
 
 **Hors préfixe `/api/v1`**
 
@@ -424,4 +472,4 @@ Mot de passe par défaut : `lekki123` (ou `SEED_PASSWORD` dans `.env`).
 | editor@lekki.local | editor |
 | reader@lekki.local | reader |
 
-Voir [README.md](./README.md) pour l’installation, le pipeline RAG Gemini et le dépannage.
+Voir [README.md](./README.md) (architecture, bascule LLM) et [TESTING.md](./TESTING.md) (procédure de tests).
