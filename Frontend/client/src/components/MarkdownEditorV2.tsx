@@ -20,13 +20,14 @@ import { Streamdown } from 'streamdown';
 interface MarkdownEditorV2Props {
   document: WikiDocument;
   onSave: (content: string, title: string) => void;
+  readOnly?: boolean;
 }
 
-export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
+export function MarkdownEditorV2({ document, onSave, readOnly = false }: MarkdownEditorV2Props) {
   const [content, setContent] = useState(document.content);
   const [title, setTitle] = useState(document.title);
   const [isSaved, setIsSaved] = useState(true);
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>(readOnly ? 'preview' : 'edit');
 
   const handleSave = () => {
     onSave(content, title);
@@ -67,34 +68,39 @@ export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
               setTitle(e.target.value);
               setIsSaved(false);
             }}
-            placeholder="Document title"
-            aria-label="Document title"
-            className="w-full text-2xl font-bold text-foreground bg-transparent border-0 outline-none focus:ring-0 p-0 hover:bg-secondary/50 focus:bg-secondary/50 rounded px-1 -mx-1 transition-colors"
+            readOnly={readOnly}
+            placeholder="Titre du document"
+            aria-label="Titre du document"
+            className={`w-full text-2xl font-bold text-foreground bg-transparent border-0 outline-none focus:ring-0 p-0 rounded px-1 -mx-1 transition-colors ${
+              readOnly ? '' : 'hover:bg-secondary/50 focus:bg-secondary/50'
+            }`}
           />
           <p className="text-sm text-muted-foreground mt-1 px-1">
-            Last updated by {document.author} • {document.updatedAt.toLocaleDateString()}
+            Modifié par {document.author} • {document.updatedAt.toLocaleDateString()}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {!isSaved && (
-            <span className="text-sm text-amber-600 flex items-center gap-1">
-              <Clock size={14} /> Unsaved
-            </span>
-          )}
-          <Button
-            onClick={handleSave}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            <Save size={16} className="mr-2" />
-            Save
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            {!isSaved && (
+              <span className="text-sm text-amber-600 flex items-center gap-1">
+                <Clock size={14} /> Non enregistré
+              </span>
+            )}
+            <Button
+              onClick={handleSave}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Save size={16} className="mr-2" />
+              Enregistrer
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Toolbar & View Toggle */}
       <div className="border-b border-border p-3 flex items-center justify-between bg-secondary flex-wrap">
         {/* Toolbar */}
-        {viewMode === 'edit' && (
+        {viewMode === 'edit' && !readOnly && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => insertMarkdown('**', '**')}
@@ -182,8 +188,9 @@ export function MarkdownEditorV2({ document, onSave }: MarkdownEditorV2Props) {
               setContent(e.target.value);
               setIsSaved(false);
             }}
+            readOnly={readOnly}
             className="w-full h-full p-4 font-mono text-sm resize-none border-0 focus:ring-0"
-            placeholder="Write your markdown here..."
+            placeholder="Écrivez votre markdown ici..."
           />
         ) : (
           <div className="h-full overflow-y-auto p-4">

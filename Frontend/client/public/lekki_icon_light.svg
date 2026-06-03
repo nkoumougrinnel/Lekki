@@ -1,0 +1,14 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="#F6F8FA"/>
+  <rect x="1" y="1" width="118" height="118" rx="20" fill="none" stroke="#E8EBF0" stroke-width="1.5"/>
+
+  <!-- Icon inner bg -->
+  <rect x="16" y="16" width="88" height="88" rx="16" fill="#0D0F12"/>
+
+  <!-- L letter -->
+  <text x="28" y="88" font-family="Georgia, serif" font-weight="bold"
+        font-size="66" fill="#00C896" letter-spacing="-2">L</text>
+
+  <!-- Emerald accent dot -->
+  <circle cx="88" cy="28" r="7" fill="#F6F8FA"/>
+</svg>

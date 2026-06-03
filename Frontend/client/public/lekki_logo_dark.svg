@@ -1,0 +1,31 @@
+<svg width="480" height="120" viewBox="0 0 480 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap');
+    </style>
+  </defs>
+  <rect width="480" height="120" rx="16" fill="#0D0F12"/>
+  
+
+  <!-- Icon mark -->
+  <rect x="24" y="24" width="72" height="72" rx="14" fill="#00C896"/>
+  <!-- L letter -->
+  <text x="48" y="79" font-family="Georgia, serif" font-weight="bold" font-size="46"
+        fill="#0D0F12" letter-spacing="-1">L</text>
+  <!-- Emerald dot accent -->
+  <circle cx="83" cy="38" r="5" fill="#00C896"/>
+
+  <!-- Wordmark -->
+  <text x="116" y="68" font-family="Georgia, 'Times New Roman', serif"
+        font-weight="bold" font-size="40" fill="#F6F8FA" letter-spacing="-1.5">Lekki</text>
+
+  <!-- Accent dot between L and rest (visual) -->
+  <circle cx="140" cy="75" r="2.5" fill="#00C896"/>
+
+  <!-- Tagline -->
+  <text x="117" y="90" font-family="'Courier New', Courier, monospace"
+        font-size="10.5" fill="#8892A4" letter-spacing="2">THINK · WRITE · SEARCH</text>
+
+  <!-- Vertical separator -->
+  <line x1="112" y1="30" x2="112" y2="90" stroke="#00C896" stroke-width="1.5" opacity="0.25"/>
+</svg>

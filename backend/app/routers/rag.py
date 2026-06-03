@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,6 +23,30 @@ embedding_router = EmbeddingProviderRouter()
 NO_CONTEXT_ANSWER = (
     "Je n'ai trouvé aucune information dans le wiki pour répondre à votre question."
 )
+
+GREETING_ANSWER = (
+    "Bonjour ! 👋 Je suis l'assistant IA de Lekki. "
+    "Posez-moi une question sur le contenu du wiki (RH, technique, commercial, guides…) "
+    "et je chercherai la réponse dans la base de connaissances."
+)
+
+# Salutations / formules de politesse courtes qui ne nécessitent pas de recherche RAG.
+_GREETING_WORDS = {
+    "bonjour", "bonsoir", "salut", "coucou", "hello", "hi", "hey", "yo",
+    "slt", "cc", "wesh", "hola", "merci", "thanks", "ok", "okay", "bye",
+    "ça", "va", "comment", "tu", "vas", "bonne", "journée", "soirée",
+}
+
+
+def _is_smalltalk(text: str) -> bool:
+    """Détecte une salutation / formule courte sans réelle question."""
+    cleaned = re.sub(r"[^\w\sàâäéèêëïîôöùûüç]", "", text.lower(), flags=re.UNICODE).strip()
+    words = cleaned.split()
+    if not words:
+        return True
+    if len(words) <= 4 and all(w in _GREETING_WORDS for w in words):
+        return True
+    return False
 
 
 class QuestionRequest(BaseModel):
@@ -85,25 +110,32 @@ async def ask_lekki(
             )
         await get_user_chat(db, req.chat_id, current_user)
 
-    scored_chunks = await rag_service.get_relevant_chunks(db, req.question)
-    sources = rag_service.build_sources(scored_chunks)
-    confidence = rag_service.compute_confidence(scored_chunks)
-
-    if not scored_chunks:
-        answer = NO_CONTEXT_ANSWER
+    # Salutation / small-talk : réponse conviviale sans interroger le RAG.
+    if _is_smalltalk(req.question):
+        answer = GREETING_ANSWER
+        sources: list[dict] = []
+        confidence = 0.0
         provider = None
     else:
-        chunks = [c for _, c in scored_chunks]
-        try:
-            answer, provider = await llm.ask_question(req.question, chunks)
-        except AllProvidersFailedError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail={
-                    "message": "Tous les fournisseurs LLM sont indisponibles (quota ou erreur).",
-                    "errors": exc.errors,
-                },
-            ) from exc
+        scored_chunks = await rag_service.get_relevant_chunks(db, req.question)
+        sources = rag_service.build_sources(scored_chunks)
+        confidence = rag_service.compute_confidence(scored_chunks)
+
+        if not scored_chunks:
+            answer = NO_CONTEXT_ANSWER
+            provider = None
+        else:
+            chunks = [c for _, c in scored_chunks]
+            try:
+                answer, provider = await llm.ask_question(req.question, chunks)
+            except AllProvidersFailedError as exc:
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "message": "Tous les fournisseurs LLM sont indisponibles (quota ou erreur).",
+                        "errors": exc.errors,
+                    },
+                ) from exc
 
     user_message_id: str | None = None
     message_id: str | None = None

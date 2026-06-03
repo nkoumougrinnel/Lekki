@@ -1,67 +1,78 @@
-import { WikiDocument } from '@/types/wiki';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Sparkles, Send, FileText, X } from 'lucide-react';
-import { useState } from 'react';
+import { Bot, Send, FileText, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Streamdown } from 'streamdown';
+import { rag, ApiError, type AskSource } from '@/lib/api';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
-  sources?: { docId: string; title: string; relevance: number }[];
+  sources?: AskSource[];
+  confidence?: number;
+  provider?: string | null;
 }
 
 interface AIPanelProps {
-  documents: WikiDocument[];
   onClose: () => void;
 }
 
-export function AIPanel({ documents, onClose }: AIPanelProps) {
+export function AIPanel({ onClose }: AIPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your AI assistant. I can help you search and understand your knowledge base. Ask me anything about your documents!',
-      timestamp: new Date(),
+      content:
+        "Bonjour ! Je suis l'assistant IA de Lekki. Posez-moi une question sur la base de connaissances.",
     },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
-    // Add user message
+  const handleSendMessage = async () => {
+    const question = input.trim();
+    if (!question || isLoading) return;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
-      timestamp: new Date(),
+      content: question,
     };
-
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I found information about "${input}" in your knowledge base. Based on the documents, here's what I found:\n\n**Key Points:**\n- This is a simulated response\n- The AI panel indexes all your Markdown documents\n- You can ask questions and get AI-powered answers\n\nWould you like to know more?`,
-        timestamp: new Date(),
-        sources: [
-          { docId: 'doc-1-1', title: 'Getting Started', relevance: 95 },
-          { docId: 'doc-1-2', title: 'API Reference', relevance: 78 },
-        ],
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+    try {
+      const res = await rag.ask(question);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-a`,
+          role: 'assistant',
+          content: res.answer,
+          sources: res.sources,
+          confidence: res.confidence,
+          provider: res.provider,
+        },
+      ]);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Une erreur est survenue lors de l'interrogation de l'IA.";
+      setMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-e`, role: 'assistant', content: `⚠️ ${message}` },
+      ]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -69,15 +80,10 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
       {/* Header */}
       <div className="border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles size={20} className="text-primary" />
-          <h2 className="font-semibold text-foreground">AI Assistant</h2>
+          <Bot size={20} className="text-primary" />
+          <h2 className="font-semibold text-foreground">Assistant IA</h2>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="p-1 h-auto"
-        >
+        <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
           <X size={16} />
         </Button>
       </div>
@@ -96,22 +102,29 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
                   : 'bg-secondary text-foreground'
               }`}
             >
-              <div className="text-sm">
+              <div className="text-sm break-words">
                 <Streamdown>{message.content}</Streamdown>
               </div>
 
-              {/* Sources */}
               {message.sources && message.sources.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
-                  <p className="text-xs font-semibold opacity-70">Sources:</p>
+                  <p className="text-xs font-semibold opacity-70">
+                    Sources
+                    {typeof message.confidence === 'number' && (
+                      <span className="font-normal">
+                        {' '}
+                        · confiance {Math.round(message.confidence * 100)}%
+                      </span>
+                    )}
+                  </p>
                   {message.sources.map((source) => (
                     <div
-                      key={source.docId}
-                      className="text-xs opacity-80 flex items-center gap-1"
+                      key={source.page_id}
+                      className="text-xs opacity-80 flex items-start gap-1"
                     >
-                      <FileText size={12} />
-                      <span>{source.title}</span>
-                      <span className="opacity-60">({source.relevance}%)</span>
+                      <FileText size={12} className="mt-0.5 flex-shrink-0" />
+                      <span className="flex-1">{source.excerpt}</span>
+                      <span className="opacity-60">{Math.round(source.score * 100)}%</span>
                     </div>
                   ))}
                 </div>
@@ -125,12 +138,19 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
             <div className="bg-secondary text-foreground rounded-lg p-3">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '0.1s' }}
+                />
+                <div
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                />
               </div>
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
@@ -140,7 +160,7 @@ export function AIPanel({ documents, onClose }: AIPanelProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Ask about your docs..."
+            placeholder="Posez une question sur vos docs..."
             className="text-sm"
             disabled={isLoading}
           />
