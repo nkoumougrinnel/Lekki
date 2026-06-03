@@ -192,10 +192,10 @@ def seed() -> None:
     try:
         # ── Idempotence ───────────────────────────────────────────────────
         if db.query(User).count() > 0:
-            print("⚠️  Base déjà peuplée — seed annulé.")
+            print(" Base déjà peuplée — seed annulé.")
             return
 
-        print("🌱  Démarrage du seed…")
+        print(" Démarrage du seed…")
 
         # ── 1. Utilisateurs ───────────────────────────────────────────────
         admin = User(
@@ -284,7 +284,7 @@ def seed() -> None:
         db.commit()
         print(" 1 chat d'exemple avec 2 messages créé")
         print()
-        print("🎉  Seed terminé avec succès !")
+        print(" Seed terminé avec succès !")
         print()
         print("  Comptes disponibles :")
         print("    admin@lekki.io  / Admin1234!  (admin)")
