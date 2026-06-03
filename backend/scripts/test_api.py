@@ -12,19 +12,19 @@ def test_crud():
     }
     response = requests.post(f"{BASE_URL}/pages/", params={"creator_id": CREATOR_ID}, json=payload)
     page_id = response.json()["id"]
-    print(f"✅ Page créée : {page_id}")
+    print(f"Page créée : {page_id}")
 
     # 2. Lecture
     response = requests.get(f"{BASE_URL}/pages/{page_id}")
     assert response.status_code == 200
-    print(f"✅ Lecture réussie : {response.json()['title']}")
+    print(f"Lecture réussie : {response.json()['title']}")
 
     # 3. Liste
     response = requests.get(f"{BASE_URL}/pages/")
-    print(f"✅ Nombre de pages en base : {len(response.json())}")
+    print(f"Nombre de pages en base : {len(response.json())}")
 
 if __name__ == "__main__":
     try:
         test_crud()
     except Exception as e:
-        print(f"❌ Erreur : {e}")
+        print(f"Erreur : {e}")
