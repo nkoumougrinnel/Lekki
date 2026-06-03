@@ -11,11 +11,13 @@ from app.models.chat import Chat, Message
 from app.models.user import User
 from app.services import llm_service, rag_service
 from app.services.auth_service import get_optional_user
+from app.services.embedding_providers import EmbeddingProviderRouter
 from app.services.llm_providers.base import AllProvidersFailedError
 from app.utils.chats import get_user_chat
 
 router = APIRouter(tags=["rag"])
 llm = llm_service.LLMService()
+embedding_router = EmbeddingProviderRouter()
 
 NO_CONTEXT_ANSWER = (
     "Je n'ai trouvé aucune information dans le wiki pour répondre à votre question."
@@ -124,3 +126,9 @@ async def ask_lekki(
 async def llm_providers_status():
     """État des fournisseurs LLM (config, cooldown) — utile pour le debug."""
     return {"providers": llm.get_providers_status()}
+
+
+@router.get("/embedding/status")
+async def embedding_providers_status():
+    """État des fournisseurs d'embeddings (MiniLM local, Gemini fallback)."""
+    return {"providers": embedding_router.get_status()}

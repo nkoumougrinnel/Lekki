@@ -1,15 +1,14 @@
-import os
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.config import settings
 from app.database import get_db
 from app.services import rag_service
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
-INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "lekki-internal-secret-key")
 
 async def verify_internal_key(x_internal_key: str = Header(...)):
-    if x_internal_key != INTERNAL_API_KEY:
+    if x_internal_key != settings.INTERNAL_API_KEY:
         raise HTTPException(status_code=401, detail="Clé API interne invalide")
 
 @router.post("/embed/{page_id}", status_code=200)

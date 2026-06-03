@@ -1,5 +1,5 @@
 """
-Indexation RAG de toutes les pages (chunking + embeddings Gemini).
+Indexation RAG de toutes les pages (chunking + embeddings).
 
 Usage (depuis backend/, après seed) :
   python -m scripts.index_rag
@@ -16,21 +16,26 @@ from sqlalchemy import select
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.config import settings
 from app.database import AsyncSessionLocal, run_migrations
 from app.models.page import Page
 from app.services import rag_service
-from app.services.embedding_providers.gemini import GeminiEmbeddingProvider
+from app.services.embedding_providers import EmbeddingProviderRouter
 
 
 async def index_all(page_id: str | None = None) -> None:
     run_migrations()
 
-    provider = GeminiEmbeddingProvider(settings.LLM_PROVIDER_COOLDOWN_MINUTES)
-    if not provider.is_configured():
-        print("ERREUR : GEMINI_API_KEY manquante dans .env")
-        print("  → https://aistudio.google.com/apikey")
+    router = EmbeddingProviderRouter()
+    if not router.order:
+        print("ERREUR : EMBEDDING_PROVIDER_ORDER vide ou fournisseur inconnu.")
+        print("  Valeurs supportées : minilm, gemini")
         sys.exit(1)
+    if not router.has_configured_provider():
+        print("ERREUR : aucun fournisseur d'embedding configuré.")
+        sys.exit(1)
+
+    configured = [n for n in router.order if router.providers[n].is_configured()]
+    print(f"Embeddings via : {', '.join(configured)}")
 
     async with AsyncSessionLocal() as session:
         query = select(Page)
