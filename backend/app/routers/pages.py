@@ -16,6 +16,13 @@ async def list_pages(
 ):
     return await crud_pages.get_pages(db, skip=skip, limit=limit, category=category.value if category else None)
 
+@router.get("/search", response_model=List[PageResponse])
+async def search_pages(
+    q: str = Query(..., min_length=1, description="Texte à rechercher"),
+    db: AsyncSession = Depends(get_db),
+):
+    return await crud_pages.search_pages(db, q)
+
 @router.get("/{id}", response_model=PageResponse)
 async def read_page(id: str, db: AsyncSession = Depends(get_db)):
     page = await crud_pages.get_page(db, id)
