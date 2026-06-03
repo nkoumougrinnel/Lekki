@@ -111,11 +111,13 @@ Client (Frontend / curl / test_api.py)
 
 ### Flux question RAG (`POST /ask`)
 
-1. Embedding de la question (Gemini, tâche `RETRIEVAL_QUERY`)
-2. Chargement de tous les `chunks` avec vecteur
-3. Score cosinus, top **4** chunks
+1. Validation optionnelle du `chat_id` (404 si conversation absente)
+2. Embedding de la question (Gemini, tâche `RETRIEVAL_QUERY`)
+3. Chargement de tous les `chunks` avec vecteur → score cosinus, top **4**
 4. `LLMProviderRouter` : essaie **Gemini**, puis **Groq**, puis **Cerebras**
-5. Réponse `{ answer, sources: [page_id, ...], provider: "groq" }`
+5. Sources enrichies `{ page_id, excerpt, score }` + `confidence` (meilleur cosinus)
+6. Si `chat_id` : insertion de 2 lignes dans `messages` (user + assistant)
+7. Réponse `{ message_id, user_message_id, answer, sources, confidence, provider }`
 
 > **Note** : `/ask` n’est pas encore protégé par JWT. Si tous les fournisseurs échouent → **503** avec détail des erreurs.
 
@@ -136,11 +138,13 @@ backend/
 │   │   ├── chat.py             # Chat, Message
 │   │   └── lekki_class_diagram.html
 │   ├── schemas/
-│   │   └── page.py             # PageCreate, PageUpdate, PageResponse
+│   │   ├── page.py             # PageCreate, PageUpdate, PageResponse
+│   │   └── chat.py             # ChatCreate, ChatResponse, MessageResponse
 │   ├── routers/
 │   │   ├── auth.py             # login, me
 │   │   ├── pages.py            # CRUD + search
 │   │   ├── rag.py              # /ask
+│   │   ├── chats.py            # /chats
 │   │   └── internal.py         # /internal/embed
 │   ├── services/
 │   │   ├── auth_service.py
@@ -149,12 +153,15 @@ backend/
 │   │   ├── llm_providers/          # gemini, groq, cerebras, router
 │   │   └── embedding_providers/    # gemini, router
 │   └── utils/
-│       └── pages.py
+│       ├── pages.py
+│       └── chats.py
 ├── tests/
 │   ├── conftest.py
 │   ├── test_models.py
 │   ├── test_routes.py
-│   └── test_llm_failover.py
+│   ├── test_llm_failover.py
+│   ├── test_ask.py
+│   └── test_chats.py
 ├── migrations/
 │   └── versions/
 │       ├── 001_initial_mvp_schema.py
@@ -413,7 +420,7 @@ POST /ask
        1. gemini   — si clé + pas en cooldown
        2. groq     — si Gemini quota / 429
        3. cerebras — si Groq indisponible
-  → { answer, sources, provider }
+  → { message_id, user_message_id, answer, sources, confidence, provider }
 ```
 
 | Comportement | Détail |

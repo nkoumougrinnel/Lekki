@@ -231,7 +231,7 @@ Mise à jour partielle.
 
 ### `POST /ask` ✓
 
-Pose une question au wiki.
+Pose une question au wiki et, si `chat_id` est fourni, enregistre la paire user/assistant dans `messages`.
 
 **Pipeline** : embedding requête (Gemini) → top 4 chunks (cosinus) → génération avec **bascule** `gemini` → `groq` → `cerebras`.
 
@@ -241,35 +241,79 @@ Pose une question au wiki.
 
 ```json
 {
-  "question": "Comment déployer avec Docker ?"
+  "question": "Comment déployer avec Docker ?",
+  "chat_id": "b0000000-0000-4000-8000-000000000010"
 }
 ```
+
+| Champ | Requis | Description |
+|-------|--------|-------------|
+| `question` | oui | Texte de la question (min. 1 caractère) |
+| `chat_id` | non | UUID d'une conversation existante (`chats.id`). **JWT requis** si présent. Deux lignes créées dans `messages`. |
 
 **Réponse 200 — succès**
 
 ```json
 {
+  "message_id": "c0000000-0000-4000-8000-000000000021",
+  "user_message_id": "c0000000-0000-4000-8000-000000000020",
   "answer": "Pour déployer, exécutez docker compose up -d depuis la racine...",
-  "sources": ["b0000000-0000-4000-8000-000000000002"],
+  "sources": [
+    {
+      "page_id": "b0000000-0000-4000-8000-000000000002",
+      "excerpt": "Pour déployer l'application, exécutez docker compose up -d…",
+      "score": 0.8724
+    }
+  ],
+  "confidence": 0.8724,
   "provider": "gemini"
 }
 ```
 
 | Champ | Description |
 |-------|-------------|
-| `answer` | Texte généré |
-| `sources` | IDs des pages sources (top chunks) |
+| `message_id` | ID du message **assistant** (`messages.id`), `null` si pas de `chat_id` |
+| `user_message_id` | ID du message **user**, `null` si pas de `chat_id` |
+| `answer` | Texte généré (lu aussi comme `content` côté front) |
+| `sources` | Pages citées — une entrée par `page_id` (score max), format aligné sur `messages.sources` |
+| `confidence` | Score sémantique **0–1** (meilleur cosinus des chunks retenus) ; le front l’affiche en % |
 | `provider` | Fournisseur ayant répondu : `gemini`, `groq` ou `cerebras` |
+
+**Persistance base**
+
+Lorsque `chat_id` est fourni :
+
+| Colonne | Message user | Message assistant |
+|---------|--------------|-------------------|
+| `chat_id` | FK vers `chats.id` | idem |
+| `role` | `user` | `assistant` |
+| `content` | `question` | `answer` |
+| `sources` | `null` | JSON `[{page_id, excerpt, score}]` |
+| `tokens_used` | estimation (`len` mots) | idem |
 
 **Réponse 200 — aucun contexte**
 
 ```json
 {
+  "message_id": "c0000000-0000-4000-8000-000000000021",
+  "user_message_id": "c0000000-0000-4000-8000-000000000020",
   "answer": "Je n'ai trouvé aucune information dans le wiki pour répondre à votre question.",
   "sources": [],
+  "confidence": 0.0,
   "provider": null
 }
 ```
+
+**Erreurs**
+
+| Code | Cause typique |
+|------|----------------|
+| `404` | `chat_id` inconnu |
+| `401` | `chat_id` fourni sans JWT |
+| `403` | `chat_id` appartient à un autre utilisateur |
+| `422` | `question` vide ou corps invalide |
+| `503` | Quota / erreur sur tous les fournisseurs **configurés** |
+| `500` | Erreur non gérée (vérifier logs serveur) |
 
 **Réponse 503 — tous fournisseurs indisponibles**
 
@@ -285,16 +329,19 @@ Pose une question au wiki.
 }
 ```
 
-**Erreurs**
+**Intégration frontend** (`envoyerMessageChat`)
 
-| Code | Cause typique |
-|------|----------------|
-| `503` | Quota / erreur sur tous les fournisseurs **configurés** |
-| `500` | Erreur non gérée (vérifier logs serveur) |
+```javascript
+// Envoi
+POST /ask  →  { question, chat_id }
 
-**Champs planifiés**
-
-- `confidence`, sources enrichies, persistance `chat_id`
+// Champs lus
+message_id      → id message assistant
+user_message_id → id message user (optionnel UI)
+answer          → content affiché
+sources         → citations (excerpt / page_id)
+confidence      → × 100 pour le badge %
+```
 
 ---
 
@@ -323,24 +370,146 @@ Pose une question au wiki.
 
 ---
 
-## Chats ○
+## Chats ✓
 
-Tables `chats` et `messages` présentes en base. **Routes non implémentées.**
+Conversations RAG liées à l'utilisateur connecté. Tables `chats` et `messages`.
 
-| Méthode | Route | Statut |
-|---------|-------|--------|
-| `GET` | `/chats` | ○ |
-| `GET` | `/chats/{id}` | ○ |
-| `POST` | `/chats` | ○ |
-| `DELETE` | `/chats/{id}` | ○ |
-| `GET` | `/chats/{id}/messages` | ○ |
+**Auth** : JWT requis sur toutes les routes (`Authorization: Bearer <token>`)
 
-Règles prévues :
+### `GET /chats` ✓
 
-- `GET /chats` : uniquement les chats de `current_user`
-- Routes `/{id}` : `chat.user_id == current_user.id` sinon `403`
+Liste les conversations de l'utilisateur connecté, triées par `updated_at` décroissant (la plus récente en premier — utilisée par `recupererHistoriqueChat`).
 
-Corps attendu `POST /chats` : `{ "title": "..." }`
+**Réponse 200**
+
+```json
+[
+  {
+    "id": "b0000000-0000-4000-8000-000000000010",
+    "title": "Comment déployer ?",
+    "user_id": "a0000000-0000-4000-8000-000000000001",
+    "created_at": "2026-06-03T10:00:00",
+    "updated_at": "2026-06-03T10:05:00"
+  }
+]
+```
+
+**Erreurs** : `401` si non authentifié
+
+---
+
+### `POST /chats` ✓
+
+Crée une conversation.
+
+**Corps**
+
+```json
+{
+  "title": "Nouvelle conversation"
+}
+```
+
+**Réponse 201**
+
+```json
+{
+  "id": "b0000000-0000-4000-8000-000000000010",
+  "title": "Nouvelle conversation",
+  "user_id": "a0000000-0000-4000-8000-000000000001",
+  "created_at": "2026-06-03T10:00:00",
+  "updated_at": "2026-06-03T10:00:00"
+}
+```
+
+| Champ | Description |
+|-------|-------------|
+| `title` | Titre affiché (1–200 caractères). Le front tronque la question à 80 caractères. |
+
+**Erreurs** : `401`, `422` (titre vide)
+
+---
+
+### `GET /chats/{id}` ✓
+
+Détail d'une conversation.
+
+**Réponse 200** : même schéma qu'un élément de `GET /chats`
+
+**Erreurs**
+
+| Code | Cause |
+|------|-------|
+| `401` | Non authentifié |
+| `403` | Conversation d'un autre utilisateur |
+| `404` | ID inconnu |
+
+---
+
+### `DELETE /chats/{id}` ✓
+
+Supprime la conversation et ses messages (cascade SQL).
+
+**Réponse 204** (sans corps)
+
+**Erreurs** : `401`, `403`, `404`
+
+---
+
+### `GET /chats/{id}/messages` ✓
+
+Historique des messages d'une conversation, ordre chronologique.
+
+**Query**
+
+| Param | Défaut | Description |
+|-------|--------|-------------|
+| `limit` | `50` | Nombre max de messages (1–100) |
+
+**Réponse 200**
+
+```json
+[
+  {
+    "id": "c0000000-0000-4000-8000-000000000020",
+    "chat_id": "b0000000-0000-4000-8000-000000000010",
+    "role": "user",
+    "content": "Combien de jours de congés ?",
+    "sources": null,
+    "tokens_used": 5,
+    "created_at": "2026-06-03T10:01:00"
+  },
+  {
+    "id": "c0000000-0000-4000-8000-000000000021",
+    "chat_id": "b0000000-0000-4000-8000-000000000010",
+    "role": "assistant",
+    "content": "Selon la politique interne, 25 jours...",
+    "sources": "[{\"page_id\": \"...\", \"excerpt\": \"...\", \"score\": 0.97}]",
+    "tokens_used": 58,
+    "created_at": "2026-06-03T10:01:05"
+  }
+]
+```
+
+| Champ | Description |
+|-------|-------------|
+| `role` | `user` ou `assistant` |
+| `sources` | JSON string (messages assistant) — parsé par `normaliserMessage` côté front |
+| `content` | Texte du message |
+
+**Erreurs** : `401`, `403`, `404`
+
+**Intégration frontend**
+
+```javascript
+// Historique au chargement
+GET /chats                          → chats[0] = conversation active
+GET /chats/{id}/messages?limit=50   → messages affichés
+
+// Nouvelle question
+POST /chats  →  { title }         → nouveau.id
+POST /ask     →  { question, chat_id: nouveau.id }
+```
 
 ---
 
@@ -441,11 +610,11 @@ Règles prévues :
 | 9 | `DELETE` | `/pages/{id}` | ✓ |
 | 10 | `POST` | `/ask` | ✓ |
 | 11 | `GET` | `/llm/status` | ✓ |
-| 12 | `GET` | `/chats` | ○ |
-| 13 | `GET` | `/chats/{id}` | ○ |
-| 14 | `POST` | `/chats` | ○ |
-| 15 | `DELETE` | `/chats/{id}` | ○ |
-| 16 | `GET` | `/chats/{id}/messages` | ○ |
+| 12 | `GET` | `/chats` | ✓ |
+| 13 | `GET` | `/chats/{id}` | ✓ |
+| 14 | `POST` | `/chats` | ✓ |
+| 15 | `DELETE` | `/chats/{id}` | ✓ |
+| 16 | `GET` | `/chats/{id}/messages` | ✓ |
 | 17 | `POST` | `/internal/embed/{page_id}` | ✓ |
 | 18 | `DELETE` | `/internal/embed/{page_id}` | ○ |
 | 19 | `GET` | `/users` | ○ |

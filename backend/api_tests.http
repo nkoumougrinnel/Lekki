@@ -57,13 +57,34 @@ Authorization: Bearer {{token}}
 POST {{baseUrl}}/internal/embed/{{pageId}}
 X-Internal-Key: {{internalKey}}
 
-### Question RAG
+### Question RAG (`POST /ask`)
 POST {{baseUrl}}/ask
 Content-Type: application/json
 
 {
     "question": "Comment déployer avec Docker ?"
 }
+
+### Créer une conversation
+# @name createChat
+POST {{baseUrl}}/chats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "Comment déployer avec Docker ?"
+}
+
+###
+@chatId = {{createChat.response.body.id}}
+
+### Historique des messages
+GET {{baseUrl}}/chats/{{chatId}}/messages?limit=50
+Authorization: Bearer {{token}}
+
+### Liste des conversations
+GET {{baseUrl}}/chats
+Authorization: Bearer {{token}}
 
 ### Santé (hors /api/v1)
 GET http://localhost:8000/health
