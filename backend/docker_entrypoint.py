@@ -23,14 +23,27 @@ def main() -> None:
     if os.getenv("GEMINI_API_KEY"):
         try:
             if asyncio.run(_needs_rag_index()):
-                print("Indexation RAG initiale…")
-                subprocess.run([sys.executable, "-m", "scripts.index_rag"], check=False)
+                print("Indexation RAG en arrière-plan…")
+                subprocess.Popen(
+                    [sys.executable, "-m", "scripts.index_rag"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                )
         except Exception as exc:
             print(f"index_rag ignoré : {exc}")
 
     os.execvp(
-        "uvicorn",
-        ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
+        sys.executable,
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "app.main:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
+        ],
     )
 
 
