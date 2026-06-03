@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:8000/api/v1
 @creatorId = a0000000-0000-4000-8000-000000000002
+@internalKey = lekki-internal-secret-key
 
 ### Liste des pages
 GET {{baseUrl}}/pages/
@@ -30,3 +31,11 @@ Content-Type: application/json
     "title": "Titre mis à jour",
     "content": "Nouveau contenu"
 }
+
+### Forcer l'embedding RAG (Interne)
+POST {{baseUrl}}/internal/embed/{{pageId}}
+X-Internal-Key: {{internalKey}}
+
+### Tester la recherche
+GET {{baseUrl}}/pages/search?q=test
+Accept: application/json

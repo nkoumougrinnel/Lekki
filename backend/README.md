@@ -11,7 +11,7 @@ API REST **FastAPI** pour le wiki d’entreprise Lekki : pages Markdown, RAG, ch
 | Framework | FastAPI + Uvicorn |
 | ORM | SQLAlchemy 2 (async) |
 | Base | SQLite (`data/wiki.db`) |
-| Migrations | Alembic |
+| Recherche | SQLite FTS5 (Full-Text Search) |
 | Migrations | Alembic (dossier `migrations/`) |
 | Validation API | Pydantic v2 |
 | Auth (prévu) | JWT (`python-jose`, `passlib` / bcrypt) |
@@ -94,7 +94,7 @@ Depuis la racine du monorepo (venv recommandé à la racine `Lekki/`) :
 
 ```bash
 cd backend
-pip install -r requirements.txt
+pip install fastapi uvicorn sqlalchemy aiosqlite alembic pydantic bcrypt google-generativeai langchain-text-splitters numpy
 cp .env.example .env
 ```
 
@@ -103,6 +103,7 @@ Variables utiles (voir `.env.example`) :
 | Variable | Description |
 |----------|-------------|
 | `SECRET_KEY` | Clé JWT (à changer en prod) |
+| `GOOGLE_API_KEY` | Clé API pour les modèles Gemini (Google AI Studio) |
 | `SEED_PASSWORD` | Mot de passe des comptes de démo (défaut : `lekki123`) |
 | `DATABASE_URL` | Optionnel — défaut : `sqlite+aiosqlite:///<backend>/data/wiki.db` |
 
