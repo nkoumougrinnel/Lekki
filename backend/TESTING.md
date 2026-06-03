@@ -97,6 +97,8 @@ pytest tests/ -v
 pytest tests/test_models.py -v      # Modèles SQLAlchemy
 pytest tests/test_routes.py -v      # Auth + pages (JWT, rôles)
 pytest tests/test_llm_failover.py -v  # Bascule LLM (mocks)
+pytest tests/test_chats.py -v        # Conversations + messages (JWT)
+pytest tests/test_ask.py -v         # Contrat /ask + persistance messages
 pytest tests/test_auth.py -v        # Auth (si présent)
 ```
 
@@ -107,6 +109,8 @@ pytest tests/test_auth.py -v        # Auth (si présent)
 | `test_models.py` | User, Page, Chunk, Chat, Message, mots de passe |
 | `test_routes.py` | Login, `/auth/me`, CRUD pages, permissions |
 | `test_llm_failover.py` | Router Gemini→Groq→Cerebras, `/ask` mocké, `503`, `/llm/status` |
+| `test_ask.py` | Contrat frontend (`message_id`, `confidence`, sources enrichies), persistance `messages`, `404` chat |
+| `test_chats.py` | CRUD conversations, messages, isolation utilisateur, flux frontend |
 
 **Attendu :** `47 passed` (ou plus si de nouveaux tests sont ajoutés).
 

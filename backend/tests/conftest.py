@@ -149,3 +149,16 @@ async def sample_page(db: AsyncSession, admin_user: User) -> Page:
     await db.commit()
     await db.refresh(page)
     return page
+
+
+# ---------------------------------------------------------------------------
+# Chat de test
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture
+async def sample_chat(db: AsyncSession, reader_user: User) -> Chat:
+    chat = Chat(title="Conversation de test", user_id=reader_user.id)
+    db.add(chat)
+    await db.commit()
+    await db.refresh(chat)
+    return chat
