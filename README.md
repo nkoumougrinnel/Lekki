@@ -31,6 +31,7 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 ## Fonctionnalités actuelles
 
 ### Authentification & rôles
+
 - Inscription, connexion et profil via **JWT** (HS256), mots de passe hachés avec **bcrypt**.
 - Connexion par **email ou nom d'utilisateur**.
 - Trois rôles : **admin**, **editor**, **reader**.
@@ -40,6 +41,7 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - Contexte d'authentification côté front (`AuthProvider`/`AuthGate`), token persisté en `localStorage`, écran de connexion dédié.
 
 ### Gestion des pages (wiki)
+
 - **CRUD complet** des pages Markdown (création, lecture, mise à jour, suppression) selon le rôle.
 - **Catégories** : `rh`, `technique`, `commercial`, `guides`.
 - **Statut** : `draft` (brouillon / « Privé ») ou `published` (« Public »).
@@ -48,12 +50,14 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - **Compteur de vues** et indicateur d'indexation (`is_embedded`) par page.
 
 ### Sidebar (style explorateur VS Code)
-- Sections : **Favoris** (étoile dorée), **Privés**, **Groupes** _(à venir)_, **Publics**.
+
+- Sections : **Favoris** (étoile dorée), **Privés**, **Groupes** *(à venir)*, **Publics**.
 - **Favoris** gérés côté client (`localStorage`), étoile dorée par page pour ajouter/retirer.
 - Boutons d'ajout rapide de page (au survol des sections, + barre d'outils en haut), suppression de page pour les rôles autorisés.
 
 ### Assistant IA — Lekki AI
-- Chat connecté au endpoint **`POST /ask`** (RAG réel).
+
+- Chat connecté au endpoint `**POST /ask`** (RAG réel).
 - **Sources cliquables** : chaque réponse liste les pages utilisées (titre + score) ; un clic **ouvre la page dans l'éditeur**.
 - **Score de confiance** affiché (basé sur la similarité cosinus du meilleur passage).
 - **Détection des salutations / small-talk** : répond poliment sans interroger inutilement le RAG.
@@ -61,6 +65,7 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - Panneau refermable et **bouton flottant** pour le rouvrir.
 
 ### Pipeline RAG & fournisseurs
+
 - **Chunking** via LangChain `RecursiveCharacterTextSplitter` (512 / overlap 64, séparateurs Markdown).
 - **Embeddings** stockés en base (vecteurs `float32`), recherche par **similarité cosinus** (top-4).
 - **Fournisseurs d'embeddings** avec bascule : **MiniLM** (`all-MiniLM-L6-v2`, local, sans clé) puis **Gemini** (fallback).
@@ -68,18 +73,22 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - Endpoints d'état : `GET /llm/status` et `GET /embedding/status`.
 
 ### Conversations
+
 - Historique de conversations par utilisateur (`/chats`), persistance des messages et de leurs sources (JSON).
 
 ### Administration
+
 - Gestion des utilisateurs réservée aux admins : liste, consultation, **changement de rôle**, suppression (protections anti auto-modification).
 
 ### UI / UX
+
 - **React + Vite + TailwindCSS** avec composants shadcn/ui et icônes lucide-react.
 - **Mode clair / sombre** (clair par défaut), contrastes corrigés.
 - **Barre de défilement** discrète accordée au thème.
 - Rendu Markdown des réponses via **Streamdown**.
 
 ### Déploiement
+
 - **Docker Compose** : services `backend` (FastAPI/Uvicorn) + `frontend` (build Vite servi par **Nginx**), volume persistant pour la base SQLite, healthcheck backend.
 
 ---
@@ -121,27 +130,34 @@ Page Markdown → Chunking (512 / overlap 64)
 ## Stack technique
 
 ### Backend
-| Composant          | Technologie                                                  |
-| ------------------ | ------------------------------------------------------------ |
-| Framework API      | FastAPI + Uvicorn (préfixe `/api/v1`)                        |
-| Base de données    | SQLite + SQLAlchemy **async**, migrations **Alembic**        |
-| Recherche texte    | SQLite **FTS5** (`pages_fts`)                                |
-| Embeddings         | `sentence-transformers` **all-MiniLM-L6-v2** (local) / Gemini |
-| Découpage RAG      | `langchain-text-splitters`                                   |
-| LLM                | **Gemini** (`google-genai`), **Groq**, **Cerebras** (failover) |
-| Authentification   | JWT HS256 (python-jose) + passlib/bcrypt                     |
+
+
+| Composant        | Technologie                                                    |
+| ---------------- | -------------------------------------------------------------- |
+| Framework API    | FastAPI + Uvicorn (préfixe `/api/v1`)                          |
+| Base de données  | SQLite + SQLAlchemy **async**, migrations **Alembic**          |
+| Recherche texte  | SQLite **FTS5** (`pages_fts`)                                  |
+| Embeddings       | `sentence-transformers` **all-MiniLM-L6-v2** (local) / Gemini  |
+| Découpage RAG    | `langchain-text-splitters`                                     |
+| LLM              | **Gemini** (`google-genai`), **Groq**, **Cerebras** (failover) |
+| Authentification | JWT HS256 (python-jose) + passlib/bcrypt                       |
+
 
 ### Frontend
-| Composant         | Technologie                          |
-| ----------------- | ------------------------------------ |
-| Framework         | React 18 + TypeScript (Vite)         |
-| Styles & UI       | TailwindCSS + shadcn/ui              |
-| Icônes            | lucide-react                         |
-| Rendu Markdown    | Streamdown                           |
-| Gestionnaire pkg  | pnpm                                 |
-| État / contextes  | React Context (auth, thème)          |
+
+
+| Composant        | Technologie                  |
+| ---------------- | ---------------------------- |
+| Framework        | React 18 + TypeScript (Vite) |
+| Styles & UI      | TailwindCSS + shadcn/ui      |
+| Icônes           | lucide-react                 |
+| Rendu Markdown   | Streamdown                   |
+| Gestionnaire pkg | pnpm                         |
+| État / contextes | React Context (auth, thème)  |
+
 
 ### Infrastructure
+
 - **Docker Compose** (backend + frontend), **Nginx** pour servir le SPA en production.
 - **SQLite WAL** : pas de serveur de base à gérer, données dans un volume.
 
@@ -150,6 +166,7 @@ Page Markdown → Chunking (512 / overlap 64)
 ## Installation et démarrage
 
 ### Prérequis
+
 - Docker ≥ 24 et Docker Compose ≥ 2.20, **ou**
 - Python 3.11+ et Node 20+ (+ `pnpm`) pour le développement local.
 
@@ -161,9 +178,9 @@ Page Markdown → Chunking (512 / overlap 64)
 docker compose up --build
 ```
 
-- **Frontend** → http://localhost:3000
-- **API** → http://localhost:8000
-- **Swagger UI** → http://localhost:8000/docs
+- **Frontend** → [http://localhost:3000](http://localhost:3000)
+- **API** → [http://localhost:8000](http://localhost:8000)
+- **Swagger UI** → [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### Option B — Développement local
 
@@ -290,6 +307,7 @@ Lekki/
 Toutes les routes sont préfixées par `/api/v1`. Documentation interactive sur `/docs`.
 
 ### Authentification
+
 ```
 POST   /api/v1/auth/register     { email, username, password } → { access_token, user }
 POST   /api/v1/auth/login        (form: username, password)    → { access_token, user }
@@ -297,6 +315,7 @@ GET    /api/v1/auth/me           → profil de l'utilisateur courant
 ```
 
 ### Pages
+
 ```
 GET    /api/v1/pages             ?category=&skip=&limit=        (authentifié)
 GET    /api/v1/pages/search      ?q=<texte>                     (FTS, authentifié)
@@ -307,6 +326,7 @@ DELETE /api/v1/pages/{id}        (admin)
 ```
 
 ### Assistant (RAG)
+
 ```
 POST   /api/v1/ask               { question, chat_id? }
        → { answer, sources: [{ page_id, title, excerpt, score }], confidence, provider }
@@ -315,6 +335,7 @@ GET    /api/v1/embedding/status  état des fournisseurs d'embeddings
 ```
 
 ### Conversations
+
 ```
 GET    /api/v1/chats
 POST   /api/v1/chats             { title }
@@ -324,6 +345,7 @@ GET    /api/v1/chats/{id}/messages   ?limit=
 ```
 
 ### Utilisateurs (admin)
+
 ```
 GET    /api/v1/users/
 GET    /api/v1/users/{id}
@@ -332,6 +354,7 @@ DELETE /api/v1/users/{id}
 ```
 
 ### Exemple (PowerShell)
+
 ```powershell
 curl.exe -X POST "http://127.0.0.1:8000/api/v1/auth/login" -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin@lekki.local&password=lekki123"
 # Puis :
@@ -343,6 +366,7 @@ curl.exe -H "Authorization: Bearer <token>" "http://127.0.0.1:8000/api/v1/auth/m
 ## Pipeline RAG
 
 ### Découpage (chunking)
+
 ```python
 RecursiveCharacterTextSplitter(
     chunk_size=512,
@@ -352,18 +376,21 @@ RecursiveCharacterTextSplitter(
 ```
 
 ### Embeddings
+
 ```
 all-MiniLM-L6-v2  (local, 384 dimensions, sans clé API)  →  fallback Gemini
 Vecteurs stockés en float32 dans la table `chunks`.
 ```
 
 ### Recherche & confiance
+
 ```
 Similarité cosinus entre la requête et chaque chunk  →  top-4
 confidence = meilleure similarité (borné [0, 1])
 ```
 
 ### Réindexation après modification de contenu
+
 ```bash
 cd backend
 python -m scripts.seed        # rafraîchit le contenu des pages de démo + FTS
@@ -376,19 +403,23 @@ python -m scripts.index_rag   # recalcule les embeddings de toutes les pages
 
 `python -m scripts.seed` crée 3 comptes (mot de passe : valeur de `SEED_PASSWORD`, par défaut `lekki123`) et 7 pages wiki :
 
-| Compte               | Rôle   |
-| -------------------- | ------ |
-| admin@lekki.local    | admin  |
-| editor@lekki.local   | editor |
-| reader@lekki.local   | reader |
+
+| Compte                                          | Rôle   |
+| ----------------------------------------------- | ------ |
+| [admin@lekki.local](mailto:admin@lekki.local)   | admin  |
+| [editor@lekki.local](mailto:editor@lekki.local) | editor |
+| [reader@lekki.local](mailto:reader@lekki.local) | reader |
+
 
 Pages de démo : Politique de congés · Onboarding · Remboursement des frais · Charte IT · Guide télétravail · Recrutement interne · Architecture technique (Stack Lekki).
 
 ### Questions de démo recommandées
-- _« Combien de jours de congés payés par an ? »_
-- _« Que faire le premier jour d'onboarding ? »_
-- _« Quel est le plafond repas client ? »_
-- _« Quelle est la longueur minimale d'un mot de passe ? »_
-- _« Combien de jours de télétravail par semaine ? »_
 
-> Après le seed, lancez **`python -m scripts.index_rag`** pour que l'assistant puisse répondre.
+- *« Combien de jours de congés payés par an ? »*
+- *« Que faire le premier jour d'onboarding ? »*
+- *« Quel est le plafond repas client ? »*
+- *« Quelle est la longueur minimale d'un mot de passe ? »*
+- *« Combien de jours de télétravail par semaine ? »*
+
+> Après le seed, lancez `**python -m scripts.index_rag*`* pour que l'assistant puisse répondre.
+
