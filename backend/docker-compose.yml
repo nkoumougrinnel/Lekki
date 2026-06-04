@@ -1,0 +1,30 @@
+# Backend seul — depuis backend/ :
+#   docker compose up --build
+#
+# Ou depuis la racine :
+#   docker compose up --build backend
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lekki-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./data/wiki.db
+      SYNC_DATABASE_URL: sqlite:///./data/wiki.db
+      EMBEDDING_PROVIDER_ORDER: gemini
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped

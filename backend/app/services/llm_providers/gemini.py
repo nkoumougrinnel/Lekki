@@ -17,19 +17,21 @@ def _import_genai() -> Any:
 class GeminiLLMProvider(BaseLLMProvider):
     name = "gemini"
 
-    def __init__(self, cooldown_minutes: int) -> None:
+    def __init__(self, cooldown_minutes: int, api_key: str | None = None) -> None:
         super().__init__(cooldown_minutes)
+        # Clé explicite (rotation) ou repli sur la clé unique de configuration.
+        self._api_key = api_key if api_key is not None else settings.GEMINI_API_KEY
         self._client: Any = None
 
     @property
     def client(self) -> Any:
         if self._client is None:
             genai = _import_genai()
-            self._client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            self._client = genai.Client(api_key=self._api_key)
         return self._client
 
     def is_configured(self) -> bool:
-        if not settings.GEMINI_API_KEY.strip():
+        if not (self._api_key or "").strip():
             return False
         try:
             _import_genai()

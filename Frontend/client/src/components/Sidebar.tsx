@@ -1,76 +1,212 @@
 import { WikiDocument } from '@/types/wiki';
-import { ChevronDown, ChevronRight, Folder, FileText, Lock, Globe } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  FilePlus,
+  Plus,
+  Trash2,
+  Loader2,
+  Star,
+  Upload,
+} from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+export type SidebarSection = 'favoris' | 'prives' | 'groupes' | 'publics';
 
 interface SidebarProps {
   documents: WikiDocument[];
+  loading?: boolean;
+  canEdit?: boolean;
   onSelectDocument: (doc: WikiDocument) => void;
+  onCreateDocument: (section: 'prives' | 'publics') => void;
+  onDeleteDocument?: (id: string) => void;
+  onImport?: () => void;
   selectedDocId?: string;
+  /** Ouverture du tiroir sur mobile (ignoré ≥ md où la sidebar est statique). */
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ documents, onSelectDocument, selectedDocId }: SidebarProps) {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['doc-1']));
+const SECTIONS: { key: SidebarSection; label: string; canAdd: boolean }[] = [
+  { key: 'favoris', label: 'Favoris', canAdd: false },
+  { key: 'prives', label: 'Privés', canAdd: true },
+  { key: 'groupes', label: 'Groupes', canAdd: false },
+  { key: 'publics', label: 'Publics', canAdd: true },
+];
 
-  const toggleFolder = (id: string) => {
-    const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedFolders(newExpanded);
+const FAVORITES_KEY = 'lekki_favorites';
+
+function loadFavorites(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function Sidebar({
+  documents,
+  loading,
+  canEdit,
+  onSelectDocument,
+  onCreateDocument,
+  onDeleteDocument,
+  onImport,
+  selectedDocId,
+  mobileOpen = false,
+  onMobileClose,
+}: SidebarProps) {
+  const [collapsed, setCollapsed] = useState<Set<SidebarSection>>(
+    () => new Set<SidebarSection>(['groupes']),
+  );
+  const [hovered, setHovered] = useState<SidebarSection | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
+  const [docToDelete, setDocToDelete] = useState<WikiDocument | null>(null);
+
+  const toggleSection = (section: SidebarSection) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
   };
 
-  const renderDocument = (doc: WikiDocument, level: number = 0) => {
-    const isExpanded = expandedFolders.has(doc.id);
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const documentsFor = (section: SidebarSection): WikiDocument[] => {
+    switch (section) {
+      case 'favoris':
+        return documents.filter((d) => favorites.has(d.id));
+      case 'prives':
+        return documents.filter((d) => !d.access.public);
+      case 'publics':
+        return documents.filter((d) => d.access.public);
+      case 'groupes':
+        return [];
+    }
+  };
+
+  const renderDocument = (doc: WikiDocument) => {
     const isSelected = selectedDocId === doc.id;
+    const isFav = favorites.has(doc.id);
+    return (
+      <div
+        key={doc.id}
+        className={`group/doc flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors ${
+          isSelected ? 'bg-primary/20 text-primary' : 'hover:bg-secondary text-foreground'
+        }`}
+        onClick={() => onSelectDocument(doc)}
+      >
+        <FileText size={16} className="text-muted-foreground flex-shrink-0" />
+        <span className="flex-1 text-sm font-medium truncate">{doc.title}</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(doc.id);
+          }}
+          className={`p-1 rounded hover:bg-background transition-opacity ${
+            isFav ? 'opacity-100' : 'opacity-0 group-hover/doc:opacity-100'
+          }`}
+          title={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        >
+          <Star
+            size={13}
+            className={isFav ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}
+          />
+        </button>
+        {canEdit && onDeleteDocument && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDocToDelete(doc);
+            }}
+            className="opacity-0 group-hover/doc:opacity-100 p-1 hover:bg-background rounded transition-opacity"
+            title="Supprimer"
+          >
+            <Trash2 size={13} className="text-muted-foreground" />
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderSection = ({
+    key,
+    label,
+    canAdd,
+  }: {
+    key: SidebarSection;
+    label: string;
+    canAdd: boolean;
+  }) => {
+    const isCollapsed = collapsed.has(key);
+    const docs = documentsFor(key);
 
     return (
-      <div key={doc.id}>
+      <div key={key} className="mb-2">
         <div
-          className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors ${
-            isSelected
-              ? 'bg-emerald-100 text-emerald-900'
-              : 'hover:bg-smoke text-foreground'
-          }`}
-          style={{ marginLeft: `${level * 16}px` }}
+          className="flex items-center justify-between px-2 py-1.5 cursor-pointer hover:bg-secondary rounded-md transition-colors"
+          onMouseEnter={() => setHovered(key)}
+          onMouseLeave={() => setHovered(null)}
         >
-          {doc.isFolder ? (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFolder(doc.id);
-                }}
-                className="p-0 hover:bg-white rounded"
-              >
-                {isExpanded ? (
-                  <ChevronDown size={16} />
-                ) : (
-                  <ChevronRight size={16} />
-                )}
-              </button>
-              <Folder size={16} className="text-emerald-600" />
-            </>
-          ) : (
-            <>
-              <div className="w-4" />
-              <FileText size={16} className="text-sapphire-600" />
-            </>
+          <div className="flex items-center gap-2 flex-1" onClick={() => toggleSection(key)}>
+            {isCollapsed ? (
+              <ChevronRight size={14} className="text-muted-foreground" />
+            ) : (
+              <ChevronDown size={14} className="text-muted-foreground" />
+            )}
+            {key === 'favoris' && (
+              <Star size={13} className="flex-shrink-0 fill-amber-400 text-amber-400" />
+            )}
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {label}
+            </span>
+            <span className="text-xs text-muted-foreground">({docs.length})</span>
+          </div>
+          {canEdit && canAdd && (key === 'prives' || key === 'publics') && hovered === key && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateDocument(key);
+              }}
+              className="p-1 hover:bg-background rounded transition-colors"
+              title="Nouvelle page"
+            >
+              <Plus size={14} className="text-muted-foreground" />
+            </button>
           )}
-          <span
-            onClick={() => onSelectDocument(doc)}
-            className="flex-1 text-sm font-medium truncate"
-          >
-            {doc.title}
-          </span>
-          {!doc.access.public && <Lock size={12} className="text-mist" />}
         </div>
 
-        {doc.isFolder && isExpanded && doc.children && (
-          <div>
-            {doc.children.map((child) => renderDocument(child, level + 1))}
+        {!isCollapsed && (
+          <div className="mt-0.5">
+            {docs.length > 0 ? (
+              docs.map((doc) => renderDocument(doc))
+            ) : (
+              <div className="px-3 py-1.5 text-xs text-muted-foreground italic">
+                {key === 'groupes' ? 'Bientôt disponible' : 'Aucune page'}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -78,36 +214,95 @@ export function Sidebar({ documents, onSelectDocument, selectedDocId }: SidebarP
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-screen">
-      {/* Header */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-600 rounded-md flex items-center justify-center">
-            <span className="text-white font-bold">L</span>
+    <>
+      {/* Fond cliquable (mobile uniquement) */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border flex flex-col transition-transform duration-200 md:static md:z-auto md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+      {/* Brand */}
+      <div className="p-4 border-b border-border flex items-center gap-2">
+        <img src="/lekki_icon_emerald.svg" alt="Lekki" className="w-8 h-8 rounded-md" />
+        <h1 className="text-lg font-bold text-foreground">Lekki</h1>
+      </div>
+
+      {/* Toolbar (style VS Code) */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Pages
+        </span>
+        {canEdit && (
+          <div className="flex items-center gap-1">
+            {onImport && (
+              <button
+                onClick={onImport}
+                className="p-1 hover:bg-secondary rounded transition-colors"
+                title="Importer des documents (PDF, DOCX, TXT, Markdown)"
+              >
+                <Upload size={16} className="text-muted-foreground" />
+              </button>
+            )}
+            <button
+              onClick={() => onCreateDocument('prives')}
+              className="p-1 hover:bg-secondary rounded transition-colors"
+              title="Nouvelle page (privée)"
+            >
+              <FilePlus size={16} className="text-muted-foreground" />
+            </button>
           </div>
-          <h1 className="text-lg font-bold text-foreground">Lekki</h1>
-        </div>
+        )}
       </div>
 
-      {/* Navigation */}
+      {/* Sections */}
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="mb-4">
-          <h2 className="text-xs font-semibold text-muted uppercase tracking-wide px-3 py-2">
-            Documents
-          </h2>
-          {documents.map((doc) => renderDocument(doc))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" />
+            <span className="text-sm">Chargement…</span>
+          </div>
+        ) : (
+          SECTIONS.map(renderSection)
+        )}
+      </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border space-y-2">
-        <Button variant="outline" className="w-full text-sm">
-          + New Document
-        </Button>
-        <Button variant="ghost" className="w-full text-sm">
-          Settings
-        </Button>
-      </div>
-    </div>
+      <AlertDialog
+        open={docToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setDocToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la page&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {docToDelete
+                ? `« ${docToDelete.title} » sera définitivement supprimée. Cette action est irréversible.`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (docToDelete) onDeleteDocument?.(docToDelete.id);
+                setDocToDelete(null);
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

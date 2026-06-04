@@ -1,5 +1,6 @@
 import json
 import re
+import time
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,15 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.chat import Chat, Message
+from app.models.rag_query import RagQuery
 from app.models.user import User
-from app.services import llm_service, rag_service
+from app.services import llm_service, rag_service, workspace_service
 from app.services.auth_service import get_optional_user
 from app.services.embedding_providers import EmbeddingProviderRouter
 from app.services.llm_providers.base import AllProvidersFailedError
 from app.utils.chats import get_user_chat
 
 router = APIRouter(tags=["rag"])
-llm = llm_service.LLMService()
+llm = llm_service.get_llm_service()
 embedding_router = EmbeddingProviderRouter()
 
 NO_CONTEXT_ANSWER = (
@@ -52,6 +54,7 @@ def _is_smalltalk(text: str) -> bool:
 class QuestionRequest(BaseModel):
     question: str = Field(..., min_length=1)
     chat_id: str | None = None
+    workspace_id: str | None = None
 
 
 class AskResponse(BaseModel):
@@ -102,13 +105,42 @@ async def ask_lekki(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
+    chat = None
     if req.chat_id:
         if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Authentification requise pour associer une conversation",
             )
-        await get_user_chat(db, req.chat_id, current_user)
+        chat = await get_user_chat(db, req.chat_id, current_user)
+
+    # SÉCURITÉ RAG : ne fouiller que les chunks des workspaces de l'utilisateur.
+    # - utilisateur non authentifié → aucun workspace → aucune source.
+    # - si la conversation est rattachée à un workspace précis, on restreint à
+    #   ce seul workspace (et on vérifie que l'utilisateur y a accès).
+    workspace_ids = await workspace_service.get_accessible_workspace_ids(db, current_user)
+    if chat is not None and chat.workspace_id:
+        if chat.workspace_id not in workspace_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès refusé au workspace de cette conversation",
+            )
+        workspace_ids = [chat.workspace_id]
+    elif req.workspace_id:
+        # Le client demande de restreindre la recherche à un workspace précis.
+        if req.workspace_id not in workspace_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès refusé à ce workspace",
+            )
+        workspace_ids = [req.workspace_id]
+
+    # Workspace attribué à la trace analytics (workspace de scope si défini).
+    tracked_workspace_id: str | None = None
+    if chat is not None and chat.workspace_id:
+        tracked_workspace_id = chat.workspace_id
+    elif req.workspace_id:
+        tracked_workspace_id = req.workspace_id
 
     # Salutation / small-talk : réponse conviviale sans interroger le RAG.
     if _is_smalltalk(req.question):
@@ -117,7 +149,10 @@ async def ask_lekki(
         confidence = 0.0
         provider = None
     else:
-        scored_chunks = await rag_service.get_relevant_chunks(db, req.question)
+        started = time.perf_counter()
+        scored_chunks = await rag_service.get_relevant_chunks(
+            db, req.question, workspace_ids=workspace_ids
+        )
         sources = rag_service.build_sources(scored_chunks)
         sources = await rag_service.attach_page_titles(db, sources)
         confidence = rag_service.compute_confidence(scored_chunks)
@@ -127,8 +162,14 @@ async def ask_lekki(
             provider = None
         else:
             chunks = [c for _, c in scored_chunks]
+            # Mémoire conversationnelle : injecter les derniers échanges (questions de suivi).
+            history = (
+                await rag_service.get_recent_history(db, req.chat_id)
+                if req.chat_id
+                else None
+            )
             try:
-                answer, provider = await llm.ask_question(req.question, chunks)
+                answer, provider = await llm.ask_question(req.question, chunks, history)
             except AllProvidersFailedError as exc:
                 raise HTTPException(
                     status_code=503,
@@ -137,6 +178,21 @@ async def ask_lekki(
                         "errors": exc.errors,
                     },
                 ) from exc
+
+        # Tracking analytics : on enregistre chaque vraie question (hors small-talk).
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        db.add(
+            RagQuery(
+                user_id=current_user.id if current_user else None,
+                workspace_id=tracked_workspace_id,
+                question=req.question.strip(),
+                confidence=confidence,
+                provider=provider,
+                duration_ms=duration_ms,
+                had_results=bool(scored_chunks),
+            )
+        )
+        await db.commit()
 
     user_message_id: str | None = None
     message_id: str | None = None

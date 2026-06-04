@@ -1,4 +1,4 @@
-"""Point d'entrée Docker : seed, indexation RAG initiale, puis uvicorn."""
+"""Point d'entrée Docker : migrations, seed, index RAG optionnel, uvicorn."""
 
 from __future__ import annotations
 
@@ -17,21 +17,25 @@ async def _needs_rag_index() -> bool:
         return await rag_service.count_indexed_chunks(session) == 0
 
 
+def _maybe_index_rag() -> None:
+    try:
+        from app.services.embedding_providers import EmbeddingProviderRouter
+
+        router = EmbeddingProviderRouter()
+        if not router.has_configured_provider():
+            print("Aucun provider embedding configuré — index RAG ignoré.")
+            return
+        if not asyncio.run(_needs_rag_index()):
+            return
+        print("Indexation RAG en arrière-plan…")
+        subprocess.Popen([sys.executable, "-m", "scripts.index_rag"])
+    except Exception as exc:
+        print(f"index_rag ignoré : {exc}")
+
+
 def main() -> None:
     subprocess.run([sys.executable, "-m", "scripts.seed"], check=False)
-
-    if os.getenv("GEMINI_API_KEY"):
-        try:
-            if asyncio.run(_needs_rag_index()):
-                print("Indexation RAG en arrière-plan…")
-                subprocess.Popen(
-                    [sys.executable, "-m", "scripts.index_rag"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
-                )
-        except Exception as exc:
-            print(f"index_rag ignoré : {exc}")
-
+    _maybe_index_rag()
     os.execvp(
         sys.executable,
         [

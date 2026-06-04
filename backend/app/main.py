@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db
-from app.routers import pages, internal, auth, rag, chats, users
+from app.routers import pages, internal, auth, rag, chats, users, workspaces, imports, knowledge_map, system, analytics, audit
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +45,12 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(rag.router, prefix="/api/v1")
 app.include_router(chats.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(workspaces.router, prefix="/api/v1")
+app.include_router(imports.router, prefix="/api/v1")
+app.include_router(knowledge_map.router, prefix="/api/v1")
+app.include_router(system.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(audit.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

@@ -4,10 +4,19 @@ from app.models.page import Page
 from app.schemas.page import PageCreate, PageUpdate
 from app.services import rag_service
 
-async def get_pages(db: AsyncSession, skip: int = 0, limit: int = 20, category: str | None = None):
+async def get_pages(
+    db: AsyncSession,
+    skip: int = 0,
+    limit: int = 20,
+    category: str | None = None,
+    workspace_ids: list[str] | None = None,
+):
     query = select(Page)
     if category:
         query = query.where(Page.category == category)
+    # Cloisonnement : ne renvoyer que les pages des workspaces autorisés.
+    if workspace_ids is not None:
+        query = query.where(Page.workspace_id.in_(workspace_ids))
     result = await db.execute(query.offset(skip).limit(limit))
     return result.scalars().all()
 
@@ -37,6 +46,8 @@ async def create_page(db: AsyncSession, page_in: PageCreate, creator_id: str):
     # Déclenchement automatique du pipeline RAG (Chunking + Embeddings)
     try:
         await rag_service.embed_page(db, new_page.id)
+        # Recalcul des voisins sémantiques (pages liées).
+        await rag_service.compute_related_pages(db)
     except Exception as e:
         print(f"RAG Error on creation: {e}")
 
@@ -68,6 +79,8 @@ async def update_page(db: AsyncSession, page_id: str, page_in: PageUpdate):
     # Mise à jour automatique du pipeline RAG (Recalcul des chunks)
     try:
         await rag_service.embed_page(db, page_id)
+        # Recalcul des voisins sémantiques (pages liées).
+        await rag_service.compute_related_pages(db)
     except Exception as e:
         print(f"RAG Error on update: {e}")
 
@@ -92,7 +105,7 @@ async def delete_page(db: AsyncSession, page_id: str):
     await db.commit()
     return page
 
-async def search_pages(db: AsyncSession, query: str):
+async def search_pages(db: AsyncSession, query: str, workspace_ids: list[str] | None = None):
     clean_query = query.strip()
     if not clean_query:
         return []
@@ -111,10 +124,12 @@ async def search_pages(db: AsyncSession, query: str):
         
         if not ids:
             return []
-        
-        pages_result = await db.execute(
-            select(Page).where(Page.id.in_(ids))
-        )
+
+        pages_query = select(Page).where(Page.id.in_(ids))
+        # Cloisonnement : restreindre aux workspaces autorisés.
+        if workspace_ids is not None:
+            pages_query = pages_query.where(Page.workspace_id.in_(workspace_ids))
+        pages_result = await db.execute(pages_query)
         return pages_result.scalars().all()
     except Exception as e:
         print(f"FTS5 search error: {e}")

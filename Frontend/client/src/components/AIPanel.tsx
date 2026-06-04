@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, Send, FileText, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Bot, Send, FileText, X, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Streamdown } from 'streamdown';
-import { rag, ApiError, type AskSource } from '@/lib/api';
+import { rag, chats as chatsApi, ApiError, type AskSource } from '@/lib/api';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { TypewriterMarkdown } from './TypewriterMarkdown';
 
 interface Message {
   id: string;
@@ -12,6 +14,8 @@ interface Message {
   sources?: AskSource[];
   confidence?: number;
   provider?: string | null;
+  /** Anime la réponse en révélation progressive (effet « token par token »). */
+  animate?: boolean;
 }
 
 interface AIPanelProps {
@@ -19,22 +23,110 @@ interface AIPanelProps {
   onOpenSource?: (pageId: string) => void;
 }
 
+const WELCOME: Message = {
+  id: 'welcome',
+  role: 'assistant',
+  content: 'Bonjour ! Je suis Lekki AI. Posez-moi une question sur la base de connaissances.',
+};
+
+type ConfidenceTier = {
+  label: string;
+  text: string;
+  badge: string;
+  dot: string;
+  bar: string;
+};
+
+function confidenceTier(value: number): ConfidenceTier {
+  if (value >= 0.7) {
+    return {
+      label: 'Confiance élevée',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      badge: 'bg-emerald-500/15',
+      dot: 'bg-emerald-500',
+      bar: 'bg-emerald-500',
+    };
+  }
+  if (value >= 0.4) {
+    return {
+      label: 'Confiance moyenne',
+      text: 'text-amber-700 dark:text-amber-400',
+      badge: 'bg-amber-500/15',
+      dot: 'bg-amber-500',
+      bar: 'bg-amber-500',
+    };
+  }
+  return {
+    label: 'Confiance faible',
+    text: 'text-rose-700 dark:text-rose-400',
+    badge: 'bg-rose-500/15',
+    dot: 'bg-rose-500',
+    bar: 'bg-rose-500',
+  };
+}
+
+function ConfidenceBadge({ value }: { value: number }) {
+  const tier = confidenceTier(value);
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tier.badge} ${tier.text}`}
+      title={`Niveau de confiance : ${Math.round(value * 100)}%`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
+      {tier.label} · {Math.round(value * 100)}%
+    </span>
+  );
+}
+
+
 export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content:
-        'Bonjour ! Je suis Lekki AI. Posez-moi une question sur la base de connaissances.',
-    },
-  ]);
+  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
+  const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  // Ids des réponses dont l'animation « token par token » est terminée
+  // (on ne dévoile les sources qu'une fois le texte entièrement écrit).
+  const [typedDone, setTypedDone] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, []);
+
+  const markTyped = useCallback((id: string) => {
+    setTypedDone((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Changer de workspace démarre une nouvelle conversation (mémoire cloisonnée).
+  useEffect(() => {
+    setChatId(null);
+    setMessages([WELCOME]);
+  }, [activeWorkspaceId]);
+
+  const handleNewConversation = async () => {
+    if (isLoading) return;
+    const previous = chatId;
+    setChatId(null);
+    setMessages([WELCOME]);
+    // Efface la mémoire côté serveur (best-effort).
+    if (previous) {
+      try {
+        await chatsApi.clearContext(previous);
+      } catch {
+        /* non bloquant */
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     const question = input.trim();
@@ -50,7 +142,21 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
     setIsLoading(true);
 
     try {
-      const res = await rag.ask(question);
+      // Conversation persistante : créée à la 1re question pour activer la mémoire.
+      let currentChatId = chatId;
+      if (!currentChatId) {
+        const chat = await chatsApi.create(
+          question.slice(0, 60),
+          activeWorkspaceId ?? undefined,
+        );
+        currentChatId = chat.id;
+        setChatId(chat.id);
+      }
+
+      const res = await rag.ask(question, {
+        chatId: currentChatId,
+        workspaceId: activeWorkspaceId ?? undefined,
+      });
       setMessages((prev) => [
         ...prev,
         {
@@ -60,6 +166,7 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
           sources: res.sources,
           confidence: res.confidence,
           provider: res.provider,
+          animate: true,
         },
       ]);
     } catch (err) {
@@ -77,16 +184,35 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
   };
 
   return (
-    <div className="w-96 bg-background border-l border-border flex flex-col h-full">
+    <div className="fixed inset-0 z-40 w-full flex flex-col h-full bg-background border-l border-border md:static md:inset-auto md:z-auto md:w-96">
       {/* Header */}
       <div className="border-b border-border p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bot size={20} className="text-primary" />
-          <h2 className="font-semibold text-foreground">Lekki AI</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <Bot size={20} className="text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <h2 className="font-semibold text-foreground leading-tight">Lekki AI</h2>
+            {activeWorkspace && (
+              <p className="text-xs text-muted-foreground truncate" title={activeWorkspace.name}>
+                Workspace : {activeWorkspace.name}
+              </p>
+            )}
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
-          <X size={16} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNewConversation}
+            disabled={isLoading || messages.length <= 1}
+            className="p-1 h-auto"
+            title="Nouvelle conversation (efface le contexte)"
+          >
+            <RotateCcw size={15} />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
+            <X size={16} />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -97,48 +223,76 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs rounded-lg p-3 ${
+              className={`rounded-lg p-3 ${
                 message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground'
+                  ? 'max-w-xs bg-primary text-primary-foreground'
+                  : 'max-w-[90%] bg-secondary text-foreground'
               }`}
             >
               <div className="text-sm break-words">
-                <Streamdown>{message.content}</Streamdown>
+                {message.role === 'assistant' && message.animate && !typedDone.has(message.id) ? (
+                  <TypewriterMarkdown
+                    text={message.content}
+                    onDone={() => markTyped(message.id)}
+                    onProgress={scrollToBottom}
+                  />
+                ) : (
+                  <Streamdown>{message.content}</Streamdown>
+                )}
               </div>
 
-              {message.sources && message.sources.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
-                  <p className="text-xs font-semibold opacity-70">
-                    Sources
-                    {typeof message.confidence === 'number' && (
-                      <span className="font-normal">
-                        {' '}
-                        · confiance {Math.round(message.confidence * 100)}%
+              {message.sources &&
+                message.sources.length > 0 &&
+                (!message.animate || typedDone.has(message.id)) && (
+                  <div className="mt-3 space-y-2 border-t border-border/40 pt-3 duration-300 animate-in fade-in slide-in-from-bottom-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-60">
+                        Sources · {message.sources.length}
                       </span>
-                    )}
-                  </p>
-                  {message.sources.map((source) => (
-                    <button
-                      key={source.page_id}
-                      type="button"
-                      onClick={() => onOpenSource?.(source.page_id)}
-                      disabled={!onOpenSource}
-                      title="Ouvrir dans l'éditeur"
-                      className="w-full text-left text-xs opacity-80 -mx-1.5 rounded-md px-1.5 py-1 transition-colors enabled:cursor-pointer enabled:hover:bg-background/60 enabled:hover:opacity-100"
-                    >
-                      <div className="flex items-center gap-1 font-medium">
-                        <FileText size={12} className="flex-shrink-0" />
-                        <span className="flex-1 truncate">{source.title ?? 'Document'}</span>
-                        <span className="opacity-60">{Math.round(source.score * 100)}%</span>
-                      </div>
-                      {source.excerpt && (
-                        <p className="mt-0.5 pl-4 opacity-70 italic">« {source.excerpt} »</p>
+                      {typeof message.confidence === 'number' && (
+                        <ConfidenceBadge value={message.confidence} />
                       )}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    </div>
+                    <div className="space-y-1.5">
+                      {message.sources.map((source) => {
+                        const pct = Math.round(source.score * 100);
+                        return (
+                          <button
+                            key={source.page_id}
+                            type="button"
+                            onClick={() => onOpenSource?.(source.page_id)}
+                            disabled={!onOpenSource}
+                            title="Ouvrir dans l'éditeur"
+                            className="group/src w-full rounded-lg border border-border/50 bg-background/40 p-2 text-left transition-colors enabled:cursor-pointer enabled:hover:border-border enabled:hover:bg-background"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                <FileText size={12} />
+                              </span>
+                              <span className="flex-1 truncate text-xs font-medium">
+                                {source.title ?? 'Document'}
+                              </span>
+                              <span className="text-[10px] font-semibold tabular-nums opacity-70">
+                                {pct}%
+                              </span>
+                            </div>
+                            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-border/60">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${Math.max(4, pct)}%` }}
+                              />
+                            </div>
+                            {source.excerpt && (
+                              <p className="mt-1.5 line-clamp-2 text-[11px] italic opacity-70">
+                                « {source.excerpt} »
+                              </p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         ))}

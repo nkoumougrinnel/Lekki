@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Helvetica:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
+/* Helvetica n'est pas hébergée par Google Fonts : on s'appuie sur la pile
+   système (Helvetica/Arial selon l'OS) et on ne charge que Courier Prime. */
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -64,28 +66,31 @@
   --chart-4: var(--color-rose);
   --chart-5: var(--color-mist);
   --radius: 0.5rem;
-  --background: var(--color-white);
+  /* Mode clair — hiérarchie de profondeur :
+     canevas légèrement teinté (#F6F7F9) → surfaces blanches qui ressortent,
+     bordures visibles mais douces, texte secondaire assombri pour la lisibilité. */
+  --background: #F6F7F9;
   --foreground: var(--color-ink);
-  --card: var(--color-white);
+  --card: #FFFFFF;
   --card-foreground: var(--color-ink);
-  --popover: var(--color-white);
+  --popover: #FFFFFF;
   --popover-foreground: var(--color-ink);
-  --secondary: var(--color-smoke);
+  --secondary: #ECEEF2;
   --secondary-foreground: var(--color-ink);
-  --muted: var(--color-smoke);
-  --muted-foreground: var(--color-mist);
+  --muted: #ECEEF2;
+  --muted-foreground: #5F6776;
   --accent: var(--color-emerald);
   --accent-foreground: var(--color-white);
   --destructive: var(--color-rose);
   --destructive-foreground: var(--color-white);
-  --border: var(--color-smoke);
-  --input: var(--color-smoke);
+  --border: #E3E6EB;
+  --input: #D6DBE2;
   --ring: var(--color-emerald);
-  --sidebar: var(--color-white);
+  --sidebar: #FFFFFF;
   --sidebar-foreground: var(--color-ink);
   --sidebar-accent: var(--color-emerald);
   --sidebar-accent-foreground: var(--color-white);
-  --sidebar-border: var(--color-smoke);
+  --sidebar-border: #E3E6EB;
   --sidebar-ring: var(--color-emerald);
 }
 
@@ -126,7 +131,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Helvetica', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
   }
 
   /* Barre de défilement discrète, accordée au thème (Firefox) */
@@ -156,11 +162,12 @@
     background: transparent;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Helvetica', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
     font-weight: 700;
   }
   code, pre {
-    font-family: 'Courier Prime', monospace;
+    font-family: 'Courier Prime', ui-monospace, 'Cascadia Code', Consolas, monospace;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -222,6 +229,22 @@
 /* Markdown Preview Styles */
 .prose {
   @apply text-foreground;
+}
+
+/* Évite un écart vertical en tête de rendu, même si Streamdown enveloppe le
+   contenu : on annule la marge haute du tout premier bloc (et du premier
+   titre/paragraphe, où qu'il soit imbriqué en tête). */
+.prose > :first-child,
+.prose > :first-child > :first-child,
+.prose h1:first-child,
+.prose h2:first-child,
+.prose h3:first-child,
+.prose h4:first-child,
+.prose p:first-child,
+.prose ul:first-child,
+.prose ol:first-child,
+.prose blockquote:first-child {
+  margin-top: 0;
 }
 
 .prose h1 {

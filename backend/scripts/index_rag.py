@@ -66,6 +66,13 @@ async def index_all(page_id: str | None = None) -> None:
 
         print(f"\nIndexation terminée : {total_chunks} chunks au total.")
 
+        # Recalcul du graphe de pages liées (voisins sémantiques).
+        try:
+            n_rel = await rag_service.compute_related_pages(session)
+            print(f"Pages liées : {n_rel} relations calculées.")
+        except Exception as exc:
+            print(f"Pages liées : échec du calcul ({exc}).")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Indexation RAG Lekki Wiki")
