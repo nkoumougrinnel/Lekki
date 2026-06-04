@@ -16,3 +16,14 @@ class User(Base):
 
     pages = relationship("Page", back_populates="creator")
     chats = relationship("Chat", back_populates="user")
+    owned_workspaces = relationship(
+        "Workspace",
+        back_populates="owner",
+        foreign_keys="Workspace.owner_id",
+    )
+    workspace_memberships = relationship(
+        "WorkspaceMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    rag_queries = relationship("RagQuery", back_populates="user")

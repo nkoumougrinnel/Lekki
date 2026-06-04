@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, Send, FileText, X } from 'lucide-react';
+import { Bot, Send, FileText, X, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Streamdown } from 'streamdown';
-import { rag, ApiError, type AskSource } from '@/lib/api';
+import { rag, chats as chatsApi, ApiError, type AskSource } from '@/lib/api';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface Message {
   id: string;
@@ -19,22 +20,44 @@ interface AIPanelProps {
   onOpenSource?: (pageId: string) => void;
 }
 
+const WELCOME: Message = {
+  id: 'welcome',
+  role: 'assistant',
+  content: 'Bonjour ! Je suis Lekki AI. Posez-moi une question sur la base de connaissances.',
+};
+
 export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content:
-        'Bonjour ! Je suis Lekki AI. Posez-moi une question sur la base de connaissances.',
-    },
-  ]);
+  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
+  const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  // Changer de workspace démarre une nouvelle conversation (mémoire cloisonnée).
+  useEffect(() => {
+    setChatId(null);
+    setMessages([WELCOME]);
+  }, [activeWorkspaceId]);
+
+  const handleNewConversation = async () => {
+    if (isLoading) return;
+    const previous = chatId;
+    setChatId(null);
+    setMessages([WELCOME]);
+    // Efface la mémoire côté serveur (best-effort).
+    if (previous) {
+      try {
+        await chatsApi.clearContext(previous);
+      } catch {
+        /* non bloquant */
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     const question = input.trim();
@@ -50,7 +73,21 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
     setIsLoading(true);
 
     try {
-      const res = await rag.ask(question);
+      // Conversation persistante : créée à la 1re question pour activer la mémoire.
+      let currentChatId = chatId;
+      if (!currentChatId) {
+        const chat = await chatsApi.create(
+          question.slice(0, 60),
+          activeWorkspaceId ?? undefined,
+        );
+        currentChatId = chat.id;
+        setChatId(chat.id);
+      }
+
+      const res = await rag.ask(question, {
+        chatId: currentChatId,
+        workspaceId: activeWorkspaceId ?? undefined,
+      });
       setMessages((prev) => [
         ...prev,
         {
@@ -80,13 +117,32 @@ export function AIPanel({ onClose, onOpenSource }: AIPanelProps) {
     <div className="w-96 bg-background border-l border-border flex flex-col h-full">
       {/* Header */}
       <div className="border-b border-border p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bot size={20} className="text-primary" />
-          <h2 className="font-semibold text-foreground">Lekki AI</h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <Bot size={20} className="text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <h2 className="font-semibold text-foreground leading-tight">Lekki AI</h2>
+            {activeWorkspace && (
+              <p className="text-xs text-muted-foreground truncate" title={activeWorkspace.name}>
+                Workspace : {activeWorkspace.name}
+              </p>
+            )}
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
-          <X size={16} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNewConversation}
+            disabled={isLoading || messages.length <= 1}
+            className="p-1 h-auto"
+            title="Nouvelle conversation (efface le contexte)"
+          >
+            <RotateCcw size={15} />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-auto">
+            <X size={16} />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}

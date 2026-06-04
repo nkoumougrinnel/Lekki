@@ -69,8 +69,39 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - **Chunking** via LangChain `RecursiveCharacterTextSplitter` (512 / overlap 64, séparateurs Markdown).
 - **Embeddings** stockés en base (vecteurs `float32`), recherche par **similarité cosinus** (top-4).
 - **Fournisseurs d'embeddings** avec bascule : **MiniLM** (`all-MiniLM-L6-v2`, local, sans clé) puis **Gemini** (fallback).
-- **Fournisseurs LLM** avec **failover automatique** et cooldown sur quota/429 : **Gemini → Groq → Cerebras**.
-- Endpoints d'état : `GET /llm/status` et `GET /embedding/status`.
+- **Fournisseurs LLM** gérés par un service centralisé (`LLMProviderManager`) avec **rotation de clés API**, **failover automatique** et **cache des fournisseurs défaillants** (cooldown) : **Gemini → Groq → Cerebras → Ollama** (dernier recours).
+- Endpoints d'état : `GET /system/llm-status`, `GET /llm/status` et `GET /embedding/status`.
+
+#### Gestion des fournisseurs LLM (failover + rotation de clés)
+
+`LLMProviderManager` essaie, dans l'ordre `LLM_PROVIDER_ORDER`, **chaque clé** de chaque
+fournisseur cloud, puis **Ollama** uniquement si tout le cloud a échoué :
+
+1. **Rotation de clés** : `GEMINI_API_KEYS`, `GROQ_API_KEYS`, `CEREBRAS_API_KEYS` (liste JSON
+   ou valeurs séparées par virgules ; la clé unique `*_API_KEY` reste prise en compte). En cas
+   de quota / rate-limit / timeout / erreur réseau, on bascule sur la **clé suivante**, puis sur
+   le **fournisseur suivant**.
+2. **Cache de cooldown** : une clé en échec transitoire n'est pas réessayée pendant
+   `LLM_KEY_COOLDOWN_MINUTES` (5 min par défaut).
+3. **Ollama = filet de sécurité** : utilisé seulement en dernier recours, avec un **modèle léger**
+   (`llama3.2:3b` / `qwen2.5:3b`) et des paramètres **frugaux** (`temperature=0.1`, `top_p=0.7`,
+   `num_predict=256`, `num_ctx=1024`). Si `OLLAMA_ENABLED=false`, une **erreur propre** (503) est
+   renvoyée quand tout le cloud est indisponible — l'utilisateur ne voit jamais d'erreur brute de quota.
+4. **Logs détaillés** (sans dévoiler la clé) :
+
+```
+[LLM] Gemini key #2 failed : RateLimit
+[LLM] Switching to Gemini key #3
+[LLM] Gemini key #3 failed : QuotaExceeded
+[LLM] Switching to Groq
+[LLM] Groq success in 1.2s
+```
+
+`GET /system/llm-status` renvoie la santé synthétique :
+
+```json
+{ "gemini": "available", "groq": "available", "cerebras": "available", "ollama": "fallback" }
+```
 
 ### Conversations
 
@@ -278,7 +309,7 @@ Lekki/
 │   │       ├── llm_service.py      # orchestration LLM
 │   │       ├── auth_service.py     # JWT, hash, dépendances de rôle
 │   │       ├── embedding_providers/ # router, minilm, gemini
-│   │       └── llm_providers/      # router, gemini, groq, cerebras
+│   │       └── llm_providers/      # manager (failover + rotation clés), gemini, groq, cerebras, ollama
 │   ├── scripts/
 │   │   ├── seed.py                 # comptes + pages de démo (upsert + FTS)
 │   │   ├── seed_pages.py           # contenu Markdown des pages de démo
@@ -323,15 +354,31 @@ GET    /api/v1/pages/{id}
 POST   /api/v1/pages             { title, content, category }   (admin, editor)
 PUT    /api/v1/pages/{id}        (admin ; editor → ses pages)
 DELETE /api/v1/pages/{id}        (admin)
+POST   /api/v1/pages/{id}/summarize  ?force=   → { summary, summary_at, cached, provider }
+GET    /api/v1/pages/{id}/summary                → résumé existant (ou summary null)
+GET    /api/v1/pages/{id}/related    ?limit=     → [{ page_id, title, category, score }]
 ```
+
+**Résumé automatique (TL;DR)** : `POST /pages/{id}/summarize` envoie le contenu Markdown au
+LLM (bascule Gemini → Groq → Cerebras) pour produire un TL;DR de 5 à 8 lignes, stocké dans
+`pages.summary` / `pages.summary_at`. Si un résumé existe déjà, il est renvoyé tel quel
+(`cached: true`) — passez `?force=true` pour le régénérer.
+
+**Pages liées (voisins sémantiques)** : à l'indexation, le vecteur de chaque page (moyenne
+normalisée des embeddings de ses chunks) sert à calculer les similarités cosinus ; les **5
+meilleurs voisins** sont stockés dans la table `page_relations` (`page_id`, `related_id`,
+`score`, `computed_at`). `GET /pages/{id}/related` renvoie titre, catégorie et score, en
+**excluant toujours les pages d'un workspace inaccessible** à l'utilisateur. Le graphe est
+recalculé automatiquement après indexation, import et création/édition de page.
 
 ### Assistant (RAG)
 
 ```
 POST   /api/v1/ask               { question, chat_id? }
        → { answer, sources: [{ page_id, title, excerpt, score }], confidence, provider }
-GET    /api/v1/llm/status        état des fournisseurs LLM
-GET    /api/v1/embedding/status  état des fournisseurs d'embeddings
+GET    /api/v1/llm/status         état détaillé des fournisseurs LLM (clés, cooldown)
+GET    /api/v1/system/llm-status  santé synthétique des fournisseurs (authentifié)
+GET    /api/v1/embedding/status   état des fournisseurs d'embeddings
 ```
 
 ### Conversations
@@ -342,7 +389,92 @@ POST   /api/v1/chats             { title }
 GET    /api/v1/chats/{id}
 DELETE /api/v1/chats/{id}
 GET    /api/v1/chats/{id}/messages   ?limit=
+GET    /api/v1/chats/{id}/context    # derniers échanges injectés dans le prompt
+DELETE /api/v1/chats/{id}/context    # réinitialise la mémoire de la conversation
 ```
+
+**Mémoire conversationnelle** : lors d'une question avec `chat_id`, le RAG récupère les
+**4 derniers échanges** et les injecte dans le prompt, ce qui permet les questions de suivi
+(« et pour eux ? », « combien ? ») sans répéter le contexte. La taille est bornée
+(max. 4 échanges, ~600 caractères/message, ~3000 au total) pour éviter l'explosion des
+tokens. Le contexte respecte les permissions workspace et peut être effacé via
+`DELETE /chats/{id}/context`.
+
+### Analytics d'usage
+
+```
+GET    /api/v1/analytics/overview            ?workspace_id=        KPI (docs, workspaces, users, questions)
+GET    /api/v1/analytics/pages/top           ?workspace_id=&limit= top pages consultées
+GET    /api/v1/analytics/pages/never-viewed  ?workspace_id=&limit= pages jamais consultées
+GET    /api/v1/analytics/users/top           ?workspace_id=&limit= utilisateurs actifs
+GET    /api/v1/analytics/questions/top       ?workspace_id=&limit= questions fréquentes
+GET    /api/v1/analytics/questions/failed    ?workspace_id=&limit= questions sans réponse (conf<0.3 ou had_results=false)
+GET    /api/v1/analytics/questions/per-day   ?workspace_id=&days=  série temporelle (graphe)
+GET    /api/v1/analytics/providers           ?workspace_id=        usage des fournisseurs IA
+GET    /api/v1/analytics/missing-topics      ?workspace_id=&limit= sujets manquants (différenciant)
+GET    /api/v1/analytics/super-admin                               dashboard global (Super Admin)
+```
+
+Chaque appel à `POST /ask` est **tracé** dans la table `rag_queries` (utilisateur,
+workspace, question, confidence, provider, duration_ms, had_results). Chaque ouverture de
+page incrémente `view_count` et met à jour `last_viewed_at`.
+
+**Cloisonnement** : un Workspace Admin (propriétaire ou membre `owner`/`admin`) ne voit que
+les workspaces qu'il gère ; le Super Admin (`role = admin`) accède à tout via `?workspace_id`
+ou en vue globale. **Missing topics** analyse les questions sans réponse, regroupe les
+mots-clés significatifs et suggère les sujets à documenter — mis en avant dans le dashboard.
+
+### Audit de connaissance
+
+```
+GET    /api/v1/audit/health                ?workspace_id=        Knowledge Health Score (0-100) + détails
+GET    /api/v1/audit/pages/stale           ?workspace_id=&min_score=&limit=  pages obsolètes (score d'obsolescence)
+GET    /api/v1/audit/questions/unanswered  ?workspace_id=&limit= questions sans réponse regroupées par sujet
+GET    /api/v1/audit/pages/unindexed       ?workspace_id=&limit= pages sans chunks/embeddings
+GET    /api/v1/audit/pages/unused          ?workspace_id=&limit= documents jamais consultés (view_count = 0)
+GET    /api/v1/audit/pages/flagged         ?workspace_id=&limit= pages signalées (non résolues)
+POST   /api/v1/audit/pages/{id}/flag       body {flag_type}      signaler une page
+DELETE /api/v1/audit/pages/{id}/flag       ?flag_type=           résoudre les signalements d'une page
+GET    /api/v1/audit/missing-topics        ?workspace_id=&limit= connaissances manquantes + priorité
+```
+
+L'audit analyse automatiquement la **qualité de la base documentaire** :
+
+- **Pages obsolètes** : `staleness_score` = 40 % ancienneté (`updated_at`) + 40 % absence de
+  consultation (`last_viewed_at`) + 20 % faible fréquence d'usage (`view_count`).
+- **Questions sans réponse** : `rag_queries` avec `confidence < 0.30` ou `had_results = false`,
+  regroupées par mot-clé dominant (occurrences, dernière occurrence, score moyen).
+- **Pages non indexées** : aucune chunk, chunks sans embeddings ou `is_embedded = false`.
+- **Pages signalées** : table `page_flags` (`outdated`, `incorrect`, `duplicate`,
+  `missing_information`) ; `pages.flag_count` suit les signalements non résolus.
+- **Knowledge Health Score** : `100 − pénalités` (pages obsolètes, questions sans réponse,
+  pages non indexées, pages signalées), chaque pénalité plafonnée.
+- **Connaissances manquantes** : sujets fréquemment demandés sans réponse, classés par
+  priorité (`high`/`medium`/`low`) — la recommandation actionnable mise en avant.
+
+**Sécurité** : Workspace Admin restreint à ses workspaces, Super Admin global, utilisateur
+standard sans accès (403). Section dédiée dans le dashboard React (icône bouclier).
+
+### Carte des connaissances
+
+```
+GET    /api/v1/knowledge-map     ?workspace_id=&min_score=&max_edges_per_node=   (authentifié)
+```
+
+Retourne un graphe **compatible React Flow** : `nodes`, `edges`, `clusters`.
+
+- **nodes** : une page accessible = un nœud (`id`, `position {x, y}`, `data {label, category,
+  cluster, views}`, `style` coloré par thématique).
+- **edges** : liens **déduits automatiquement** des similarités sémantiques (table
+  `page_relations`, cosinus entre embeddings), dédupliqués et bornés par `max_edges_per_node` ;
+  `min_score` filtre les liens faibles.
+- **clusters** : regroupement thématique par catégorie (RH, Technique, Commercial, Guides),
+  avec label, couleur et nombre de pages.
+
+Sécurité : seules les pages des workspaces accessibles (ou sans workspace) apparaissent, et
+aucun lien ne pointe vers une page d'un workspace inaccessible. Côté frontend, un bouton
+« Carte des connaissances » (en-tête) ouvre un graphe interactif (zoom, déplacement,
+glisser-déposer des nœuds, clic pour ouvrir une page, légende des thématiques).
 
 ### Utilisateurs (admin)
 
@@ -351,6 +483,48 @@ GET    /api/v1/users/
 GET    /api/v1/users/{id}
 PUT    /api/v1/users/{id}/role   { role }
 DELETE /api/v1/users/{id}
+```
+
+### Workspaces
+
+```
+POST   /api/v1/workspaces                       { name, description? }       (authentifié, créateur = owner)
+GET    /api/v1/workspaces                        → workspaces de l'utilisateur
+GET    /api/v1/workspaces/{id}                   (membre uniquement)
+GET    /api/v1/workspaces/{id}/members           (membre uniquement)
+POST   /api/v1/workspaces/{id}/members           { user_id, role? }          (owner/admin du workspace)
+DELETE /api/v1/workspaces/{id}/members/{user_id} (owner/admin du workspace)
+```
+
+**Cloisonnement (isolation des données)** : chaque page, chunk RAG et conversation porte
+un `workspace_id`. Un utilisateur ne voit que les pages et chats de ses workspaces, et la
+recherche vectorielle (`POST /ask`) filtre les chunks **avant** la similarité cosinus
+selon les workspaces de l'utilisateur connecté. Un membre du seul workspace RH ne peut
+donc jamais récupérer d'information du workspace Technique, y compris via le chatbot RAG.
+Un administrateur global (`role = admin`) a accès à tous les workspaces.
+
+### Import documentaire
+
+```
+POST   /api/v1/imports          (multipart: files[], workspace_id, category?)   (admin, editor)
+       → 202 { id, status, total_files, processed_files, progress, ... }
+GET    /api/v1/imports           → imports de l'utilisateur
+GET    /api/v1/imports/{id}       → progression d'un import
+```
+
+Formats acceptés : **PDF, DOCX, TXT, Markdown**. À l'upload, le texte est extrait, une
+**page** est créée dans le workspace ciblé, puis le pipeline RAG (chunking + embeddings)
+est lancé **automatiquement en tâche de fond** (FastAPI `BackgroundTasks`). Le document
+devient ainsi immédiatement consultable par l'assistant, **sans exécuter de script
+manuel**. La progression se suit via `GET /imports/{id}` (champ `progress` en %).
+
+Exemple (PowerShell) :
+
+```powershell
+curl.exe -X POST "http://127.0.0.1:8000/api/v1/imports" `
+  -H "Authorization: Bearer <token>" `
+  -F "workspace_id=c0000000-0000-4000-8000-000000000002" `
+  -F "files=@C:\chemin\vers\document.pdf"
 ```
 
 ### Exemple (PowerShell)

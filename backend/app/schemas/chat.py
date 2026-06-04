@@ -5,12 +5,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ChatCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
+    workspace_id: str | None = None
 
 
 class ChatResponse(BaseModel):
     id: str
     title: str
     user_id: str
+    workspace_id: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
 

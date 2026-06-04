@@ -30,6 +30,10 @@ langchain-text-splitters>=0.2.0
 numpy>=1.26.0
 sentence-transformers>=3.0.0
 
+# Import documentaire (extraction de texte)
+pypdf>=4.2.0
+python-docx>=1.1.0
+
 # Scripts et tests d integration
 requests>=2.31.0
 

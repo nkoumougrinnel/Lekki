@@ -15,12 +15,14 @@ class OpenAICompatibleLLMProvider(BaseLLMProvider):
         base_url: str,
         model: str,
         cooldown_minutes: int,
+        timeout: float = 120.0,
     ) -> None:
         super().__init__(cooldown_minutes)
         self.name = name
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
         self._model = model
+        self._timeout = timeout
 
     def is_configured(self) -> bool:
         return bool(self._api_key.strip())
@@ -37,7 +39,7 @@ class OpenAICompatibleLLMProvider(BaseLLMProvider):
         }
 
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            async with httpx.AsyncClient(timeout=self._timeout) as client:
                 response = await client.post(
                     f"{self._base_url}/chat/completions",
                     headers=headers,

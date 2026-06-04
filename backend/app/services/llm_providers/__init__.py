@@ -1,3 +1,6 @@
-from app.services.llm_providers.router import LLMProviderRouter
+from app.services.llm_providers.manager import LLMProviderManager
 
-__all__ = ["LLMProviderRouter"]
+# Rétro-compatibilité : l'ancien LLMProviderRouter est désormais le manager.
+LLMProviderRouter = LLMProviderManager
+
+__all__ = ["LLMProviderManager", "LLMProviderRouter"]

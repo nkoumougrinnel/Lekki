@@ -8,6 +8,7 @@ import {
   Trash2,
   Loader2,
   Star,
+  Upload,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,6 +21,7 @@ interface SidebarV2Props {
   onSelectDocument: (doc: WikiDocument) => void;
   onCreateDocument: (section: 'prives' | 'publics') => void;
   onDeleteDocument?: (id: string) => void;
+  onImport?: () => void;
   selectedDocId?: string;
 }
 
@@ -48,9 +50,12 @@ export function SidebarV2({
   onSelectDocument,
   onCreateDocument,
   onDeleteDocument,
+  onImport,
   selectedDocId,
 }: SidebarV2Props) {
-  const [collapsed, setCollapsed] = useState<Set<SidebarSection>>(new Set(['groupes']));
+  const [collapsed, setCollapsed] = useState<Set<SidebarSection>>(
+    () => new Set<SidebarSection>(['groupes']),
+  );
   const [hovered, setHovered] = useState<SidebarSection | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
 
@@ -68,7 +73,7 @@ export function SidebarV2({
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(next)));
       return next;
     });
   };
@@ -206,13 +211,24 @@ export function SidebarV2({
           Pages
         </span>
         {canEdit && (
-          <button
-            onClick={() => onCreateDocument('publics')}
-            className="p-1 hover:bg-secondary rounded transition-colors"
-            title="Nouvelle page"
-          >
-            <FilePlus size={16} className="text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-1">
+            {onImport && (
+              <button
+                onClick={onImport}
+                className="p-1 hover:bg-secondary rounded transition-colors"
+                title="Importer des documents (PDF, DOCX, TXT, Markdown)"
+              >
+                <Upload size={16} className="text-muted-foreground" />
+              </button>
+            )}
+            <button
+              onClick={() => onCreateDocument('publics')}
+              className="p-1 hover:bg-secondary rounded transition-colors"
+              title="Nouvelle page"
+            >
+              <FilePlus size={16} className="text-muted-foreground" />
+            </button>
+          </div>
         )}
       </div>
 

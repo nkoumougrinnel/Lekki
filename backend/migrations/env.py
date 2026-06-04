@@ -9,7 +9,17 @@ from sqlalchemy import engine_from_config, pool
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.database import Base  # noqa: E402
-from app.models import chat, chunk, page, user  # noqa: F401, E402
+from app.models import (  # noqa: F401, E402
+    chat,
+    chunk,
+    page,
+    user,
+    workspace,
+    import_job,
+    page_relation,
+    rag_query,
+    page_flag,
+)
 
 config = context.config
 if config.config_file_name is not None:

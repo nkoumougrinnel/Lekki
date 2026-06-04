@@ -8,18 +8,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Search, Moon, Sun, LogOut, FileText } from 'lucide-react';
+import { Search, Moon, Sun, LogOut, FileText, Share2, BarChart3, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { pages as pagesApi } from '@/lib/api';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 interface HeaderV2Props {
   documents: WikiDocument[];
   onSelectDocument: (doc: WikiDocument) => void;
+  onOpenMap?: () => void;
+  onOpenAnalytics?: () => void;
+  onOpenAudit?: () => void;
 }
 
-export function HeaderV2({ documents, onSelectDocument }: HeaderV2Props) {
+export function HeaderV2({ documents, onSelectDocument, onOpenMap, onOpenAnalytics, onOpenAudit }: HeaderV2Props) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
 
@@ -86,7 +90,9 @@ export function HeaderV2({ documents, onSelectDocument }: HeaderV2Props) {
   return (
     <header className="bg-background border-b border-border sticky top-0 z-40">
       <div className="flex items-center px-6 py-4 gap-4">
-        <div className="flex-1" />
+        <div className="flex-1 flex items-center">
+          <WorkspaceSwitcher />
+        </div>
 
         {/* Center - Search Bar */}
         <div ref={containerRef} className="relative w-full max-w-md">
@@ -123,6 +129,39 @@ export function HeaderV2({ documents, onSelectDocument }: HeaderV2Props) {
 
         {/* Right - Theme Toggle & User Menu */}
         <div className="flex-1 flex items-center justify-end gap-2">
+          {onOpenAnalytics && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenAnalytics}
+              className="rounded-lg"
+              title="Analytics d'usage"
+            >
+              <BarChart3 size={18} />
+            </Button>
+          )}
+          {onOpenAudit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenAudit}
+              className="rounded-lg"
+              title="Audit de connaissance"
+            >
+              <ShieldCheck size={18} />
+            </Button>
+          )}
+          {onOpenMap && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenMap}
+              className="rounded-lg"
+              title="Carte des connaissances"
+            >
+              <Share2 size={18} />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

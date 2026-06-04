@@ -4,12 +4,17 @@ import { toast } from "sonner";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { useCallback, useEffect, useState } from "react";
 import { SidebarV2 } from "./components/SidebarV2";
 import { HeaderV2 } from "./components/HeaderV2";
 import { DashboardV2 } from "./components/DashboardV2";
 import { MarkdownEditorV2 } from "./components/MarkdownEditorV2";
 import { AIPanel } from "./components/AIPanel";
+import { ImportDialog } from "./components/ImportDialog";
+import { KnowledgeMapDialog } from "./components/KnowledgeMapDialog";
+import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { AuditDashboard } from "./components/AuditDashboard";
 import { LoginScreen } from "./components/LoginScreen";
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2 } from "lucide-react";
@@ -39,37 +44,58 @@ function describeError(err: unknown, fallback: string): string {
 
 function WikiApp() {
   const { user } = useAuth();
+  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
   const [selectedDoc, setSelectedDoc] = useState<WikiDocument | null>(null);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [documents, setDocuments] = useState<WikiDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
+  // Analytics & Audit : Super Admin (admin global) ou propriétaire du workspace courant.
+  const canSeeAnalytics =
+    user?.role === "admin" || (!!activeWorkspace && activeWorkspace.owner_id === user?.id);
+  const canSeeAudit = canSeeAnalytics;
 
   const loadPages = useCallback(async () => {
+    if (!activeWorkspaceId) {
+      setDocuments([]);
+      setLoadingDocs(false);
+      return;
+    }
     setLoadingDocs(true);
     setLoadError(null);
     try {
-      const list = await pagesApi.list({ limit: 100 });
+      const list = await pagesApi.list({ limit: 100, workspaceId: activeWorkspaceId });
       setDocuments(list.map((p) => pageToDoc(p, user)));
     } catch (err) {
       setLoadError(describeError(err, "Impossible de charger les pages."));
     } finally {
       setLoadingDocs(false);
     }
-  }, [user]);
+  }, [user, activeWorkspaceId]);
 
   useEffect(() => {
     loadPages();
+    // Le document ouvert peut appartenir à un autre workspace : on le referme.
+    setSelectedDoc(null);
   }, [loadPages]);
 
   const handleCreateDocument = async (section: "prives" | "publics") => {
+    if (!activeWorkspaceId) {
+      toast.error("Sélectionnez d'abord un workspace.");
+      return;
+    }
     try {
       const page = await pagesApi.create({
         title: "Nouvelle page",
         content: "# Nouvelle page\n\n",
         category: "guides",
+        workspace_id: activeWorkspaceId,
       });
       let doc = pageToDoc(page, user);
       // « Privés » = brouillon (non publié) ; « Publics » = publié (défaut backend).
@@ -139,11 +165,18 @@ function WikiApp() {
         onSelectDocument={setSelectedDoc}
         onCreateDocument={handleCreateDocument}
         onDeleteDocument={handleDeleteDocument}
+        onImport={canEdit ? () => setImportOpen(true) : undefined}
         selectedDocId={selectedDoc?.id}
       />
 
       <div className="flex-1 flex flex-col">
-        <HeaderV2 documents={documents} onSelectDocument={setSelectedDoc} />
+        <HeaderV2
+          documents={documents}
+          onSelectDocument={setSelectedDoc}
+          onOpenMap={() => setMapOpen(true)}
+          onOpenAnalytics={canSeeAnalytics ? () => setAnalyticsOpen(true) : undefined}
+          onOpenAudit={canSeeAudit ? () => setAuditOpen(true) : undefined}
+        />
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-hidden">
@@ -160,6 +193,7 @@ function WikiApp() {
                 document={selectedDoc}
                 readOnly={!canEdit}
                 onSave={handleSaveDocument}
+                onOpenRelated={openDocumentById}
               />
             ) : (
               <DashboardV2 documents={documents} onSelectDocument={setSelectedDoc} />
@@ -181,6 +215,30 @@ function WikiApp() {
           <Bot size={24} />
         </Button>
       )}
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={loadPages}
+      />
+
+      <KnowledgeMapDialog
+        open={mapOpen}
+        onOpenChange={setMapOpen}
+        onOpenPage={openDocumentById}
+      />
+
+      <AnalyticsDashboard
+        open={analyticsOpen}
+        onOpenChange={setAnalyticsOpen}
+        onOpenPage={openDocumentById}
+      />
+
+      <AuditDashboard
+        open={auditOpen}
+        onOpenChange={setAuditOpen}
+        onOpenPage={openDocumentById}
+      />
     </div>
   );
 }
@@ -197,7 +255,11 @@ function AuthGate() {
   }
 
   if (!user) return <LoginScreen />;
-  return <WikiApp />;
+  return (
+    <WorkspaceProvider>
+      <WikiApp />
+    </WorkspaceProvider>
+  );
 }
 
 function App() {
