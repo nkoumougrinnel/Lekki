@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Loader2, Maximize2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { knowledgeMap, ApiError, type KnowledgeMap } from '@/lib/api';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+
+// Dialogue plein écran accessible (focus-trap + ARIA via Radix).
+const FULLSCREEN_DIALOG =
+  'flex h-screen max-h-screen w-screen max-w-none top-0 left-0 translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 shadow-none sm:max-w-none';
 
 interface KnowledgeMapDialogProps {
   open: boolean;
@@ -18,6 +28,12 @@ interface Transform {
 
 const NODE_W = 170;
 const NODE_H = 40;
+
+// Palette de marque Lekki (cf. index.css).
+const BRAND_EMERALD = '#00C896';
+const BRAND_INK = '#0D0F12';
+const BRAND_WHITE = '#F8F9FA';
+const EDGE_NEUTRAL = '#8892A4';
 
 export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: KnowledgeMapDialogProps) {
   const { activeWorkspaceId } = useWorkspace();
@@ -80,15 +96,6 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
     if (open) load();
   }, [open, load]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onOpenChange]);
-
   // ── Interactions (zoom / pan / drag) ───────────────────────────────────────
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -150,21 +157,22 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
     }
   };
 
-  if (!open) return null;
-
   const dimmed = (cluster: string) => activeCluster != null && cluster !== activeCluster;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={FULLSCREEN_DIALOG} showCloseButton={false}>
       {/* Barre supérieure */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Carte des connaissances</h2>
-          <p className="text-xs text-muted-foreground">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Carte des connaissances
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             {data
               ? `${data.nodes.length} pages · ${data.edges.length} liens · ${data.clusters.length} thématiques`
               : 'Graphe interactif de la base documentaire'}
-          </p>
+          </DialogDescription>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => data && fitView(data, positions)} title="Recentrer">
@@ -251,9 +259,9 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
                       y1={a.y}
                       x2={b.x}
                       y2={b.y}
-                      stroke={isHi ? '#6366f1' : '#cbd5e1'}
+                      stroke={isHi ? BRAND_EMERALD : EDGE_NEUTRAL}
                       strokeWidth={(isHi ? 2 : 1) + 2 * (edge.data?.score ?? 0)}
-                      strokeOpacity={isDim ? 0.08 : isHi ? 0.9 : 0.4}
+                      strokeOpacity={isDim ? 0.08 : isHi ? 0.9 : 0.35}
                     />
                   );
                 })}
@@ -262,7 +270,7 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
                 {data.nodes.map((node) => {
                   const p = positions[node.id];
                   if (!p) return null;
-                  const color = (node.style?.background as string) ?? '#6366f1';
+                  const color = (node.style?.background as string) ?? BRAND_EMERALD;
                   const isDim = dimmed(node.data.cluster);
                   const isHi = hovered === node.id;
                   return (
@@ -280,7 +288,7 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
                         height={NODE_H}
                         rx={10}
                         fill={color}
-                        stroke={isHi ? '#1e293b' : 'transparent'}
+                        stroke={isHi ? BRAND_INK : 'transparent'}
                         strokeWidth={2}
                       />
                       <text
@@ -289,7 +297,7 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
                         textAnchor="middle"
                         dominantBaseline="central"
                         fontSize={12}
-                        fill="#ffffff"
+                        fill={BRAND_WHITE}
                         style={{ pointerEvents: 'none' }}
                       >
                         {node.data.label.length > 24
@@ -308,6 +316,7 @@ export function KnowledgeMapDialog({ open, onOpenChange, onOpenPage }: Knowledge
           Molette : zoom · Glisser le fond : déplacer · Cliquer un nœud : ouvrir la page
         </div>
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

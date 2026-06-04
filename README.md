@@ -45,21 +45,24 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 - **CRUD complet** des pages Markdown (création, lecture, mise à jour, suppression) selon le rôle.
 - **Catégories** : `rh`, `technique`, `commercial`, `guides`.
 - **Statut** : `draft` (brouillon / « Privé ») ou `published` (« Public »).
-- **Éditeur Markdown** en vue scindée **édition / aperçu** en direct, avec **titre éditable** et bouton d'enregistrement (lecture seule pour les `reader`).
-- **Recherche plein-texte** (SQLite FTS5) exposée dans la barre de recherche **centrée** de l'en-tête (résultats en direct, déboncés).
+- **Éditeur Markdown** ouvert en **aperçu par défaut** ; bascule **Aperçu / Édition** via un commutateur compact flottant dans le document (la barre d'outils Markdown n'apparaît qu'en mode édition). Titre éditable, enregistrement (icône) et **lecture seule** pour les `reader`.
+- **Résumé TL;DR** (bouton « Résumer ») et **pages liées** (3 meilleurs voisins sémantiques, sur une ligne défilante) intégrés à l'en-tête du document.
+- **Recherche plein-texte** (SQLite FTS5) dans la barre de recherche **centrée** de l'en-tête (résultats en direct, débouncés, liste déroulante à **hauteur limitée et défilante**).
 - **Compteur de vues** et indicateur d'indexation (`is_embedded`) par page.
 
 ### Sidebar (style explorateur VS Code)
 
-- Sections : **Favoris** (étoile dorée), **Privés**, **Groupes** *(à venir)*, **Publics**.
-- **Favoris** gérés côté client (`localStorage`), étoile dorée par page pour ajouter/retirer.
-- Boutons d'ajout rapide de page (au survol des sections, + barre d'outils en haut), suppression de page pour les rôles autorisés.
+- Sections : **Favoris** (icône étoile), **Privés**, **Groupes** *(à venir)*, **Publics**.
+- **Favoris** gérés côté client (`localStorage`), **icône étoile** par page pour ajouter/retirer.
+- **Création rapide** : le bouton **+** de la barre d'outils crée une page **privée (brouillon) par défaut** ; un **+** au survol des sections « Privés » / « Publics » crée la page dans la section ciblée.
+- **Suppression** réservée aux rôles autorisés, avec **pop-up de confirmation** accessible (plus d'`alert` natif).
 
 ### Assistant IA — Lekki AI
 
 - Chat connecté au endpoint `**POST /ask`** (RAG réel).
 - **Sources cliquables** : chaque réponse liste les pages utilisées (titre + score) ; un clic **ouvre la page dans l'éditeur**.
-- **Score de confiance** affiché (basé sur la similarité cosinus du meilleur passage).
+- **Animation « token par token »** : la réponse s'écrit progressivement (effet machine à écrire) pour un rendu vivant.
+- **Score de confiance** présenté en **badge coloré par niveau** (élevée / moyenne / faible) et **sources en cartes** avec barre de pertinence — révélés une fois la réponse écrite.
 - **Détection des salutations / small-talk** : répond poliment sans interroger inutilement le RAG.
 - Réponses **sans emoji**, message clair quand aucune information n'est trouvée.
 - Panneau refermable et **bouton flottant** pour le rouvrir.
@@ -78,13 +81,13 @@ Lekki Wiki combine une gestion documentaire Markdown et un pipeline RAG (Retriev
 fournisseur cloud, puis **Ollama** uniquement si tout le cloud a échoué :
 
 1. **Rotation de clés** : `GEMINI_API_KEYS`, `GROQ_API_KEYS`, `CEREBRAS_API_KEYS` (liste JSON
-   ou valeurs séparées par virgules ; la clé unique `*_API_KEY` reste prise en compte). En cas
+  ou valeurs séparées par virgules ; la clé unique `*_API_KEY` reste prise en compte). En cas
    de quota / rate-limit / timeout / erreur réseau, on bascule sur la **clé suivante**, puis sur
    le **fournisseur suivant**.
 2. **Cache de cooldown** : une clé en échec transitoire n'est pas réessayée pendant
-   `LLM_KEY_COOLDOWN_MINUTES` (5 min par défaut).
+  `LLM_KEY_COOLDOWN_MINUTES` (5 min par défaut).
 3. **Ollama = filet de sécurité** : utilisé seulement en dernier recours, avec un **modèle léger**
-   (`llama3.2:3b` / `qwen2.5:3b`) et des paramètres **frugaux** (`temperature=0.1`, `top_p=0.7`,
+  (`llama3.2:3b` / `qwen2.5:3b`) et des paramètres **frugaux** (`temperature=0.1`, `top_p=0.7`,
    `num_predict=256`, `num_ctx=1024`). Si `OLLAMA_ENABLED=false`, une **erreur propre** (503) est
    renvoyée quand tout le cloud est indisponible — l'utilisateur ne voit jamais d'erreur brute de quota.
 4. **Logs détaillés** (sans dévoiler la clé) :
@@ -114,7 +117,9 @@ fournisseur cloud, puis **Ollama** uniquement si tout le cloud a échoué :
 ### UI / UX
 
 - **React + Vite + TailwindCSS** avec composants shadcn/ui et icônes lucide-react.
-- **Mode clair / sombre** (clair par défaut), contrastes corrigés.
+- **Mode clair / sombre** (clair par défaut) : palette claire retravaillée pour une vraie hiérarchie de profondeur (canevas teinté, surfaces blanches, bordures visibles, texte secondaire lisible).
+- **Shell responsive** : sidebar en tiroir et panneau IA en plein écran sur mobile (`useMobile`), colonnes fixes sur grand écran.
+- **Accessibilité** : les vues plein écran (Analytics, Audit, Carte des connaissances) et les confirmations utilisent de **vrais dialogues Radix** (focus-trap + ARIA), pas d'overlays bricolés.
 - **Barre de défilement** discrète accordée au thème.
 - Rendu Markdown des réponses via **Streamdown**.
 
@@ -319,11 +324,14 @@ Lekki/
 ├── Frontend/
 │   ├── client/
 │   │   └── src/
-│   │       ├── App.tsx             # layout, auth gate, CRUD, ouverture sources
-│   │       ├── components/         # SidebarV2, HeaderV2, MarkdownEditorV2,
-│   │       │                       # AIPanel (Lekki AI), DashboardV2, LoginScreen
-│   │       ├── contexts/           # AuthContext, ThemeContext
-│   │       ├── lib/api.ts          # client API (auth, pages, rag)
+│   │       ├── App.tsx             # layout responsive, auth gate, CRUD, ouverture sources
+│   │       ├── components/         # Sidebar, Header, MarkdownEditor, Dashboard,
+│   │       │                       # AIPanel (Lekki AI), AnalyticsDashboard,
+│   │       │                       # AuditDashboard, KnowledgeMapDialog,
+│   │       │                       # ImportDialog, WorkspaceSwitcher, LoginScreen, ui/
+│   │       ├── contexts/           # AuthContext, ThemeContext, WorkspaceContext
+│   │       ├── hooks/              # useMobile (shell responsive)
+│   │       ├── lib/api.ts          # client API (auth, pages, rag, workspaces, audit…)
 │   │       └── types/wiki.ts
 │   ├── Dockerfile                  # build Vite + Nginx
 │   └── nginx.conf
@@ -441,19 +449,21 @@ GET    /api/v1/audit/missing-topics        ?workspace_id=&limit= connaissances m
 L'audit analyse automatiquement la **qualité de la base documentaire** :
 
 - **Pages obsolètes** : `staleness_score` = 40 % ancienneté (`updated_at`) + 40 % absence de
-  consultation (`last_viewed_at`) + 20 % faible fréquence d'usage (`view_count`).
+consultation (`last_viewed_at`) + 20 % faible fréquence d'usage (`view_count`).
 - **Questions sans réponse** : `rag_queries` avec `confidence < 0.30` ou `had_results = false`,
-  regroupées par mot-clé dominant (occurrences, dernière occurrence, score moyen).
+regroupées par mot-clé dominant (occurrences, dernière occurrence, score moyen).
 - **Pages non indexées** : aucune chunk, chunks sans embeddings ou `is_embedded = false`.
 - **Pages signalées** : table `page_flags` (`outdated`, `incorrect`, `duplicate`,
-  `missing_information`) ; `pages.flag_count` suit les signalements non résolus.
+`missing_information`) ; `pages.flag_count` suit les signalements non résolus.
 - **Knowledge Health Score** : `100 − pénalités` (pages obsolètes, questions sans réponse,
-  pages non indexées, pages signalées), chaque pénalité plafonnée.
+pages non indexées, pages signalées), chaque pénalité plafonnée.
 - **Connaissances manquantes** : sujets fréquemment demandés sans réponse, classés par
-  priorité (`high`/`medium`/`low`) — la recommandation actionnable mise en avant.
+priorité (`high`/`medium`/`low`) — la recommandation actionnable mise en avant.
 
-**Sécurité** : Workspace Admin restreint à ses workspaces, Super Admin global, utilisateur
-standard sans accès (403). Section dédiée dans le dashboard React (icône bouclier).
+**Sécurité** : Workspace Admin restreint à ses workspaces, utilisateur standard sans accès
+(403). Côté frontend, le tableau de bord d'audit (icône bouclier) porte désormais
+**uniquement sur le workspace actif** — le sélecteur de portée globale Super Admin a été
+retiré de l'UI (les endpoints restent toutefois interrogeables sans `workspace_id`).
 
 ### Carte des connaissances
 
@@ -463,13 +473,12 @@ GET    /api/v1/knowledge-map     ?workspace_id=&min_score=&max_edges_per_node=  
 
 Retourne un graphe **compatible React Flow** : `nodes`, `edges`, `clusters`.
 
-- **nodes** : une page accessible = un nœud (`id`, `position {x, y}`, `data {label, category,
-  cluster, views}`, `style` coloré par thématique).
+- **nodes** : une page accessible = un nœud (`id`, `position {x, y}`, `data {label, category, cluster, views}`, `style` coloré par thématique).
 - **edges** : liens **déduits automatiquement** des similarités sémantiques (table
-  `page_relations`, cosinus entre embeddings), dédupliqués et bornés par `max_edges_per_node` ;
-  `min_score` filtre les liens faibles.
+`page_relations`, cosinus entre embeddings), dédupliqués et bornés par `max_edges_per_node` ;
+`min_score` filtre les liens faibles.
 - **clusters** : regroupement thématique par catégorie (RH, Technique, Commercial, Guides),
-  avec label, couleur et nombre de pages.
+avec label, couleur et nombre de pages.
 
 Sécurité : seules les pages des workspaces accessibles (ou sans workspace) apparaissent, et
 aucun lien ne pointe vers une page d'un workspace inaccessible. Côté frontend, un bouton
@@ -595,5 +604,5 @@ Pages de démo : Politique de congés · Onboarding · Remboursement des frais �
 - *« Quelle est la longueur minimale d'un mot de passe ? »*
 - *« Combien de jours de télétravail par semaine ? »*
 
-> Après le seed, lancez `**python -m scripts.index_rag*`* pour que l'assistant puisse répondre.
+> Après le seed, lancez `**python -m scripts.index_rag`** pour que l'assistant puisse répondre.
 

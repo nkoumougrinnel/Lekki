@@ -26,8 +26,19 @@ import {
   Legend,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+
+// Classes communes pour un dialogue plein écran accessible (focus-trap + ARIA
+// fournis par Radix), en remplacement des anciens overlays `fixed inset-0`.
+const FULLSCREEN_DIALOG =
+  'flex h-screen max-h-screen w-screen max-w-none top-0 left-0 translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 shadow-none sm:max-w-none';
 import {
   analytics as analyticsApi,
   ApiError,
@@ -46,7 +57,10 @@ interface AnalyticsDashboardProps {
   onOpenPage: (id: string) => void;
 }
 
-const PROVIDER_COLORS = ['#6366f1', '#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#a855f7'];
+// Palette de marque Lekki (cf. index.css) — émeraude, saphir, ambre, rose, brume, encre.
+const BRAND_EMERALD = '#00C896';
+const BRAND_MIST = '#8892A4';
+const PROVIDER_COLORS = ['#00C896', '#3B82F6', '#F59E0B', '#E43F5E', '#8892A4', '#0D0F12'];
 
 interface AnalyticsState {
   overview: AnalyticsOverview | null;
@@ -141,30 +155,22 @@ export function AnalyticsDashboard({ open, onOpenChange, onOpenPage }: Analytics
     if (open) load();
   }, [open, load]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onOpenChange]);
-
-  if (!open) return null;
-
   const providerData = Object.entries(data.providers).map(([name, value]) => ({ name, value }));
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={FULLSCREEN_DIALOG} showCloseButton={false}>
       {/* En-tête */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div>
-          <h2 className="text-base font-semibold text-foreground">Analytics d'usage</h2>
-          <p className="text-xs text-muted-foreground">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Analytics d'usage
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             {scope === 'global'
               ? 'Vue globale (Super Admin)'
               : `Workspace : ${activeWorkspace?.name ?? '—'}`}
-          </p>
+          </DialogDescription>
         </div>
         <div className="flex items-center gap-2">
           {isGlobalAdmin && (
@@ -264,15 +270,15 @@ export function AnalyticsDashboard({ open, onOpenChange, onOpenPage }: Analytics
                   <AreaChart data={data.perDay} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                     <defs>
                       <linearGradient id="qpd" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        <stop offset="5%" stopColor={BRAND_EMERALD} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={BRAND_EMERALD} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={`${BRAND_MIST}33`} />
                     <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d) => String(d).slice(5)} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Area type="monotone" dataKey="count" stroke="#6366f1" fill="url(#qpd)" name="Questions" />
+                    <Area type="monotone" dataKey="count" stroke={BRAND_EMERALD} fill="url(#qpd)" name="Questions" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -375,6 +381,7 @@ export function AnalyticsDashboard({ open, onOpenChange, onOpenPage }: Analytics
           </>
         )}
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -13,8 +13,17 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+
+// Dialogue plein écran accessible (focus-trap + ARIA via Radix).
+const FULLSCREEN_DIALOG =
+  'flex h-screen max-h-screen w-screen max-w-none top-0 left-0 translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 shadow-none sm:max-w-none';
 import {
   audit as auditApi,
   ApiError,
@@ -132,14 +141,41 @@ function HealthGauge({ score }: { score: number }) {
   );
 }
 
-export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboardProps) {
-  const { user } = useAuth();
-  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
-  const isGlobalAdmin = user?.role === 'admin';
-
-  const [scope, setScope] = useState<'global' | 'workspace'>(
-    isGlobalAdmin ? 'global' : 'workspace',
+function SectionHeader({
+  icon,
+  title,
+  count,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count?: number;
+}) {
+  return (
+    <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+      {icon}
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      {count !== undefined && count > 0 && (
+        <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+          {count}
+        </span>
+      )}
+    </div>
   );
+}
+
+// État vide « tout va bien » : aucune anomalie détectée pour cette catégorie.
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+      <CheckCircle2 className="text-emerald-500" size={22} />
+      <p className="text-sm text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboardProps) {
+  const { activeWorkspaceId, activeWorkspace } = useWorkspace();
+
   const [data, setData] = useState<AuditState>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +184,7 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
     setLoading(true);
     setError(null);
     try {
-      const ws = scope === 'workspace' ? activeWorkspaceId ?? undefined : undefined;
+      const ws = activeWorkspaceId ?? undefined;
       const [health, stale, unanswered, unindexed, flagged, missing] = await Promise.all([
         auditApi.health(ws),
         auditApi.stalePages(ws, 20),
@@ -163,20 +199,11 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
     } finally {
       setLoading(false);
     }
-  }, [scope, activeWorkspaceId]);
+  }, [activeWorkspaceId]);
 
   useEffect(() => {
     if (open) load();
   }, [open, load]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onOpenChange]);
 
   const resolveFlag = async (pageId: string) => {
     try {
@@ -192,43 +219,25 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
     onOpenChange(false);
   };
 
-  if (!open) return null;
-
   const health = data.health;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={FULLSCREEN_DIALOG} showCloseButton={false}>
       {/* En-tête */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <ShieldCheck className="text-primary" size={20} />
           <div>
-            <h2 className="text-base font-semibold text-foreground">Audit de connaissance</h2>
-            <p className="text-xs text-muted-foreground">
-              {scope === 'global'
-                ? 'Vue globale (Super Admin)'
-                : `Workspace : ${activeWorkspace?.name ?? '—'}`}
-            </p>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Audit de connaissance
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {`Workspace : ${activeWorkspace?.name ?? '—'}`}
+            </DialogDescription>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isGlobalAdmin && (
-            <div className="flex items-center rounded-lg border border-border overflow-hidden text-sm">
-              <button
-                onClick={() => setScope('global')}
-                className={`px-3 py-1.5 ${scope === 'global' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
-              >
-                Global
-              </button>
-              <button
-                onClick={() => setScope('workspace')}
-                disabled={!activeWorkspaceId}
-                className={`px-3 py-1.5 ${scope === 'workspace' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'} disabled:opacity-40`}
-              >
-                Workspace
-              </button>
-            </div>
-          )}
           <Button variant="ghost" size="sm" onClick={load} title="Rafraîchir">
             <RefreshCw size={16} />
           </Button>
@@ -341,10 +350,11 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
             <div className="grid lg:grid-cols-2 gap-4">
               {/* Documents obsolètes */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                  <Clock size={16} className="text-amber-500" />
-                  <h3 className="text-sm font-semibold text-foreground">Documents obsolètes</h3>
-                </div>
+                <SectionHeader
+                  icon={<Clock size={16} className="text-amber-500" />}
+                  title="Documents obsolètes"
+                  count={data.stale.length}
+                />
                 <div className="divide-y divide-border max-h-72 overflow-y-auto">
                   {data.stale.length > 0 ? (
                     data.stale.map((p) => (
@@ -365,17 +375,18 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
                       </button>
                     ))
                   ) : (
-                    <p className="px-4 py-6 text-sm text-muted-foreground text-center">Aucun document obsolète</p>
+                    <EmptyState message="Aucun document obsolète" />
                   )}
                 </div>
               </div>
 
               {/* Documents non indexés */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                  <FileWarning size={16} className="text-red-500" />
-                  <h3 className="text-sm font-semibold text-foreground">Documents non indexés</h3>
-                </div>
+                <SectionHeader
+                  icon={<FileWarning size={16} className="text-red-500" />}
+                  title="Documents non indexés"
+                  count={data.unindexed.length}
+                />
                 <div className="divide-y divide-border max-h-72 overflow-y-auto">
                   {data.unindexed.length > 0 ? (
                     data.unindexed.map((p) => (
@@ -389,7 +400,7 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
                       </button>
                     ))
                   ) : (
-                    <p className="px-4 py-6 text-sm text-muted-foreground text-center">Tout est indexé 🎉</p>
+                    <EmptyState message="Tout est indexé" />
                   )}
                 </div>
               </div>
@@ -399,10 +410,11 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
             <div className="grid lg:grid-cols-2 gap-4">
               {/* Questions fréquentes sans réponse */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-amber-500" />
-                  <h3 className="text-sm font-semibold text-foreground">Questions fréquentes sans réponse</h3>
-                </div>
+                <SectionHeader
+                  icon={<AlertTriangle size={16} className="text-amber-500" />}
+                  title="Questions fréquentes sans réponse"
+                  count={data.unanswered.length}
+                />
                 <div className="divide-y divide-border max-h-72 overflow-y-auto">
                   {data.unanswered.length > 0 ? (
                     data.unanswered.map((g, i) => (
@@ -417,17 +429,18 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
                       </div>
                     ))
                   ) : (
-                    <p className="px-4 py-6 text-sm text-muted-foreground text-center">Aucune question sans réponse 🎉</p>
+                    <EmptyState message="Aucune question sans réponse" />
                   )}
                 </div>
               </div>
 
               {/* Pages signalées */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                  <Flag size={16} className="text-red-500" />
-                  <h3 className="text-sm font-semibold text-foreground">Pages signalées</h3>
-                </div>
+                <SectionHeader
+                  icon={<Flag size={16} className="text-red-500" />}
+                  title="Pages signalées"
+                  count={data.flagged.length}
+                />
                 <div className="divide-y divide-border max-h-72 overflow-y-auto">
                   {data.flagged.length > 0 ? (
                     data.flagged.map((p) => (
@@ -455,7 +468,7 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
                       </div>
                     ))
                   ) : (
-                    <p className="px-4 py-6 text-sm text-muted-foreground text-center">Aucune page signalée</p>
+                    <EmptyState message="Aucune page signalée" />
                   )}
                 </div>
               </div>
@@ -463,6 +476,7 @@ export function AuditDashboard({ open, onOpenChange, onOpenPage }: AuditDashboar
           </>
         )}
       </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -6,10 +6,10 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
 import { useCallback, useEffect, useState } from "react";
-import { SidebarV2 } from "./components/SidebarV2";
-import { HeaderV2 } from "./components/HeaderV2";
-import { DashboardV2 } from "./components/DashboardV2";
-import { MarkdownEditorV2 } from "./components/MarkdownEditorV2";
+import { Sidebar } from "./components/Sidebar";
+import { Header } from "./components/Header";
+import { Dashboard } from "./components/Dashboard";
+import { MarkdownEditor } from "./components/MarkdownEditor";
 import { AIPanel } from "./components/AIPanel";
 import { ImportDialog } from "./components/ImportDialog";
 import { KnowledgeMapDialog } from "./components/KnowledgeMapDialog";
@@ -19,6 +19,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2 } from "lucide-react";
 import { pages as pagesApi, ApiError, type Page, type ApiUser } from "./lib/api";
+import { useIsMobile } from "./hooks/useMobile";
 import { WikiDocument } from "./types/wiki";
 
 function pageToDoc(page: Page, currentUser: ApiUser | null): WikiDocument {
@@ -54,6 +55,14 @@ function WikiApp() {
   const [mapOpen, setMapOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Sur mobile, le panneau IA s'ouvre en plein écran : on le ferme par défaut
+  // pour laisser l'utilisateur voir d'abord ses pages.
+  useEffect(() => {
+    if (isMobile) setShowAIPanel(false);
+  }, [isMobile]);
 
   const canEdit = user?.role === "admin" || user?.role === "editor";
   // Analytics & Audit : Super Admin (admin global) ou propriétaire du workspace courant.
@@ -158,24 +167,30 @@ function WikiApp() {
 
   return (
     <div className="flex h-screen bg-background">
-      <SidebarV2
+      <Sidebar
         documents={documents}
         loading={loadingDocs}
         canEdit={canEdit}
-        onSelectDocument={setSelectedDoc}
+        onSelectDocument={(doc) => {
+          setSelectedDoc(doc);
+          setSidebarOpen(false);
+        }}
         onCreateDocument={handleCreateDocument}
         onDeleteDocument={handleDeleteDocument}
         onImport={canEdit ? () => setImportOpen(true) : undefined}
         selectedDocId={selectedDoc?.id}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col">
-        <HeaderV2
+        <Header
           documents={documents}
           onSelectDocument={setSelectedDoc}
           onOpenMap={() => setMapOpen(true)}
           onOpenAnalytics={canSeeAnalytics ? () => setAnalyticsOpen(true) : undefined}
           onOpenAudit={canSeeAudit ? () => setAuditOpen(true) : undefined}
+          onOpenSidebar={() => setSidebarOpen(true)}
         />
 
         <div className="flex flex-1 overflow-hidden">
@@ -188,7 +203,7 @@ function WikiApp() {
                 </Button>
               </div>
             ) : selectedDoc && !selectedDoc.isFolder ? (
-              <MarkdownEditorV2
+              <MarkdownEditor
                 key={selectedDoc.id}
                 document={selectedDoc}
                 readOnly={!canEdit}
@@ -196,7 +211,7 @@ function WikiApp() {
                 onOpenRelated={openDocumentById}
               />
             ) : (
-              <DashboardV2 documents={documents} onSelectDocument={setSelectedDoc} />
+              <Dashboard documents={documents} onSelectDocument={setSelectedDoc} />
             )}
           </div>
 
