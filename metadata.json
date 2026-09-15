@@ -1,0 +1,6 @@
+{
+  "name": "Lekki",
+  "description": "Espace documentaire intelligent : le Drive stocke, le partage connecte, le Wiki structure, la recherche retrouve, et l'IA comprend.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
