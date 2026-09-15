@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  # Backend API (FastAPI + SQLAlchemy + RAG)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lekki_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/lekki.db
+      - SECRET_KEY=${SECRET_KEY:-lekki-dev-secret-key-2026}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - lekki_db_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - lekki_net
+
+  # Frontend Web Client (Nginx + React SPA)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: lekki_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - lekki_net
+
+volumes:
+  lekki_db_data:
+    driver: local
+
+networks:
+  lekki_net:
+    driver: bridge
