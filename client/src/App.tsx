@@ -14,7 +14,6 @@ import { ShareDialog } from "./components/ShareDialog";
 import { NewFileDialog } from "./components/NewFileDialog";
 import { WikiEditorModal } from "./components/WikiEditorModal";
 import { WikiHistoryModal } from "./components/WikiHistoryModal";
-import { UnifiedSearchDialog } from "./components/UnifiedSearchDialog";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import {
   DriveFile,
@@ -26,7 +25,8 @@ import { drive, wiki } from "./lib/api";
 
 function LekkiMain() {
   const { user, allUsers } = useAuth();
-  const { activeWorkspace, activeWorkspaceId } = useWorkspace();
+  const { activeWorkspace, activeWorkspaceId, setActiveWorkspace } = useWorkspace();
+
 
   // Navigation State
   const [currentView, setCurrentView] = useState<NavView>("home");
@@ -48,6 +48,7 @@ function LekkiMain() {
 
   // Wiki State
   const [activeWikiPage, setActiveWikiPage] = useState<WikiPage | null>(null);
+  const [wikiFilterTopic, setWikiFilterTopic] = useState<string | null>(null);
   const [editingWikiPage, setEditingWikiPage] = useState<WikiPage | null>(null);
   const [wikiEditorTopic, setWikiEditorTopic] = useState<string | undefined>();
   const [wikiEditorSection, setWikiEditorSection] = useState<string | undefined>();
@@ -126,11 +127,17 @@ function LekkiMain() {
   const handleOpenWikiFromId = async (wikiId: string) => {
     try {
       const page = await wiki.getPage(wikiId);
+      if (page.workspace_id && page.workspace_id !== activeWorkspaceId) {
+        setActiveWorkspace(page.workspace_id);
+      }
       setActiveWikiPage(page);
       setCurrentView("workspace_wiki");
     } catch {
       const found = wikiPages.find((w) => w.id === wikiId);
       if (found) {
+        if (found.workspace_id && found.workspace_id !== activeWorkspaceId) {
+          setActiveWorkspace(found.workspace_id);
+        }
         setActiveWikiPage(found);
         setCurrentView("workspace_wiki");
       }
@@ -179,7 +186,12 @@ function LekkiMain() {
     <div className="flex flex-col h-screen w-screen bg-[#0D0F12] text-zinc-100 overflow-hidden select-none font-sans">
       {/* Top Application Header */}
       <Header
-        onOpenSearch={() => setIsSearchOpen(true)}
+        onSelectDocument={handleOpenDocFromId}
+        onSelectWiki={handleOpenWikiFromId}
+        onAskAI={(q) => {
+          setAIInitialQuestion(q);
+          setIsAIOpen(true);
+        }}
         onToggleAI={() => setIsAIOpen((prev) => !prev)}
         isAIOpen={isAIOpen}
       />
@@ -191,14 +203,7 @@ function LekkiMain() {
           onSelectView={(view) => {
             setCurrentView(view);
             setActiveWikiPage(null);
-          }}
-          onOpenNewFile={() => {
-            setNewFileFolderId(null);
-            setIsNewFileOpen(true);
-          }}
-          onOpenNewWiki={() => {
-            setEditingWikiPage(null);
-            setIsWikiEditorOpen(true);
+            setWikiFilterTopic(null);
           }}
           counts={counts}
         />
@@ -213,11 +218,13 @@ function LekkiMain() {
               onNavigate={(v) => {
                 setCurrentView(v);
                 setActiveWikiPage(null);
+                setWikiFilterTopic(null);
               }}
               onOpenFile={(f) => setViewingFile(f)}
               onOpenWiki={(p) => {
                 setActiveWikiPage(p);
                 setCurrentView("workspace_wiki");
+                setWikiFilterTopic(null);
               }}
               onOpenSearch={() => setIsSearchOpen(true)}
               onOpenAI={() => setIsAIOpen(true)}
@@ -252,8 +259,14 @@ function LekkiMain() {
                 page={activeWikiPage}
                 availableFiles={files}
                 allPages={wikiPages}
-                onBack={() => setActiveWikiPage(null)}
-                onNavigateTopic={() => setActiveWikiPage(null)}
+                onBack={() => {
+                  setActiveWikiPage(null);
+                  setWikiFilterTopic(null);
+                }}
+                onNavigateTopic={(topic) => {
+                  setWikiFilterTopic(topic);
+                  setActiveWikiPage(null);
+                }}
                 onSelectPage={(p) => setActiveWikiPage(p)}
                 onEdit={(p) => {
                   setEditingWikiPage(p);
@@ -281,6 +294,9 @@ function LekkiMain() {
                   setWikiEditorSection(section);
                   setIsWikiEditorOpen(true);
                 }}
+                filterTopic={wikiFilterTopic}
+                onClearFilter={() => setWikiFilterTopic(null)}
+                onNavigateToTopic={(topic) => setWikiFilterTopic(topic)}
               />
             )
           )}
@@ -296,18 +312,6 @@ function LekkiMain() {
         />
       </div>
 
-      {/* Unified Global Search Modal (Cmd+K) */}
-      <UnifiedSearchDialog
-        open={isSearchOpen}
-        onOpenChange={setIsSearchOpen}
-        onSelectDocument={handleOpenDocFromId}
-        onSelectWiki={handleOpenWikiFromId}
-        onAskAI={(q) => {
-          setAIInitialQuestion(q);
-          setIsAIOpen(true);
-        }}
-      />
-
       {/* Document Viewer Modal (Fiche documentaire Lekki) */}
       <DocumentViewerModal
         file={viewingFile}
@@ -318,6 +322,8 @@ function LekkiMain() {
         onShareDoc={(f) => setSharingFile(f)}
         onOpenWikiPage={(wikiId) => handleOpenWikiFromId(wikiId)}
         wikiPages={wikiPages}
+        activeWorkspaceId={activeWorkspaceId}
+        onSwitchWorkspace={setActiveWorkspace}
       />
 
       {/* Share Document Dialog */}

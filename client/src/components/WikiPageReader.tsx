@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { WikiHeaderBar } from "./WikiHeaderBar";
 import { WikiPage, WikiStatus, DriveFile } from "@/types/lekki";
 import { wiki } from "@/lib/api";
 import { toast } from "sonner";
@@ -11,17 +12,15 @@ import {
   History,
   FileText,
   Sparkles,
-  ArrowLeft,
   ChevronRight,
-  ShieldCheck,
   ChevronDown,
   Link2,
-  ExternalLink,
   MessageSquare,
   HelpCircle,
   FileSearch,
   Download,
   Layers,
+  Settings2
 } from "lucide-react";
 
 interface WikiPageReaderProps {
@@ -74,252 +73,222 @@ export function WikiPageReader({
     }
   };
 
-  // Find linked documents in the available Drive files
   const linkedFiles = availableFiles.filter((f) =>
     (page.related_document_ids || []).includes(f.id)
   );
 
-  // Find related wiki pages
   const relatedWikiList = (page.related_wiki_ids || [])
     .map((wikiId) => allPages.find((p) => p.id === wikiId))
     .filter((p): p is WikiPage => Boolean(p));
 
-  const topicName = page.topic || "Réseaux";
-  const sectionName = page.section || "Général";
+  const topicName = page.topic || "Général";
+  const sectionName = page.section || "Autres";
 
   return (
-    <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
-      {/* 1. Header Bar: Breadcrumb + Clean Actions */}
-      <div className="p-4 sm:p-5 border-b border-zinc-800/80 bg-[#12151B]/80 sticky top-0 z-20 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Breadcrumb: Wiki / [Topic] / [Section] / [Title] */}
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400 flex-wrap">
-            <button
-              onClick={onBack}
-              className="hover:text-emerald-400 transition-colors flex items-center gap-1 text-zinc-300 font-medium"
-            >
-              <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Wiki</span>
-            </button>
-            <ChevronRight className="h-3 w-3 text-zinc-600" />
-            <button
-              onClick={() => onNavigateTopic?.(topicName)}
-              className="hover:text-emerald-400 transition-colors text-zinc-300"
-            >
-              {topicName}
-            </button>
-            <ChevronRight className="h-3 w-3 text-zinc-600" />
-            <span className="text-zinc-400">{sectionName}</span>
-            <ChevronRight className="h-3 w-3 text-zinc-600" />
-            <span className="text-zinc-100 font-medium truncate max-w-[200px]">
-              {page.title}
-            </span>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Ask AI button */}
-            <button
-              onClick={() => onAskAI(page)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Demander à Lekki AI</span>
-            </button>
-
-            {/* History button */}
-            <button
-              onClick={() => onViewHistory(page)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60 transition-colors"
-            >
-              <History className="h-3.5 w-3.5 text-emerald-400" />
-              <span>v{page.current_version || page.history?.length || 1} • Historique</span>
-            </button>
-
-            {/* Edit button */}
-            <button
-              onClick={() => onEdit(page)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60 transition-colors"
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              <span>Modifier</span>
-            </button>
-          </div>
+    <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-hidden">
+      {/* 1. Header Bar: Breadcrumb only */}
+      <WikiHeaderBar>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400 flex-wrap">
+          <button
+            onClick={onBack}
+            className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-zinc-300 font-medium"
+          >
+            <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
+            <span>Wiki</span>
+          </button>
+          <ChevronRight className="h-3 w-3 text-zinc-600" />
+          <button
+            onClick={() => onNavigateTopic?.(topicName)}
+            className="hover:text-emerald-400 transition-colors text-zinc-300"
+          >
+            {topicName}
+          </button>
+          <ChevronRight className="h-3 w-3 text-zinc-600" />
+          <span className="text-zinc-500">{sectionName}</span>
         </div>
-      </div>
+      </WikiHeaderBar>
 
-      {/* Main Page Article View */}
-      <div className="max-w-4xl w-full mx-auto p-6 sm:p-10 space-y-8">
-        {/* Title and Discreet Verification Badge */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
-              {page.title}
-            </h1>
+      {/* Main Layout: Content (Left) + Context Panel (Right) */}
+      <div className="flex-1 flex overflow-hidden relative">
 
-            {/* Discreet Verification Status Badge (Dropdown) */}
-            <div className="relative">
-              <button
-                onClick={() => setShowStatusMenu((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-all ${
-                  page.status === "verified"
-                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
-                    : page.status === "community"
-                    ? "bg-sky-500/10 text-sky-300 border-sky-500/30 hover:bg-sky-500/20"
-                    : "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
-                }`}
-                title="Changer l'état de validation de la page"
-              >
-                {page.status === "verified" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
-                {page.status === "community" && <Users className="h-3.5 w-3.5 text-sky-400" />}
-                {page.status === "draft" && <Clock className="h-3.5 w-3.5 text-amber-400" />}
-                <span>
-                  {page.status === "verified"
-                    ? page.status_verified_by
-                      ? `🟢 Vérifiée par ${page.status_verified_by}`
-                      : "🟢 Vérifiée"
-                    : page.status === "community"
-                    ? "🔵 Communautaire"
-                    : "○ En cours de validation"}
-                </span>
-                <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-              </button>
+        {/* LEFT: Main Page Content */}
+        <div className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="max-w-3xl w-full mx-auto p-6 sm:px-10 sm:py-12 flex flex-col gap-10">
 
-              {showStatusMenu && (
-                <div className="absolute right-0 mt-1.5 w-60 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1.5 z-30">
-                  <div className="px-3 py-1 text-[10px] font-mono text-zinc-500 uppercase">
-                    Statut de vérification
-                  </div>
+            {/* TITLE & METADATA */}
+            <header className="space-y-6 border-b border-zinc-800/60 pb-8">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 leading-tight">
+                {page.title}
+              </h1>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-zinc-400">
+                {/* Status Button */}
+                <div className="relative">
                   <button
-                    onClick={() => handleStatusChange("verified")}
-                    className="w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-zinc-800 text-emerald-300 transition-colors"
+                    onClick={() => setShowStatusMenu((prev) => !prev)}
+                    disabled={updatingStatus}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all ${
+                      page.status === "verified"
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                        : page.status === "community"
+                        ? "bg-sky-500/10 text-sky-400 border-sky-500/20 hover:bg-sky-500/20"
+                        : "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                    }`}
                   >
-                    <span>🟢</span>
-                    <div>
-                      <div className="font-medium">Vérifiée</div>
-                      <div className="text-[10px] text-zinc-400">Validée par un référent ou enseignant</div>
-                    </div>
+                    {page.status === "verified" && <CheckCircle2 className="h-4 w-4" />}
+                    {page.status === "community" && <Users className="h-4 w-4" />}
+                    {page.status === "draft" && <Clock className="h-4 w-4" />}
+                    <span className="font-medium text-xs">
+                      {page.status === "verified"
+                        ? "Vérifiée"
+                        : page.status === "community"
+                        ? "Communautaire"
+                        : "Brouillon"}
+                    </span>
+                    <ChevronDown className="h-3 w-3 opacity-60 ml-1" />
                   </button>
-                  <button
-                    onClick={() => handleStatusChange("community")}
-                    className="w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-zinc-800 text-sky-300 transition-colors"
-                  >
-                    <span>🔵</span>
-                    <div>
-                      <div className="font-medium">Communautaire</div>
-                      <div className="text-[10px] text-zinc-400">Enrichie collectivement par les pairs</div>
+
+                  {showStatusMenu && (
+                    <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1 z-30 overflow-hidden">
+                      <button
+                        onClick={() => handleStatusChange("verified")}
+                        className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-emerald-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium"><CheckCircle2 className="h-3.5 w-3.5"/> Vérifiée</div>
+                        <div className="text-[10px] text-zinc-500 pl-5.5">Validée par un référent</div>
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange("community")}
+                        className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-sky-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium"><Users className="h-3.5 w-3.5"/> Communautaire</div>
+                        <div className="text-[10px] text-zinc-500 pl-5.5">Enrichie par les pairs</div>
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange("draft")}
+                        className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-amber-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 text-sm font-medium"><Clock className="h-3.5 w-3.5"/> Brouillon</div>
+                        <div className="text-[10px] text-zinc-500 pl-5.5">En cours de rédaction</div>
+                      </button>
                     </div>
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange("draft")}
-                    className="w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-zinc-800 text-amber-300 transition-colors"
-                  >
-                    <span>🟡</span>
-                    <div>
-                      <div className="font-medium">En cours de validation</div>
-                      <div className="text-[10px] text-zinc-400">Brouillon ou relecture en cours</div>
-                    </div>
-                  </button>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Discreet Light Metadata */}
-          <div className="flex items-center gap-3 text-xs text-zinc-400 flex-wrap">
-            <span>
-              Par <span className="text-zinc-300">{page.author_name || page.creator_name || "Membre"}</span>
-            </span>
-            <span>•</span>
-            <span>
-              Dernière mise à jour le{" "}
-              <span className="text-zinc-300">
-                {new Date(page.updated_at).toLocaleDateString("fr-FR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </span>
-            </span>
-            <span>•</span>
-            <span className="text-zinc-500 font-mono">
-              v{page.current_version || page.history?.length || 1}
-            </span>
-          </div>
-        </div>
-
-        {/* 2. Markdown Content */}
-        <div className="prose prose-invert prose-zinc max-w-none text-zinc-200 text-sm leading-relaxed pt-4 border-t border-zinc-800/80">
-          <div className="whitespace-pre-wrap font-sans leading-relaxed">
-            {page.content}
-          </div>
-        </div>
-
-        {/* 3. Section: NOTIONS RELIÉES & LIENS TRANSVERSAUX (Section 6 du cadrage) */}
-        {relatedWikiList.length > 0 && (
-          <div className="p-5 rounded-2xl bg-[#12151B] border border-zinc-800/80 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-              <Link2 className="h-3.5 w-3.5" />
-              <span>Notions reliées & Liens transversaux</span>
-            </div>
-            <p className="text-xs text-zinc-400">
-              Ces notions approfondissent ou complètent les concepts traités dans cette page :
-            </p>
-            <div className="flex items-center gap-2 flex-wrap pt-1">
-              {relatedWikiList.map((relPage) => (
-                <button
-                  key={relPage.id}
-                  onClick={() => onSelectPage?.(relPage)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-xs font-medium text-emerald-300 border border-zinc-800 hover:border-emerald-500/40 transition-all group shadow-sm"
-                >
-                  <span className="text-zinc-500 group-hover:text-emerald-400">📖</span>
-                  <span>{relPage.title}</span>
-                  <ChevronRight className="h-3 w-3 text-zinc-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 4. Section: DOCUMENTS ORIGINAUX SOURCES DU DRIVE (Section 7 & 9 du cadrage) */}
-        {linkedFiles.length > 0 && (
-          <div className="p-5 rounded-2xl bg-[#12151B] border border-zinc-800/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-300 font-semibold">
-                <FileText className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Documents originaux sources ({linkedFiles.length})</span>
+                <div className="flex items-center gap-3 text-xs flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-300">
+                      {(page.author_name || page.creator_name || "M")[0].toUpperCase()}
+                    </div>
+                    <span>{page.author_name || page.creator_name || "Membre"}</span>
+                  </div>
+                  <span className="text-zinc-600">•</span>
+                  <span>Modifié le {new Date(page.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  <span className="text-zinc-600">•</span>
+                  <span className="font-mono bg-zinc-800/50 px-1.5 py-0.5 rounded text-zinc-500">v{page.current_version || 1}</span>
+                </div>
               </div>
-              <span className="text-[11px] text-zinc-500">
-                Documents stockés dans le Drive du Workspace
-              </span>
+            </header>
+
+            {/* CONTENT */}
+            <div className="prose prose-invert prose-zinc max-w-none text-zinc-300 text-[15px] leading-relaxed">
+              <div className="whitespace-pre-wrap font-sans">
+                {page.content}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {linkedFiles.map((file) => (
-                <div
-                  key={file.id}
-                  onClick={() => onOpenDoc(file.id)}
-                  className="p-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-emerald-500/40 cursor-pointer transition-all flex items-center justify-between gap-3 group shadow-sm"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-zinc-200 group-hover:text-emerald-300 truncate">
-                        {file.name}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 font-mono mt-0.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 uppercase text-[9px]">
-                          {file.extension}
-                        </span>
-                        <span>•</span>
-                        <span>{file.page_count ? `${file.page_count} pages` : "Document"}</span>
-                        <span>•</span>
-                        <span className="text-emerald-400">Indexé</span>
+            <div className="h-32" /> {/* Spacer for the bottom */}
+          </div>
+        </div>
+
+        {/* RIGHT: Context Panel */}
+        <div className="w-80 sm:w-96 border-l border-zinc-800/60 bg-[#0E1116]/50 backdrop-blur-sm overflow-y-auto p-6 space-y-8 shrink-0 hidden lg:block">
+
+          {/* 1. AI Quick Actions (PRIORITY) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider font-mono">
+              <Sparkles className="h-3.5 w-3.5" />
+              Lekki AI
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => onAskAI(page, `Explique-moi la notion « ${page.title} » simplement et donne-moi un exemple concret.`)}
+                className="flex flex-col gap-1.5 p-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-left group"
+              >
+                <div className="flex items-center gap-2 text-xs font-medium text-zinc-300 group-hover:text-emerald-300">
+                  <HelpCircle className="h-3.5 w-3.5 text-emerald-500" />
+                  Expliquer
+                </div>
+                <div className="text-[10px] text-zinc-500 leading-tight">Obtenir une explication simple avec des exemples.</div>
+              </button>
+              <button
+                onClick={() => onAskAI(page, `Génère 3 questions d'examen types avec leurs corrigés détaillés basés sur « ${page.title} ».`)}
+                className="flex flex-col gap-1.5 p-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-left group"
+              >
+                <div className="flex items-center gap-2 text-xs font-medium text-zinc-300 group-hover:text-sky-300">
+                  <MessageSquare className="h-3.5 w-3.5 text-sky-500" />
+                  Quiz d'examen
+                </div>
+                <div className="text-[10px] text-zinc-500 leading-tight">S'entraîner avec des questions types.</div>
+              </button>
+              <button
+                onClick={() => onAskAI(page, `Résume en 5 points clés les notions fondamentales de « ${page.title} ».`)}
+                className="flex flex-col gap-1.5 p-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-left group"
+              >
+                <div className="flex items-center gap-2 text-xs font-medium text-zinc-300 group-hover:text-amber-300">
+                  <FileSearch className="h-3.5 w-3.5 text-amber-500" />
+                  Résumé express
+                </div>
+                <div className="text-[10px] text-zinc-500 leading-tight">Extraire les 5 points fondamentaux.</div>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Related Wiki Pages */}
+          {relatedWikiList.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-semibold text-zinc-200 flex items-center gap-2 uppercase tracking-wider font-mono">
+                <Link2 className="h-3.5 w-3.5 text-emerald-400" />
+                Notions reliées
+              </h3>
+              <div className="flex flex-col gap-2">
+                {relatedWikiList.map((relPage) => (
+                  <button
+                    key={relPage.id}
+                    onClick={() => onSelectPage?.(relPage)}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-left group"
+                  >
+                    <span className="text-zinc-500 group-hover:text-emerald-400 transition-colors">📖</span>
+                    <span className="text-sm text-zinc-300 group-hover:text-zinc-100 truncate flex-1">{relPage.title}</span>
+                    <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Source Documents */}
+          {linkedFiles.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-semibold text-zinc-200 flex items-center gap-2 uppercase tracking-wider font-mono">
+                <FileText className="h-3.5 w-3.5 text-sky-400" />
+                Documents sources
+              </h3>
+              <div className="flex flex-col gap-2">
+                {linkedFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    onClick={() => onOpenDoc(file.id)}
+                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/60 border border-zinc-800/80 hover:border-zinc-700 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="h-4 w-4 text-zinc-500 group-hover:text-sky-400 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm text-zinc-300 group-hover:text-zinc-100 truncate">{file.name}</div>
+                        <div className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">{file.extension}</div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -332,61 +301,39 @@ export function WikiPageReader({
                         document.body.removeChild(link);
                         toast.success(`Téléchargement de « ${file.name} »`);
                       }}
-                      className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-                      title="Télécharger le fichier original"
+                      className="p-1.5 rounded-md hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                      title="Télécharger"
                     >
                       <Download className="h-3.5 w-3.5" />
                     </button>
-                    <button
-                      onClick={() => onOpenDoc(file.id)}
-                      className="p-1.5 rounded-lg text-zinc-500 group-hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
-                      title="Consulter la fiche d'index Lekki"
-                    >
-                      <Layers className="h-3.5 w-3.5" />
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 5. Section: ACTION RAPIDE LEKKI AI */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/20 via-zinc-900 to-zinc-900/90 border border-emerald-500/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span>Exploiter cette fiche avec Lekki AI</span>
+          {/* 4. Page Management Actions */}
+          <div className="pt-6 space-y-4">
+            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-bold">
+              <Settings2 className="h-3.5 w-3.5" />
+              Gestion de page
             </div>
-            <span className="text-[11px] text-zinc-500 font-mono">Assistant RAG</span>
-          </div>
-
-          <p className="text-xs text-zinc-400 leading-relaxed">
-            Interrogez l'intelligence artificielle pour clarifier un point difficile, générer des fiches de révision ou comparer avec vos cours.
-          </p>
-
-          <div className="flex items-center gap-2 flex-wrap pt-1">
-            <button
-              onClick={() => onAskAI(page, `Explique-moi la notion « ${page.title} » simplement et donne-moi un exemple concret.`)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors"
-            >
-              <HelpCircle className="h-3 w-3 text-emerald-400" />
-              <span>Expliquer simplement</span>
-            </button>
-            <button
-              onClick={() => onAskAI(page, `Génère 3 questions d'examen types avec leurs corrigés détaillés basés sur « ${page.title} ».`)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors"
-            >
-              <MessageSquare className="h-3 w-3 text-sky-400" />
-              <span>Générer un quiz d'examen</span>
-            </button>
-            <button
-              onClick={() => onAskAI(page, `Résume en 5 points clés les notions fondamentales de « ${page.title} ».`)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors"
-            >
-              <FileSearch className="h-3 w-3 text-amber-400" />
-              <span>Résumé en 5 points</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => onEdit(page)}
+                className="flex items-center justify-center gap-2 p-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-xs font-medium text-zinc-300"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-zinc-500" />
+                Modifier
+              </button>
+              <button
+                onClick={() => onViewHistory(page)}
+                className="flex items-center justify-center gap-2 p-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 transition-colors text-xs font-medium text-zinc-300"
+              >
+                <History className="h-3.5 w-3.5 text-zinc-500" />
+                Historique
+              </button>
+            </div>
           </div>
         </div>
       </div>

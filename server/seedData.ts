@@ -50,7 +50,7 @@ export interface KeyPassage {
 export interface DriveFile {
   id: string;
   name: string;
-  extension: "pdf" | "docx" | "pptx" | "txt" | "md";
+  extension: "pdf" | "docx" | "pptx" | "txt" | "md" | "xlsx";
   size_bytes: number;
   mime_type: string;
   content: string; // Plain text or markdown for indexing & RAG
@@ -68,6 +68,23 @@ export interface DriveFile {
   detected_chapters?: ChapterInfo[];
   key_passages?: KeyPassage[];
   linked_wiki_ids?: string[];
+  index_meta?: DocumentIndexMeta;
+}
+
+export interface DocumentIndexMeta {
+  total_chunks: number;
+  total_pages_analyzed: number;
+  chapters_detected: string[];
+}
+
+export interface ServerIndexedChunk {
+  id: string;
+  source_id: string;
+  source_type: "document" | "wiki";
+  content: string;
+  chapter?: string;
+  section?: string;
+  locator?: string;
 }
 
 export type WikiStatus = "draft" | "community" | "verified";
@@ -291,6 +308,11 @@ export const INITIAL_FILES: DriveFile[] = [
 Fiche de révision pour l'épreuve de fin de semestre à SUP'PTIC. Formules de Friis et atténuation en espace libre.`,
     created_at: new Date(Date.now() - 18 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+    index_meta: {
+      total_chunks: 34,
+      total_pages_analyzed: 58,
+      chapters_detected: ["Modulation et Démodulation", "Synthèse personnelle"],
+    },
   },
   {
     id: "file-perso-td-partage",
@@ -450,6 +472,11 @@ Pour différencier le Gigabit et le 10G, l'administrateur doit exécuter :
 - UDP : sans connexion, sans garantie de livraison ni d'ordre, faible overhead, adapté au temps réel (VoIP, DNS, streaming).`,
     created_at: new Date(Date.now() - 32 * 86400000).toISOString(),
     updated_at: new Date(Date.now() - 15 * 86400000).toISOString(),
+    index_meta: {
+      total_chunks: 124,
+      total_pages_analyzed: 78,
+      chapters_detected: ["Chapitre 4 : Open Shortest Path First (OSPF v2/v3)", "Chapitre 5 : BGP et routage inter-AS", "Chapitre 6 : Sécurité des protocoles"],
+    },
   },
   {
     id: "file-supptic-td-routage",
@@ -1268,4 +1295,60 @@ Commandes et bonnes pratiques pour administrer des serveurs Debian/Ubuntu et Red
       },
     ],
   },
+];
+
+export const INITIAL_CHUNKS: ServerIndexedChunk[] = [
+  {
+    id: "chunk-1",
+    source_id: "file-supptic-cours-reseaux",
+    source_type: "document",
+    content: "La métrique utilisée par OSPF est le Coût (Cost), inversement proportionnel à la bande passante : Coût = Bande Passante de Référence / Bande Passante de l'interface.",
+    chapter: "Chapitre 4 : Open Shortest Path First (OSPF v2/v3)",
+    section: "Calcul de la métrique et Coût OSPF",
+    locator: "p. 42",
+  },
+  {
+    id: "chunk-2",
+    source_id: "file-supptic-cours-reseaux",
+    source_type: "document",
+    content: "Dans la spécification standard de base Cisco et RFC 2328 : La bande passante de référence par défaut est de 100 Mbps (10^8 bps). Pour GigabitEthernet (1000 Mbps) : Coût = 100 / 1000 = 0.1 -> arrondi à 1.",
+    chapter: "Chapitre 4 : Open Shortest Path First (OSPF v2/v3)",
+    section: "Calcul de la métrique et Coût OSPF",
+    locator: "p. 42",
+  },
+  {
+    id: "chunk-3",
+    source_id: "file-supptic-cours-reseaux",
+    source_type: "document",
+    content: "OSPF est un protocole de passerelle intérieure (IGP) standardisé (RFC 2328). Il utilise l'algorithme de Dijkstra pour trouver le plus court chemin entre chaque routeur.",
+    chapter: "Chapitre 4 : Open Shortest Path First (OSPF v2/v3)",
+    section: "Introduction",
+    locator: "p. 41",
+  },
+  {
+    id: "chunk-4",
+    source_id: "file-supptic-td-routage",
+    source_type: "document",
+    content: "Dans un réseau OSPF multi-zones, l'aire 0 est appelée backbone area. Tous les autres réseaux doivent être physiquement ou logiquement connectés à l'aire 0.",
+    chapter: "Topologies Multi-Zones",
+    section: "Aire 0",
+    locator: "p. 5",
+  },
+  {
+    id: "chunk-5",
+    source_id: "file-perso-cours",
+    source_type: "document",
+    content: "QAM-16 et QAM-64 : constellations et efficacité spectrale. Échantillonnage de Nyquist-Shannon : fe >= 2 * fmax.",
+    chapter: "Modulation et Démodulation",
+    section: "Théorèmes",
+    locator: "p. 12",
+  },
+  {
+    id: "chunk-6",
+    source_id: "wiki-ospf-base",
+    source_type: "wiki",
+    content: "En environnement moderne (1G / 10G), le calcul du coût par défaut sature à 1 et nécessite d'ajuster manuellement la commande auto-cost reference-bandwidth 1000.",
+    chapter: "Configuration OSPF",
+    section: "Limites du calcul de base",
+  }
 ];

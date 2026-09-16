@@ -15,7 +15,6 @@ import {
   ExternalLink,
   Bot,
   User,
-  Download,
   CheckCircle2,
   Layers,
 } from "lucide-react";
@@ -35,7 +34,7 @@ export function LekkiAIPanel({
   onOpenWiki,
   initialQuestion,
 }: LekkiAIPanelProps) {
-  const { activeWorkspace, activeWorkspaceId } = useWorkspace();
+  const { activeWorkspace, activeWorkspaceId, workspaces } = useWorkspace();
   const [messages, setMessages] = useState<LekkiAIChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,7 +52,7 @@ export function LekkiAIPanel({
     }
   }, [open]);
 
-  // Handle initial question passed from outside (e.g. from document viewer or search)
+  // Handle initial question passed from outside
   useEffect(() => {
     if (open && initialQuestion) {
       handleAsk(initialQuestion);
@@ -70,7 +69,6 @@ export function LekkiAIPanel({
     const q = questionText.trim();
     if (!q || loading) return;
 
-    // Optimistically add user message
     const tempUserMsg: LekkiAIChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -83,7 +81,8 @@ export function LekkiAIPanel({
     setLoading(true);
 
     try {
-      const response = await aiApi.ask(q, activeWorkspaceId || undefined);
+      const response = await aiApi.ask(q);
+
 
       const assistantMsg: LekkiAIChatMessage = {
         id: response.message_id || `assistant-${Date.now()}`,
@@ -119,16 +118,15 @@ export function LekkiAIPanel({
     "Trouve-moi les TD de réseaux disponibles",
   ];
 
-  const handleDownloadDoc = (fileId: string, fileName: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const downloadUrl = `/api/v1/drive/files/${fileId}/download`;
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Téléchargement de « ${fileName} » lancé`);
+  // Helper to clean location (Remove "Chapitre X, " etc. and keep only the page part)
+  const cleanLocation = (loc: string) => {
+    if (!loc) return "";
+    // Look for "p." or "page" and take everything from there to the end
+    const pageMatch = loc.match(/(p\.\s*\d+|page\s*\d+)/i);
+    if (pageMatch) return pageMatch[0];
+    // If no "p." found, just return the last part after the last comma if exists
+    const parts = loc.split(",");
+    return parts[parts.length - 1].trim();
   };
 
   return (
@@ -136,80 +134,58 @@ export function LekkiAIPanel({
       id="lekki-ai-panel-overlay"
       className="fixed inset-y-0 right-0 z-40 w-full sm:w-[480px] bg-[#12151B] border-l border-zinc-800 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
     >
-      {/* Header */}
-      <div className="p-4 border-b border-zinc-800 bg-[#161922] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 leading-none">
-              <h2 className="text-sm font-bold text-zinc-100">Lekki AI</h2>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                RAG Grounded
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
-              Assistant documentaire contextualisé
-            </p>
-          </div>
+      {/* Header - Aligned with Global Header */}
+      <div className="h-16 border-b border-zinc-800 bg-[#161922] px-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <img
+            src="/lekki-ai-logo.png"
+            alt="Lekki AI Logo"
+            className="h-8 w-8 object-contain"
+          />
+          <h2 className="text-sm font-bold text-zinc-100 tracking-wide">Lekki AI</h2>
         </div>
 
         <div className="flex items-center gap-1">
           <button
             onClick={handleClearHistory}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
             title="Effacer la conversation"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-4 w-4" />
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Perimeter Indicator (Section 4 & 16) */}
-      <div className="px-4 py-2.5 bg-zinc-950/60 border-b border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 shrink-0">
-        <div className="flex items-center gap-1.5 truncate">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-          <span className="truncate">
-            Périmètre : Mon Espace + Partagés + {activeWorkspace?.name || "Workspace"}
-          </span>
-        </div>
-        <span className="text-[10px] font-mono text-emerald-400/90 shrink-0">
-          Strict Access
-        </span>
-      </div>
-
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
         {messages.length === 0 && (
           <div className="py-8 space-y-4">
-            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-center space-y-2">
-              <Bot className="h-8 w-8 mx-auto text-emerald-400" />
+            <div className="p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 text-center space-y-3">
+              <Bot className="h-10 w-10 mx-auto text-emerald-400 opacity-80" />
               <div className="font-semibold text-zinc-200 text-sm">
-                Posez vos questions à Lekki
+                Prêt pour vos questions
               </div>
-              <p className="text-zinc-400 text-xs leading-relaxed max-w-sm mx-auto">
-                Lekki AI analyse simultanément vos documents personnels, les ressources
-                partagées avec vous et le Wiki de votre Workspace.
+              <p className="text-zinc-400 text-xs leading-relaxed max-w-xs mx-auto">
+                Je parcours vos documents et le Wiki pour vous répondre avec précision.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="text-[10px] font-mono uppercase text-zinc-500 font-semibold px-1">
-                Suggestions de questions
+                Suggestions
               </div>
               <div className="space-y-1.5">
                 {suggestedQuestions.map((q) => (
                   <button
                     key={q}
                     onClick={() => handleAsk(q)}
-                    className="w-full text-left p-2.5 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 hover:text-emerald-300 transition-colors text-xs"
+                    className="w-full text-left p-3 rounded-xl bg-zinc-900/40 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-300 hover:text-emerald-300 transition-all text-xs"
                   >
                     « {q} »
                   </button>
@@ -219,136 +195,139 @@ export function LekkiAIPanel({
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col space-y-2 ${
-              msg.role === "user" ? "items-end" : "items-start"
-            }`}
-          >
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
-              {msg.role === "user" ? (
-                <>
-                  <span>Vous</span>
-                  <User className="h-3 w-3" />
-                </>
-              ) : (
-                <>
-                  <Bot className="h-3 w-3 text-emerald-400" />
-                  <span className="text-emerald-400 font-semibold">Lekki AI</span>
-                </>
-              )}
-            </div>
+        {messages.map((msg) => {
+          const uniqueSources = msg.sources ? Array.from(
+            new Map(msg.sources.map(s => [s.id, s])).values()
+          ) : [];
 
+          return (
             <div
-              className={`p-3.5 rounded-xl max-w-[92%] leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-emerald-600 text-zinc-950 font-medium"
-                  : "bg-zinc-900/90 border border-zinc-800 text-zinc-200 shadow-sm"
+              key={msg.id}
+              className={`flex flex-col space-y-2 ${
+                msg.role === "user" ? "items-end" : "items-start"
               }`}
             >
-              {msg.content}
-            </div>
-
-            {/* Section 14: Contradiction or Nuance Callout */}
-            {msg.contradiction && (
-              <div className="w-full p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
-                <div className="flex items-center gap-1.5 font-semibold text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  <span>Nuance ou contradiction documentaire identifiée :</span>
-                </div>
-                <p className="text-[11px] leading-relaxed">{msg.contradiction}</p>
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
+                {msg.role === "user" ? (
+                  <>
+                    <span>Vous</span>
+                    <User className="h-3 w-3" />
+                  </>
+                ) : (
+                  <>
+                    <img
+                      src="/lekki-ai-logo.png"
+                      alt="Lekki AI"
+                      className="h-6 w-6 rounded-full"
+                    />
+                    <span className="text-emerald-400 font-bold uppercase tracking-wider">Lekki AI</span>
+                  </>
+                )}
               </div>
-            )}
 
-            {/* Section 11: Provenance explicite des sources citées (Situer le lecteur) */}
-            {msg.sources && msg.sources.length > 0 && (
-              <div className="w-full p-3.5 rounded-xl bg-zinc-950/85 border border-zinc-800/80 space-y-2.5 text-[11px]">
-                <div className="font-mono text-[10px] uppercase text-zinc-400 font-semibold flex items-center justify-between">
-                  <span>Sources & Provenances ({msg.sources.length})</span>
-                  <span className="text-emerald-400">Indexation située</span>
-                </div>
+              <div
+                className={`p-3.5 rounded-xl max-w-[92%] leading-relaxed whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "bg-emerald-600 text-zinc-950 font-medium"
+                    : "bg-zinc-900/90 border border-zinc-800 text-zinc-200 shadow-sm"
+                }`}
+              >
+                {msg.content}
+              </div>
 
-                <div className="space-y-2">
-                  {msg.sources.map((src, i) => (
-                    <div
-                      key={i}
-                      className="w-full text-left p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800/80 transition-all hover:border-zinc-700/80 space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          {src.type === "document" ? (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/20 shrink-0">
-                              {src.file_extension || "DOC"}
+              {uniqueSources.length > 0 && (
+                <div className="w-full p-3.5 rounded-xl bg-zinc-950/85 border border-zinc-800/80 space-y-2.5 text-[11px]">
+                  <div className="font-mono text-[10px] uppercase text-zinc-400 font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Layers className="h-3 w-3" /> Sources
+                    </span>
+                    <span className="text-emerald-400">Vérifié</span>
+                  </div>
+
+                  {uniqueSources.some(s => s.workspace_id && s.workspace_id !== activeWorkspaceId) && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200/80 text-[10px] mb-2 animate-in fade-in duration-500">
+                      <ExternalLink className="h-3 w-3 text-amber-400" />
+                      <span>Certaines sources proviennent de workspaces externes.</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {uniqueSources.map((src, i) => (
+                      <div
+                        key={i}
+                        className="w-full text-left p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800/80 transition-all hover:border-zinc-700/80"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                            {src.type === "document" ? (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/20 shrink-0">
+                                {src.file_extension || "DOC"}
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shrink-0">
+                                WIKI
+                              </span>
+                            )}
+                            <span className="font-medium text-zinc-200 truncate">
+                              {src.title}
                             </span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shrink-0">
-                              WIKI
+                          </div>
+                          {src.location && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60 shrink-0">
+                              {cleanLocation(src.location)}
                             </span>
                           )}
-                          <span className="font-medium text-zinc-200 truncate">
-                            {src.title}
-                          </span>
                         </div>
 
-                        {/* Situated Location Badge */}
-                        {(src.location || src.detail) && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/60 shrink-0">
-                            {src.location || src.detail}
-                          </span>
+                        {src.excerpt && (
+                          <div className="mb-2">
+                            <p className="text-[10px] text-zinc-500 line-clamp-2 font-mono bg-black/30 p-1.5 rounded border border-zinc-800/50 italic">
+                              « {src.excerpt} »
+                            </p>
+                          </div>
                         )}
-                      </div>
 
-                      {src.excerpt && (
-                        <p className="text-[10px] text-zinc-400 line-clamp-2 font-mono bg-black/30 p-1.5 rounded border border-zinc-800/50 italic">
-                          « {src.excerpt} »
-                        </p>
-                      )}
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          {src.workspace_id && src.workspace_id !== activeWorkspaceId ? (
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-400 text-zinc-950 border border-amber-300 text-[10px] font-bold shrink-0 shadow-sm" title={`Provenance : ${workspaces.find(w => w.id === src.workspace_id)?.name || "Workspace externe"}`}>
+                              <ExternalLink className="h-2.5 w-2.5" />
+                              <span>{workspaces.find(w => w.id === src.workspace_id)?.name || "Ext"}</span>
+                            </div>
+                          ) : (
+                            <div className="w-16" /> /* Spacer pour garder le bouton à droite */
+                          )}
 
-                      {/* Action buttons for citation */}
-                      <div className="flex items-center justify-between gap-2 pt-0.5 text-[11px]">
-                        {src.type === "document" ? (
-                          <>
+                          {src.type === "document" ? (
                             <button
                               onClick={() => onOpenDoc(src.id)}
-                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium text-[10px]"
                             >
                               <Layers className="h-3 w-3" />
                               <span>Fiche d'index</span>
                             </button>
-
+                          ) : (
                             <button
-                              onClick={(e) => handleDownloadDoc(src.id, src.title, e)}
-                              className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors"
-                              title="Télécharger le document original intact"
+                              onClick={() => onOpenWiki(src.id)}
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium text-[10px]"
                             >
-                              <Download className="h-3 w-3" />
-                              <span>Télécharger l'original</span>
+                              <BookOpen className="h-3 w-3" />
+                              <span>Ouvrir la fiche Wiki</span>
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => onOpenWiki(src.id)}
-                            className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
-                          >
-                            <BookOpen className="h-3 w-3" />
-                            <span>Ouvrir la fiche Wiki</span>
-                            <ExternalLink className="h-2.5 w-2.5 ml-0.5 opacity-70" />
-                          </button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
 
         {loading && (
           <div className="flex items-center gap-2 text-xs text-zinc-500 py-2">
             <Sparkles className="h-3.5 w-3.5 text-emerald-400 animate-spin" />
-            <span>Consultation des documents originaux et du Wiki en cours...</span>
+            <span>Analyse des sources en cours...</span>
           </div>
         )}
 
@@ -369,7 +348,7 @@ export function LekkiAIPanel({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Posez une question sur vos cours, TD, synthèses..."
+            placeholder="Posez une question sur vos cours..."
             disabled={loading}
             className="w-full pl-3 pr-10 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 disabled:opacity-50"
           />

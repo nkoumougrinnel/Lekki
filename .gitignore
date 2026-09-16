@@ -14,3 +14,6 @@ __pycache__/
 # Données locales (spécifique à Lekki/WikiAI)
 *.db
 data/chroma/
+
+# Node.js   
+node_modules/

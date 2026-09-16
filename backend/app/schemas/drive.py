@@ -1,6 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel
+import json
+from pydantic import BaseModel, validator
 
 
 class FolderCreate(BaseModel):
@@ -55,11 +56,22 @@ class FileOut(BaseModel):
     workspace_id: Optional[str] = None
     folder_id: Optional[str] = None
     scope: str
+    shared_with: List[str] = []
     is_starred: bool = False
     is_deleted: bool = False
     tags: List[str] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    @validator("shared_with", pre=True)
+    def parse_shared_with(cls, value):
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else []
+            except (TypeError, ValueError):
+                return []
+        return value or []
 
     class Config:
         from_attributes = True

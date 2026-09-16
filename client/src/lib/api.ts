@@ -176,6 +176,10 @@ export const drive = {
     return request<DriveFile>(`/drive/files/${id}`);
   },
 
+  getFileIndex(id: string): Promise<DocumentIndexInfo> {
+    return request<DocumentIndexInfo>(`/drive/files/${id}/index`);
+  },
+
   createFile(data: {
     name: string;
     extension?: string;

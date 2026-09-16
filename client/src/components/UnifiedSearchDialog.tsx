@@ -17,6 +17,8 @@ import {
 interface UnifiedSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
   onSelectDocument: (docId: string) => void;
   onSelectWiki: (wikiId: string) => void;
   onAskAI: (query: string) => void;
@@ -25,30 +27,33 @@ interface UnifiedSearchDialogProps {
 export function UnifiedSearchDialog({
   open,
   onOpenChange,
+  query,
+  onQueryChange,
   onSelectDocument,
   onSelectWiki,
   onAskAI,
 }: UnifiedSearchDialogProps) {
   const { activeWorkspaceId } = useWorkspace();
-  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<UnifiedSearchResults>({
     documents: [],
     wiki: [],
     shared: [],
   });
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery("");
-      setResults({ documents: [], wiki: [], shared: [] });
-    }
-  }, [open]);
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
+    if (!open) return;
     if (!query.trim()) {
       setResults({ documents: [], wiki: [], shared: [] });
       return;
@@ -67,7 +72,7 @@ export function UnifiedSearchDialog({
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [query, activeWorkspaceId]);
+  }, [query, activeWorkspaceId, open]);
 
   if (!open) return null;
 
@@ -115,43 +120,16 @@ export function UnifiedSearchDialog({
 
   return (
     <div
-      id="unified-search-overlay"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-start justify-center pt-16 px-4"
+      id="unified-search-dropdown"
+      className="absolute left-0 right-0 top-full z-50 mt-2"
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
     >
       <div
         id="unified-search-modal"
-        className="w-full max-w-2xl bg-[#14171E] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        className="w-full bg-[#14171E] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
       >
-        {/* Search Input Bar */}
-        <div className="p-3 border-b border-zinc-800 flex items-center gap-3 bg-zinc-900/60">
-          <Search className="h-5 w-5 text-emerald-400 shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher dans tout Lekki (documents, wiki, partages)..."
-            className="flex-1 bg-transparent border-none text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          <button
-            onClick={() => onOpenChange(false)}
-            className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
-          >
-            Échap
-          </button>
-        </div>
-
         {/* Ask Lekki AI prompt banner if query present */}
         {query.trim().length > 2 && (
           <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between">
@@ -171,7 +149,7 @@ export function UnifiedSearchDialog({
           </div>
         )}
 
-        {/* Results Container (Section 15: Partitioned by DOCUMENTS, WIKI, PARTAGES) */}
+        {/* Results Container */}
         <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4">
           {loading && (
             <div className="py-8 text-center text-xs text-zinc-500">
@@ -188,7 +166,7 @@ export function UnifiedSearchDialog({
                 {["OSPF", "TCP", "UDP", "Routage", "Fibre", "Examens"].map((chip) => (
                   <button
                     key={chip}
-                    onClick={() => setQuery(chip)}
+                    onClick={() => onQueryChange(chip)}
                     className="text-[11px] px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60"
                   >
                     {chip}
@@ -207,7 +185,7 @@ export function UnifiedSearchDialog({
             </div>
           )}
 
-          {/* Section 15 Result Block: DOCUMENTS */}
+          {/* DOCUMENTS */}
           {results.documents.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
@@ -244,7 +222,7 @@ export function UnifiedSearchDialog({
             </div>
           )}
 
-          {/* Section 15 Result Block: WIKI */}
+          {/* WIKI */}
           {results.wiki.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
@@ -279,7 +257,7 @@ export function UnifiedSearchDialog({
             </div>
           )}
 
-          {/* Section 15 Result Block: PARTAGES */}
+          {/* PARTAGES */}
           {results.shared.length > 0 && (
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">

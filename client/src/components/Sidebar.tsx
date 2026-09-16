@@ -9,15 +9,11 @@ import {
   Trash2,
   Files,
   BookOpen,
-  Plus,
-  ShieldCheck,
 } from "lucide-react";
 
 interface SidebarProps {
   currentView: NavView;
   onSelectView: (view: NavView) => void;
-  onOpenNewFile: () => void;
-  onOpenNewWiki: () => void;
   counts?: {
     myDocs?: number;
     starred?: number;
@@ -31,45 +27,24 @@ interface SidebarProps {
 export function Sidebar({
   currentView,
   onSelectView,
-  onOpenNewFile,
-  onOpenNewWiki,
   counts = {},
 }: SidebarProps) {
   const { activeWorkspace } = useWorkspace();
 
   const navItemClass = (isActive: boolean) =>
-    `w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group select-none ${
+    `w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group select-none ${
       isActive
         ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-        : "text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800/60 border border-transparent"
+        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 border border-transparent"
     }`;
 
   return (
     <aside
       id="lekki-app-sidebar"
-      className="w-64 bg-[#11141A] border-r border-border/60 flex flex-col justify-between shrink-0 select-none overflow-y-auto"
+      className="w-64 bg-[#0E1116] border-r border-zinc-800/80 flex flex-col justify-between shrink-0 select-none overflow-y-auto"
     >
-      <div className="p-3 space-y-5">
-        {/* Quick Action Buttons */}
-        <div className="flex gap-1.5 pt-1">
-          <button
-            id="sidebar-new-file-btn"
-            onClick={onOpenNewFile}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs transition-colors shadow-sm"
-          >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>Document</span>
-          </button>
-          <button
-            id="sidebar-new-wiki-btn"
-            onClick={onOpenNewWiki}
-            className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs border border-zinc-700/60 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Fiche Wiki</span>
-          </button>
-        </div>
-
+      <div className="p-4 space-y-8">
+        
         {/* Navigation Item: Accueil */}
         <div>
           <button
@@ -77,30 +52,30 @@ export function Sidebar({
             onClick={() => onSelectView("home")}
             className={navItemClass(currentView === "home")}
           >
-            <div className="flex items-center gap-2.5">
-              <Home className="h-4 w-4 text-emerald-400" />
+            <div className="flex items-center gap-3">
+              <Home className={`h-4.5 w-4.5 ${currentView === "home" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
               <span>Accueil</span>
             </div>
           </button>
         </div>
 
-        {/* Section 19: MON ESPACE */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-mono tracking-wider text-zinc-400 uppercase font-semibold">
+        {/* Section: MON ESPACE */}
+        <div className="space-y-2">
+          <div className="px-3 text-[11px] font-mono tracking-wider text-zinc-500 uppercase font-bold">
             Mon Espace
           </div>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <button
               id="sidebar-nav-my-docs"
               onClick={() => onSelectView("my_docs")}
               className={navItemClass(currentView === "my_docs")}
             >
-              <div className="flex items-center gap-2.5">
-                <FolderLock className="h-4 w-4 text-emerald-400/80" />
+              <div className="flex items-center gap-3">
+                <FolderLock className={`h-4.5 w-4.5 ${currentView === "my_docs" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
                 <span>Mes documents</span>
               </div>
               {counts.myDocs !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.myDocs}
                 </span>
               )}
@@ -111,12 +86,12 @@ export function Sidebar({
               onClick={() => onSelectView("starred")}
               className={navItemClass(currentView === "starred")}
             >
-              <div className="flex items-center gap-2.5">
-                <Star className="h-4 w-4 text-amber-400/90" />
+              <div className="flex items-center gap-3">
+                <Star className={`h-4.5 w-4.5 ${currentView === "starred" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
                 <span>Favoris</span>
               </div>
               {counts.starred !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.starred}
                 </span>
               )}
@@ -127,12 +102,12 @@ export function Sidebar({
               onClick={() => onSelectView("shared_with_me")}
               className={navItemClass(currentView === "shared_with_me")}
             >
-              <div className="flex items-center gap-2.5">
-                <Share2 className="h-4 w-4 text-sky-400/90" />
+              <div className="flex items-center gap-3">
+                <Share2 className={`h-4.5 w-4.5 ${currentView === "shared_with_me" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
                 <span>Partagés avec moi</span>
               </div>
               {counts.sharedWithMe !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.sharedWithMe}
                 </span>
               )}
@@ -143,12 +118,12 @@ export function Sidebar({
               onClick={() => onSelectView("trash")}
               className={navItemClass(currentView === "trash")}
             >
-              <div className="flex items-center gap-2.5">
-                <Trash2 className="h-4 w-4 text-rose-400/70" />
+              <div className="flex items-center gap-3">
+                <Trash2 className={`h-4.5 w-4.5 ${currentView === "trash" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
                 <span>Corbeille</span>
               </div>
               {counts.trash !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.trash}
                 </span>
               )}
@@ -156,27 +131,27 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Section 19: ESPACE ACTUEL (Workspace actif) */}
-        <div className="space-y-1">
-          <div className="px-3 flex items-center justify-between text-[10px] font-mono tracking-wider text-zinc-400 uppercase font-semibold">
+        {/* Section: ESPACE ACTUEL (Workspace actif) */}
+        <div className="space-y-2">
+          <div className="px-3 flex items-center justify-between text-[11px] font-mono tracking-wider text-zinc-500 uppercase font-bold">
             <span>Espace Actuel</span>
-            <span className="truncate max-w-[100px] text-emerald-400">
+            <span className="truncate max-w-[100px] text-emerald-500/80">
               {activeWorkspace?.name || "Workspace"}
             </span>
           </div>
 
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <button
               id="sidebar-nav-workspace-files"
               onClick={() => onSelectView("workspace_files")}
               className={navItemClass(currentView === "workspace_files")}
             >
-              <div className="flex items-center gap-2.5">
-                <Files className="h-4 w-4 text-emerald-400" />
-                <span>Fichiers</span>
+              <div className="flex items-center gap-3">
+                <Files className={`h-4.5 w-4.5 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Fichiers partagés</span>
               </div>
               {counts.workspaceFiles !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.workspaceFiles}
                 </span>
               )}
@@ -187,31 +162,17 @@ export function Sidebar({
               onClick={() => onSelectView("workspace_wiki")}
               className={navItemClass(currentView === "workspace_wiki")}
             >
-              <div className="flex items-center gap-2.5">
-                <BookOpen className="h-4 w-4 text-emerald-400" />
-                <span>Wiki</span>
+              <div className="flex items-center gap-3">
+                <BookOpen className={`h-4.5 w-4.5 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Wiki d'équipe</span>
               </div>
               {counts.workspaceWiki !== undefined && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-zinc-500">
                   {counts.workspaceWiki}
                 </span>
               )}
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Footer Perimeter Principle Indicator (Section 4) */}
-      <div className="p-3 border-t border-zinc-800/80 bg-zinc-950/30">
-        <div className="rounded-lg bg-zinc-900/60 border border-zinc-800/80 p-2.5 text-[11px] text-zinc-400 space-y-1">
-          <div className="flex items-center gap-1.5 font-medium text-zinc-200">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Périmètre de confiance</span>
-          </div>
-          <p className="text-[10px] leading-relaxed text-zinc-400">
-            Lekki ne connaît que ce à quoi vous avez accès. Vos documents privés ne
-            sont jamais partagés sans votre accord.
-          </p>
         </div>
       </div>
     </aside>

@@ -79,40 +79,6 @@ export function DriveView({
     return true;
   });
 
-  const getViewTitle = () => {
-    switch (currentView) {
-      case "my_docs":
-        return "Mon Espace — Mes documents personnels";
-      case "starred":
-        return "Favoris";
-      case "shared_with_me":
-        return "Partagés avec moi";
-      case "trash":
-        return "Corbeille";
-      case "workspace_files":
-        return `${activeWorkspaceName || "Workspace"} — Fichiers & Cours`;
-      default:
-        return "Documents";
-    }
-  };
-
-  const getViewDescription = () => {
-    switch (currentView) {
-      case "my_docs":
-        return "Vos fichiers et dossiers privés. Vous seul y avez accès sauf si vous choisissez de les partager.";
-      case "starred":
-        return "Vos documents épinglés pour un accès rapide.";
-      case "shared_with_me":
-        return "Ressources que d'autres collaborateurs ont partagées directement avec vous.";
-      case "trash":
-        return "Éléments supprimés temporairement.";
-      case "workspace_files":
-        return "Bibliothèque documentaire partagée entre tous les membres du Workspace actif.";
-      default:
-        return "";
-    }
-  };
-
   const getDocIcon = (ext: FileExtension) => {
     switch (ext) {
       case "pdf":
@@ -178,6 +144,21 @@ export function DriveView({
     }
   };
 
+  const handleEmptyTrash = async () => {
+    if (displayedFiles.length === 0) {
+      toast.info("La corbeille est déjà vide");
+      return;
+    }
+
+    try {
+      await Promise.all(displayedFiles.map((file) => drive.deleteFile(file.id, true)));
+      toast.success("Corbeille vidée");
+      onRefresh();
+    } catch {
+      toast.error("Impossible de vider complètement la corbeille");
+    }
+  };
+
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
@@ -200,22 +181,47 @@ export function DriveView({
   return (
     <div id="drive-view-container" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
       {/* View Header */}
-      <div className="p-6 border-b border-border/60 bg-[#11141A]/70">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-zinc-100">
-              {getViewTitle()}
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
-              {getViewDescription()}
-            </p>
+      <div className="px-4 py-3 border-b border-zinc-800/80 bg-[#11141A]/70">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center justify-between gap-4 font-mono">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400 min-w-0">
+            {!["starred", "shared_with_me", "trash"].includes(currentView) && (
+              <button
+                onClick={() => setCurrentFolderId(null)}
+                className={`hover:text-emerald-400 transition-colors truncate ${
+                  !currentFolderId ? "text-emerald-400 font-semibold" : ""
+                }`}
+              >
+                {currentView === "my_docs" ? "Mes documents" : "Fichiers partagés"}
+              </button>
+            )}
+            {currentFolder && (
+              <>
+                <ChevronRight className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
+                <span className="text-emerald-400 font-semibold truncate">
+                  📁 {currentFolder.name}
+                </span>
+              </>
+            )}
           </div>
 
-          {currentView !== "trash" && (
-            <div className="flex items-center gap-2">
+          {currentView === "trash" ? (
+            <button
+              onClick={handleEmptyTrash}
+              aria-label="Vider la corbeille"
+              title="Vider la corbeille"
+              className="flex h-8 items-center gap-1.5 rounded-lg bg-rose-500/15 px-3 text-xs font-semibold text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Vider la corbeille</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setShowNewFolderInput((prev) => !prev)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors"
+                aria-label="Nouveau dossier"
+                title="Nouveau dossier"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
               >
                 <FolderPlus className="h-3.5 w-3.5 text-emerald-400" />
                 <span>Nouveau dossier</span>
@@ -223,32 +229,14 @@ export function DriveView({
 
               <button
                 onClick={() => onNewFileClick(currentFolderId || undefined)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm"
+                aria-label="Déposer un document"
+                title="Déposer un document"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500 px-3 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm text-xs font-semibold"
               >
                 <Upload className="h-3.5 w-3.5" />
                 <span>Déposer un document</span>
               </button>
             </div>
-          )}
-        </div>
-
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-1.5 text-xs text-zinc-400 mt-4 pt-3 border-t border-zinc-800/80 font-mono">
-          <button
-            onClick={() => setCurrentFolderId(null)}
-            className={`hover:text-emerald-400 transition-colors ${
-              !currentFolderId ? "text-emerald-400 font-semibold" : ""
-            }`}
-          >
-            Racine
-          </button>
-          {currentFolder && (
-            <>
-              <ChevronRight className="h-3.5 w-3.5 text-zinc-600" />
-              <span className="text-emerald-400 font-semibold">
-                📁 {currentFolder.name}
-              </span>
-            </>
           )}
         </div>
       </div>
@@ -287,30 +275,25 @@ export function DriveView({
 
         {/* Folders Grid (shown if at root and folders exist) */}
         {!currentFolderId && visibleFolders.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-[11px] uppercase font-mono tracking-wider text-zinc-400 font-semibold">
-              Dossiers ({visibleFolders.length})
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-zinc-200">
+              Dossiers
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {visibleFolders.map((folder) => {
-                const folderItemCount = files.filter(
-                  (f) => f.folder_id === folder.id && !f.is_deleted
-                ).length;
                 return (
                   <button
                     key={folder.id}
                     onClick={() => setCurrentFolderId(folder.id)}
-                    className="p-3 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-zinc-700 text-left transition-all flex items-center gap-2.5 group shadow-sm"
+                    className="p-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-zinc-700 text-left transition-all flex items-center justify-between group shadow-sm"
                   >
-                    <Folder className="h-5 w-5 text-emerald-400/90 group-hover:scale-105 transition-transform shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium text-zinc-200 group-hover:text-emerald-300 truncate">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Folder className="h-5 w-5 text-zinc-400 group-hover:text-emerald-400 transition-colors shrink-0 fill-zinc-400/20 group-hover:fill-emerald-400/20" />
+                      <div className="text-sm font-medium text-zinc-300 group-hover:text-zinc-100 truncate">
                         {folder.name}
                       </div>
-                      <div className="text-[10px] text-zinc-400 font-mono">
-                        {folderItemCount} {folderItemCount > 1 ? "fichiers" : "fichier"}
-                      </div>
                     </div>
+                    <MoreVertical className="h-4 w-4 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 );
               })}
@@ -319,12 +302,9 @@ export function DriveView({
         )}
 
         {/* Files Section */}
-        <div className="space-y-2">
-          <div className="text-[11px] uppercase font-mono tracking-wider text-zinc-400 font-semibold flex items-center justify-between">
-            <span>Documents ({displayedFiles.length})</span>
-            <span className="text-zinc-400 font-normal normal-case text-xs">
-              Ressources originales directement indexées
-            </span>
+        <div className="space-y-3 pt-2">
+          <div className="text-sm font-medium text-zinc-200 flex items-center justify-between">
+            <span>Fichiers</span>
           </div>
 
           {displayedFiles.length === 0 ? (
@@ -349,81 +329,33 @@ export function DriveView({
               )}
             </div>
           ) : (
-            <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-[#12151B]">
-              <div className="grid grid-cols-12 px-4 py-2.5 bg-zinc-900/80 border-b border-zinc-800 text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
-                <div className="col-span-6 sm:col-span-5">Nom du document</div>
-                <div className="col-span-3 sm:col-span-2 hidden sm:block">Auteur / Accès</div>
-                <div className="col-span-3 sm:col-span-2 hidden md:block">Taille & Pages</div>
-                <div className="col-span-3 sm:col-span-2 hidden lg:block">Modifié le</div>
-                <div className="col-span-6 sm:col-span-3 lg:col-span-1 text-right">Actions</div>
-              </div>
-
-              <div className="divide-y divide-zinc-800/60">
-                {displayedFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    onClick={() => onOpenFile(file)}
-                    className="grid grid-cols-12 px-4 py-3 items-center hover:bg-zinc-800/40 transition-colors cursor-pointer group text-xs text-zinc-300"
-                  >
-                    {/* File Name & Format */}
-                    <div className="col-span-6 sm:col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                      <div className="p-1.5 rounded bg-zinc-800/80 border border-zinc-700/60 shrink-0">
-                        {getDocIcon(file.extension)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-zinc-200 group-hover:text-emerald-400 transition-colors truncate">
-                          {file.name}
-                        </div>
-                        {file.summary && (
-                          <div className="text-[11px] text-zinc-400 line-clamp-1">
-                            {file.summary}
-                          </div>
-                        )}
-                      </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {displayedFiles.map((file) => (
+                <div
+                  key={file.id}
+                  onClick={() => onOpenFile(file)}
+                  className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl overflow-hidden hover:bg-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group flex flex-col aspect-[4/3] sm:aspect-square relative"
+                >
+                  {/* File Preview Area (Mocked with icon for now) */}
+                  <div className="flex-1 bg-zinc-950/50 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="transform scale-150 opacity-40 group-hover:scale-125 transition-transform duration-500 text-zinc-600">
+                      {getDocIcon(file.extension)}
                     </div>
-
-                    {/* Owner & Access Badges */}
-                    <div className="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
-                      {file.workspace_id ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          <Globe className="h-2.5 w-2.5" /> Workspace
-                        </span>
-                      ) : file.shared_with.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          <Share2 className="h-2.5 w-2.5" /> Partagé ({file.shared_with.length})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700">
-                          <Lock className="h-2.5 w-2.5" /> Privé
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Size & Pages */}
-                    <div className="col-span-3 sm:col-span-2 hidden md:block text-zinc-400 font-mono text-[11px]">
-                      {file.page_count ? `${file.page_count} p. • ` : ""}
-                      {formatFileSize(file.size_bytes)}
-                    </div>
-
-                    {/* Updated At */}
-                    <div className="col-span-3 sm:col-span-2 hidden lg:block text-zinc-400 text-[11px]">
-                      {new Date(file.updated_at).toLocaleDateString("fr-FR")}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="col-span-6 sm:col-span-3 lg:col-span-1 flex items-center justify-end gap-1">
+                    
+                    {/* Action Overlay */}
+                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-950/80 p-1.5 rounded-lg backdrop-blur-sm border border-zinc-800/80" onClick={(e) => e.stopPropagation()}>
                       {currentView === "trash" ? (
                         <>
                           <button
                             onClick={(e) => handleRestore(file, e)}
-                            className="p-1 rounded hover:bg-zinc-700 text-emerald-400"
+                            className="p-1.5 rounded hover:bg-zinc-700 text-emerald-400"
                             title="Restaurer"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={(e) => handleTrashOrDelete(file, e)}
-                            className="p-1 rounded hover:bg-zinc-700 text-rose-400"
+                            className="p-1.5 rounded hover:bg-zinc-700 text-rose-400"
                             title="Supprimer définitivement"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -443,8 +375,8 @@ export function DriveView({
                               document.body.removeChild(link);
                               toast.success(`Téléchargement de « ${file.name} »`);
                             }}
-                            className="p-1 rounded hover:bg-zinc-700 text-zinc-400 hover:text-emerald-400"
-                            title="Télécharger le fichier original"
+                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white"
+                            title="Télécharger"
                           >
                             <Download className="h-3.5 w-3.5" />
                           </button>
@@ -454,18 +386,18 @@ export function DriveView({
                                 e.stopPropagation();
                                 onAskAIAboutFile(file);
                               }}
-                              className="p-1 rounded hover:bg-zinc-700 text-zinc-400 hover:text-emerald-400"
-                              title="Interroger ce fichier avec Lekki AI"
+                              className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400"
+                              title="Interroger avec Lekki AI"
                             >
                               <Sparkles className="h-3.5 w-3.5" />
                             </button>
                           )}
                           <button
                             onClick={(e) => handleToggleStar(file, e)}
-                            className={`p-1 rounded hover:bg-zinc-700 ${
-                              file.is_starred ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"
+                            className={`p-1.5 rounded hover:bg-zinc-800 ${
+                              file.is_starred ? "text-amber-400" : "text-zinc-300 hover:text-white"
                             }`}
-                            title={file.is_starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+                            title="Favoris"
                           >
                             <Star className="h-3.5 w-3.5" fill={file.is_starred ? "currentColor" : "none"} />
                           </button>
@@ -474,15 +406,15 @@ export function DriveView({
                               e.stopPropagation();
                               onOpenShare(file);
                             }}
-                            className="p-1 rounded hover:bg-zinc-700 text-zinc-400 hover:text-sky-400"
+                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-sky-400"
                             title="Partager"
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={(e) => handleTrashOrDelete(file, e)}
-                            className="p-1 rounded hover:bg-zinc-700 text-zinc-500 hover:text-rose-400"
-                            title="Mettre à la corbeille"
+                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-rose-400"
+                            title="Corbeille"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -490,8 +422,22 @@ export function DriveView({
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                  
+                  {/* File Info Footer */}
+                  <div className="p-3 border-t border-zinc-800/80 bg-[#161A22] shrink-0">
+                    <div className="flex items-center gap-2">
+                      <div className="shrink-0 p-1 bg-zinc-800/50 rounded">
+                        {getDocIcon(file.extension)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-[11px] sm:text-xs text-zinc-300 group-hover:text-zinc-100 truncate" title={file.name}>
+                          {file.name}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

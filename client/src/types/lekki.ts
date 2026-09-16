@@ -1,4 +1,4 @@
-export type FileExtension = "pdf" | "docx" | "pptx" | "txt" | "md";
+export type FileExtension = "pdf" | "docx" | "pptx" | "txt" | "md" | "xlsx";
 
 export interface DriveFolder {
   id: string;
@@ -45,6 +45,13 @@ export interface DriveFile {
   key_passages?: KeyPassage[];
   linked_wiki_ids?: string[];
   is_owner?: boolean;
+  index_meta?: DocumentIndexInfo;
+}
+
+export interface DocumentIndexInfo {
+  total_pages_analyzed: number;
+  total_chunks: number;
+  chapters_detected: string[];
 }
 
 export type WikiStatus = "draft" | "community" | "verified";
@@ -132,6 +139,37 @@ export interface User {
   avatar?: string;
 }
 
+export interface DocumentProvenance {
+  document_id: string;
+  document_name: string;
+  document_type: FileExtension;
+  chapter?: string;
+  section?: string;
+  locator?: string;
+}
+
+export interface WikiProvenance {
+  wiki_id: string;
+  wiki_title: string;
+  topic?: string;
+  section?: string;
+  heading?: string;
+  status: WikiStatus;
+}
+
+export type SourceProvenance =
+  | ({ type: "document" } & DocumentProvenance)
+  | ({ type: "wiki" } & WikiProvenance);
+
+export interface IndexedChunk {
+  id: string;
+  source_id: string;
+  source_type: "document" | "wiki";
+  content: string;
+  provenance: SourceProvenance;
+  score?: number;
+}
+
 export interface LekkiAISource {
   id: string;
   type: "document" | "wiki";
@@ -148,6 +186,8 @@ export interface LekkiAISource {
   page_anchor?: string;
   excerpt: string;
   score: number;
+  workspace_id?: string | null;
+  provenance?: SourceProvenance;
 }
 
 export interface LekkiAIChatMessage {
