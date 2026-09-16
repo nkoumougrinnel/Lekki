@@ -308,7 +308,7 @@ function LekkiMain() {
         }}
       />
 
-      {/* Document Viewer Modal */}
+      {/* Document Viewer Modal (Fiche documentaire Lekki) */}
       <DocumentViewerModal
         file={viewingFile}
         open={Boolean(viewingFile)}
@@ -316,6 +316,8 @@ function LekkiMain() {
         onAskAIAboutDoc={handleAskAIAboutFile}
         onCreateWikiFromDoc={handleCreateWikiFromDoc}
         onShareDoc={(f) => setSharingFile(f)}
+        onOpenWikiPage={(wikiId) => handleOpenWikiFromId(wikiId)}
+        wikiPages={wikiPages}
       />
 
       {/* Share Document Dialog */}

@@ -431,6 +431,23 @@ export function DriveView({
                         </>
                       ) : (
                         <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const downloadUrl = `/api/v1/drive/files/${file.id}/download`;
+                              const link = document.createElement("a");
+                              link.href = downloadUrl;
+                              link.setAttribute("download", file.name);
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              toast.success(`Téléchargement de « ${file.name} »`);
+                            }}
+                            className="p-1 rounded hover:bg-zinc-700 text-zinc-400 hover:text-emerald-400"
+                            title="Télécharger le fichier original"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </button>
                           {onAskAIAboutFile && (
                             <button
                               onClick={(e) => {

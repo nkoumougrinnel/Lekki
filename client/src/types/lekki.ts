@@ -9,6 +9,19 @@ export interface DriveFolder {
   created_at: string;
 }
 
+export interface ChapterInfo {
+  number: string;
+  title: string;
+  page: number;
+  subtopics?: string[];
+}
+
+export interface KeyPassage {
+  label: string;
+  location: string;
+  excerpt: string;
+}
+
 export interface DriveFile {
   id: string;
   name: string;
@@ -27,6 +40,10 @@ export interface DriveFile {
   created_at: string;
   updated_at: string;
   page_count?: number;
+  indexed_chunks_count?: number;
+  detected_chapters?: ChapterInfo[];
+  key_passages?: KeyPassage[];
+  linked_wiki_ids?: string[];
   is_owner?: boolean;
 }
 
@@ -120,6 +137,14 @@ export interface LekkiAISource {
   type: "document" | "wiki";
   title: string;
   detail?: string;
+  location?: string; // e.g. "Chapitre 4 — Routage dynamique · p. 42–48" or "p. 12 · Exercice 3" or "Wiki / Réseaux / Routage"
+  page?: number | string;
+  page_range?: string;
+  chapter?: string;
+  section?: string;
+  slide?: number;
+  file_extension?: FileExtension;
+  size_bytes?: number;
   page_anchor?: string;
   excerpt: string;
   score: number;

@@ -34,6 +34,19 @@ export interface DriveFolder {
   created_at: string;
 }
 
+export interface ChapterInfo {
+  number: string;
+  title: string;
+  page: number;
+  subtopics?: string[];
+}
+
+export interface KeyPassage {
+  label: string;
+  location: string;
+  excerpt: string;
+}
+
 export interface DriveFile {
   id: string;
   name: string;
@@ -51,6 +64,10 @@ export interface DriveFile {
   created_at: string;
   updated_at: string;
   page_count?: number;
+  indexed_chunks_count?: number;
+  detected_chapters?: ChapterInfo[];
+  key_passages?: KeyPassage[];
+  linked_wiki_ids?: string[];
 }
 
 export type WikiStatus = "draft" | "community" | "verified";
@@ -380,6 +397,20 @@ Chaque candidat dispose de 30 minutes de présentation, suivies de 20 minutes de
     size_bytes: 4850000,
     mime_type: "application/pdf",
     page_count: 78,
+    indexed_chunks_count: 284,
+    detected_chapters: [
+      { number: "01", title: "Introduction aux architectures de routage", page: 4, subtopics: ["Routage statique vs dynamique", "Systèmes autonomes (AS)"] },
+      { number: "02", title: "Protocoles à vecteur de distance", page: 16, subtopics: ["Algorithme Bellman-Ford", "Problème du compte à l'infini", "Poison reverse"] },
+      { number: "03", title: "Protocoles à état de liens (Link-State)", page: 28, subtopics: ["Inondation LSA", "Base de données topologique (LSDB)"] },
+      { number: "04", title: "Routage dynamique OSPF v2/v3", page: 42, subtopics: ["Calcul du coût métrique", "Types de paquets OSPF", "Élection DR/BDR"] },
+      { number: "05", title: "Hiérarchie Multi-Zones et convergence", page: 60, subtopics: ["Zone Backbone Area 0", "Routeurs ABR et ASBR", "Aires Stub et NSSA"] },
+    ],
+    key_passages: [
+      { label: "Métrique et Formule du Coût OSPF", location: "Chapitre 4 · p. 42", excerpt: "Coût = Bande Passante de Référence / Bande Passante de l'interface. Référence standard Cisco : 100 Mbps (10^8 bps)." },
+      { label: "Types de paquets OSPF", location: "Chapitre 4 · p. 45", excerpt: "1. Hello (keepalive 10s), 2. DBD (Database Description), 3. LSR, 4. LSU, 5. LSAck." },
+      { label: "Algorithme de Dijkstra", location: "Chapitre 3 · p. 30", excerpt: "Calcul du plus court chemin d'arbre couvrant (SPF Tree) depuis la racine locale." },
+    ],
+    linked_wiki_ids: ["wiki-ospf", "wiki-tcp-udp"],
     is_starred: true,
     is_deleted: false,
     owner_id: USER_GRINNEL_ID,
@@ -427,6 +458,16 @@ Pour différencier le Gigabit et le 10G, l'administrateur doit exécuter :
     size_bytes: 2100000,
     mime_type: "application/pdf",
     page_count: 18,
+    indexed_chunks_count: 64,
+    detected_chapters: [
+      { number: "01", title: "Exercice 1 : Plan d'adressage et VLSM", page: 2, subtopics: ["Sous-réseaux /27 et /30"] },
+      { number: "02", title: "Exercice 2 : Configuration d'un Backbone OSPF", page: 7, subtopics: ["Area 0", "Voisinages 2-Way"] },
+      { number: "03", title: "Exercice 3 : Routeurs ABR et redistribution", page: 12, subtopics: ["LSA Type 3 et 5"] },
+    ],
+    key_passages: [
+      { label: "Exercice 3 : Raccordement ABR", location: "p. 12 · Exercice 3", excerpt: "Configuration d'un routeur frontière ABR entre l'Area 0 et l'Area 10." },
+    ],
+    linked_wiki_ids: ["wiki-ospf"],
     is_starred: false,
     is_deleted: false,
     owner_id: USER_SARAH_ID,

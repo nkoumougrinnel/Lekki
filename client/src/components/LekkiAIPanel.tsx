@@ -15,6 +15,9 @@ import {
   ExternalLink,
   Bot,
   User,
+  Download,
+  CheckCircle2,
+  Layers,
 } from "lucide-react";
 
 interface LekkiAIPanelProps {
@@ -115,6 +118,18 @@ export function LekkiAIPanel({
     "Quelle est la métrique OSPF par défaut sur un lien Gigabit ?",
     "Trouve-moi les TD de réseaux disponibles",
   ];
+
+  const handleDownloadDoc = (fileId: string, fileName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const downloadUrl = `/api/v1/drive/files/${fileId}/download`;
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Téléchargement de « ${fileName} » lancé`);
+  };
 
   return (
     <div
@@ -246,44 +261,83 @@ export function LekkiAIPanel({
               </div>
             )}
 
-            {/* Section 11: Provenance explicite des sources citées */}
+            {/* Section 11: Provenance explicite des sources citées (Situer le lecteur) */}
             {msg.sources && msg.sources.length > 0 && (
-              <div className="w-full p-3 rounded-lg bg-zinc-950/70 border border-zinc-800/80 space-y-2 text-[11px]">
+              <div className="w-full p-3.5 rounded-xl bg-zinc-950/85 border border-zinc-800/80 space-y-2.5 text-[11px]">
                 <div className="font-mono text-[10px] uppercase text-zinc-400 font-semibold flex items-center justify-between">
-                  <span>Sources documentaires vérifiées ({msg.sources.length})</span>
-                  <span className="text-emerald-400">Provenance explicite</span>
+                  <span>Sources & Provenances ({msg.sources.length})</span>
+                  <span className="text-emerald-400">Indexation située</span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {msg.sources.map((src, i) => (
-                    <button
+                    <div
                       key={i}
-                      onClick={() => {
-                        if (src.type === "document") onOpenDoc(src.id);
-                        else onOpenWiki(src.id);
-                      }}
-                      className="w-full text-left p-2 rounded bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800/80 transition-colors flex items-start gap-2 group"
+                      className="w-full text-left p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800/80 transition-all hover:border-zinc-700/80 space-y-2"
                     >
-                      {src.type === "document" ? (
-                        <FileText className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
-                      ) : (
-                        <BookOpen className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="font-medium text-zinc-200 group-hover:text-emerald-300 truncate">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {src.type === "document" ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-rose-500/15 text-rose-400 border border-rose-500/20 shrink-0">
+                              {src.file_extension || "DOC"}
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shrink-0">
+                              WIKI
+                            </span>
+                          )}
+                          <span className="font-medium text-zinc-200 truncate">
                             {src.title}
                           </span>
-                          <span className="text-[10px] font-mono text-zinc-400 shrink-0">
-                            {src.page_anchor || (src.type === "wiki" ? "Fiche Wiki" : "")}
-                          </span>
                         </div>
-                        <p className="text-[10px] text-zinc-400 line-clamp-2 mt-0.5 font-mono">
-                          {src.excerpt}
-                        </p>
+
+                        {/* Situated Location Badge */}
+                        {(src.location || src.detail) && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/60 shrink-0">
+                            {src.location || src.detail}
+                          </span>
+                        )}
                       </div>
-                      <ExternalLink className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 shrink-0 mt-1" />
-                    </button>
+
+                      {src.excerpt && (
+                        <p className="text-[10px] text-zinc-400 line-clamp-2 font-mono bg-black/30 p-1.5 rounded border border-zinc-800/50 italic">
+                          « {src.excerpt} »
+                        </p>
+                      )}
+
+                      {/* Action buttons for citation */}
+                      <div className="flex items-center justify-between gap-2 pt-0.5 text-[11px]">
+                        {src.type === "document" ? (
+                          <>
+                            <button
+                              onClick={() => onOpenDoc(src.id)}
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                            >
+                              <Layers className="h-3 w-3" />
+                              <span>Fiche d'index</span>
+                            </button>
+
+                            <button
+                              onClick={(e) => handleDownloadDoc(src.id, src.title, e)}
+                              className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors"
+                              title="Télécharger le document original intact"
+                            >
+                              <Download className="h-3 w-3" />
+                              <span>Télécharger l'original</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => onOpenWiki(src.id)}
+                            className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                          >
+                            <BookOpen className="h-3 w-3" />
+                            <span>Ouvrir la fiche Wiki</span>
+                            <ExternalLink className="h-2.5 w-2.5 ml-0.5 opacity-70" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

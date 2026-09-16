@@ -36,6 +36,9 @@ interface ChatMessage {
     type: "document" | "wiki";
     title: string;
     detail?: string;
+    location?: string;
+    file_extension?: string;
+    size_bytes?: number;
     excerpt: string;
     score: number;
     id: string;
@@ -349,6 +352,15 @@ apiRouter.put("/drive/files/:id", (req: Request, res: Response) => {
   file.updated_at = new Date().toISOString();
 
   return res.json(file);
+});
+
+apiRouter.get("/drive/files/:id/download", (req: Request, res: Response) => {
+  const file = files.find((f) => f.id === req.params.id);
+  if (!file) return res.status(404).json({ detail: "Fichier introuvable" });
+
+  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
+  res.setHeader("Content-Type", file.mime_type || "application/octet-stream");
+  return res.send(file.content || `Fichier Lekki: ${file.name}`);
 });
 
 apiRouter.post("/drive/files/:id/share", (req: Request, res: Response) => {
@@ -699,6 +711,9 @@ apiRouter.post("/ask", async (req: Request, res: Response) => {
     type: "document" | "wiki";
     title: string;
     detail: string;
+    location?: string;
+    file_extension?: string;
+    size_bytes?: number;
     excerpt: string;
     score: number;
     content: string;
@@ -718,11 +733,24 @@ apiRouter.post("/ask", async (req: Request, res: Response) => {
         if (doc.name.toLowerCase().includes(t)) match += 2;
       }
       if (match > 0) {
+        let situatedLoc = "Document original";
+        if (doc.key_passages && doc.key_passages.length > 0) {
+          const matchedKp = doc.key_passages.find((kp) =>
+            qTerms.some((t) => kp.label.toLowerCase().includes(t) || kp.excerpt.toLowerCase().includes(t))
+          ) || doc.key_passages[0];
+          situatedLoc = `${matchedKp.location} · ${matchedKp.label}`;
+        } else if (doc.page_count) {
+          situatedLoc = `p. 1–${Math.min(10, doc.page_count)}`;
+        }
+
         scoredSources.push({
           id: doc.id,
           type: "document",
           title: doc.name,
-          detail: doc.page_count ? `Document original • p. ${Math.min(42, doc.page_count)}` : "Document original",
+          detail: `Document original (${doc.extension.toUpperCase()})`,
+          location: situatedLoc,
+          file_extension: doc.extension,
+          size_bytes: doc.size_bytes,
           excerpt: para.replace(/^[#\s>-]+/, "").slice(0, 300),
           score: Math.min(0.98, 0.6 + match * 0.1),
           content: para,
@@ -749,11 +777,14 @@ apiRouter.post("/ask", async (req: Request, res: Response) => {
             ? "Wiki • Communautaire 🔵"
             : "Wiki • Brouillon 🟡";
 
+        const wikiLoc = `${wp.topic || "Général"} / ${wp.section || "Général"}`;
+
         scoredSources.push({
           id: wp.id,
           type: "wiki",
           title: wp.title,
           detail: statusLabel,
+          location: wikiLoc,
           excerpt: sec.replace(/^[#\s>-]+/, "").slice(0, 300),
           score: Math.min(0.99, 0.65 + match * 0.1),
           content: sec,
@@ -843,6 +874,9 @@ ${question}`;
       type: s.type,
       title: s.title,
       detail: s.detail,
+      location: s.location,
+      file_extension: s.file_extension,
+      size_bytes: s.size_bytes,
       excerpt: s.excerpt,
       score: s.score,
     })),

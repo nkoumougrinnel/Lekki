@@ -20,6 +20,8 @@ import {
   MessageSquare,
   HelpCircle,
   FileSearch,
+  Download,
+  Layers,
 } from "lucide-react";
 
 interface WikiPageReaderProps {
@@ -297,7 +299,7 @@ export function WikiPageReader({
                 <div
                   key={file.id}
                   onClick={() => onOpenDoc(file.id)}
-                  className="p-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-emerald-500/40 cursor-pointer transition-all flex items-center justify-between gap-3 group shadow-sm"
+                  className="p-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-emerald-500/40 cursor-pointer transition-all flex items-center justify-between gap-3 group shadow-sm"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <FileText className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -305,13 +307,44 @@ export function WikiPageReader({
                       <div className="text-xs font-medium text-zinc-200 group-hover:text-emerald-300 truncate">
                         {file.name}
                       </div>
-                      <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                        {file.page_count ? `${file.page_count} pages • ` : ""}
-                        {file.owner_name}
+                      <div className="text-[10px] text-zinc-500 font-mono mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 uppercase text-[9px]">
+                          {file.extension}
+                        </span>
+                        <span>•</span>
+                        <span>{file.page_count ? `${file.page_count} pages` : "Document"}</span>
+                        <span>•</span>
+                        <span className="text-emerald-400">Indexé</span>
                       </div>
                     </div>
                   </div>
-                  <ExternalLink className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-300 shrink-0" />
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const downloadUrl = `/api/v1/drive/files/${file.id}/download`;
+                        const link = document.createElement("a");
+                        link.href = downloadUrl;
+                        link.setAttribute("download", file.name);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        toast.success(`Téléchargement de « ${file.name} »`);
+                      }}
+                      className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                      title="Télécharger le fichier original"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onOpenDoc(file.id)}
+                      className="p-1.5 rounded-lg text-zinc-500 group-hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
+                      title="Consulter la fiche d'index Lekki"
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
