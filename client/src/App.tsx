@@ -95,13 +95,17 @@ function LekkiMain() {
         drive.getFiles({ scope: "trash" }),
       ]);
 
-      setFiles(loadedFiles);
-      setAllFiles(loadedAllFiles);
-      setTrashedFiles(loadedTrashFiles);
-      setFolders(loadedFolders);
-      setWikiPages(loadedWiki);
+      setFiles(Array.isArray(loadedFiles) ? loadedFiles : []);
+      setAllFiles(Array.isArray(loadedAllFiles) ? loadedAllFiles : []);
+      setTrashedFiles(Array.isArray(loadedTrashFiles) ? loadedTrashFiles : []);
+      setFolders(Array.isArray(loadedFolders) ? loadedFolders : []);
+      setWikiPages(Array.isArray(loadedWiki) ? loadedWiki : []);
     } catch {
-      // Safe fallback
+      setFiles([]);
+      setAllFiles([]);
+      setTrashedFiles([]);
+      setFolders([]);
+      setWikiPages([]);
     }
   }, [currentView, activeWorkspaceId]);
 

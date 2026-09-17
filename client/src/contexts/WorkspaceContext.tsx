@@ -37,12 +37,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const list = await workspacesApi.list();
-      setWorkspaces(list);
+      const safeList = Array.isArray(list) ? list : [];
+      setWorkspaces(safeList);
       setActiveWorkspaceId((prev) => {
-        if (prev && list.some((w) => w.id === prev)) return prev;
-        return list[0]?.id ?? null;
+        if (prev && safeList.some((w) => w.id === prev)) return prev;
+        return safeList[0]?.id ?? null;
       });
     } catch {
+      setWorkspaces([]);
+      setActiveWorkspaceId(null);
       setError("Impossible de charger les workspaces.");
     } finally {
       setLoading(false);
