@@ -1,30 +1,8 @@
-from typing import Optional, List
-from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel
 
-
-class AskRequest(BaseModel):
-    question: str
-    workspace_id: Optional[str] = None
-    chat_id: Optional[str] = None
-
-
-class AskSource(BaseModel):
-    id: str
-    title: str
-    type: str  # document, wiki
-    detail: Optional[str] = None
-    excerpt: str
-    score: float
-
-
-class AskResponse(BaseModel):
-    message_id: Optional[str] = None
-    answer: str
-    sources: List[AskSource] = []
-    contradiction: Optional[str] = None
-    confidence: float = 0.95
-    provider: Optional[str] = "Lekki AI (Gemini 2.5 Flash)"
+from app.ai.schemas import AskRequest, AskResponse, AskSource
 
 
 class SearchItem(BaseModel):

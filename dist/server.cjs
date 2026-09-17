@@ -1759,6 +1759,7 @@ apiRouter.post("/ask", async (req, res) => {
           location: situatedLoc,
           file_extension: doc.extension,
           size_bytes: doc.size_bytes,
+          workspace_id: doc.workspace_id,
           excerpt: para.replace(/^[#\s>-]+/, "").slice(0, 300),
           score: Math.min(0.98, 0.6 + match * 0.1),
           content: para
@@ -1784,6 +1785,7 @@ apiRouter.post("/ask", async (req, res) => {
           title: wp.title,
           detail: statusLabel,
           location: wikiLoc,
+          workspace_id: wp.workspace_id,
           excerpt: sec.replace(/^[#\s>-]+/, "").slice(0, 300),
           score: Math.min(0.99, 0.65 + match * 0.1),
           content: sec
@@ -1870,6 +1872,7 @@ V\xE9rifiez que le document ou la fiche Wiki a bien \xE9t\xE9 ajout\xE9 ou parta
       location: s.location,
       file_extension: s.file_extension,
       size_bytes: s.size_bytes,
+      workspace_id: s.workspace_id,
       excerpt: s.excerpt,
       score: s.score
     })),

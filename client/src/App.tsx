@@ -33,6 +33,8 @@ function LekkiMain() {
 
   // Domain Data State
   const [files, setFiles] = useState<DriveFile[]>([]);
+  const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
+  const [trashedFiles, setTrashedFiles] = useState<DriveFile[]>([]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [wikiPages, setWikiPages] = useState<WikiPage[]>([]);
 
@@ -78,7 +80,7 @@ function LekkiMain() {
       else if (currentView === "trash") fileScope = "trash";
       else if (currentView === "workspace_files") fileScope = "workspace";
 
-      const [loadedFiles, loadedFolders, loadedWiki] = await Promise.all([
+      const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles] = await Promise.all([
         drive.getFiles({
           scope: fileScope,
           workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
@@ -89,9 +91,13 @@ function LekkiMain() {
         wiki.getPages({
           workspace_id: activeWorkspaceId || undefined,
         }),
+        drive.getFiles({ scope: "all" }),
+        drive.getFiles({ scope: "trash" }),
       ]);
 
       setFiles(loadedFiles);
+      setAllFiles(loadedAllFiles);
+      setTrashedFiles(loadedTrashFiles);
       setFolders(loadedFolders);
       setWikiPages(loadedWiki);
     } catch {
@@ -105,11 +111,11 @@ function LekkiMain() {
 
   // Sidebar Counts
   const counts = {
-    myDocs: files.filter((f) => !f.workspace_id && !f.is_deleted).length,
-    starred: files.filter((f) => f.is_starred && !f.is_deleted).length,
-    sharedWithMe: files.filter((f) => (f.shared_with || []).includes(user?.id || "") && !f.is_deleted).length,
-    trash: files.filter((f) => f.is_deleted).length,
-    workspaceFiles: files.filter((f) => f.workspace_id === activeWorkspaceId && !f.is_deleted).length,
+    myDocs: allFiles.filter((f) => !f.workspace_id).length,
+    starred: allFiles.filter((f) => f.is_starred).length,
+    sharedWithMe: allFiles.filter((f) => (f.shared_with || []).includes(user?.id || "")).length,
+    trash: trashedFiles.length,
+    workspaceFiles: allFiles.filter((f) => f.workspace_id === activeWorkspaceId).length,
     workspaceWiki: wikiPages.length,
   };
 
@@ -240,6 +246,7 @@ function LekkiMain() {
               currentView={currentView}
               files={files}
               folders={folders}
+              activeWorkspaceId={activeWorkspaceId}
               activeWorkspaceName={activeWorkspace?.name}
               currentUser={user}
               onOpenFile={(f) => setViewingFile(f)}

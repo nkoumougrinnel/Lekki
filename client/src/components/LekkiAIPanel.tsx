@@ -7,15 +7,11 @@ import {
   Sparkles,
   X,
   Send,
-  FileText,
   BookOpen,
-  AlertTriangle,
   RotateCcw,
-  ShieldCheck,
   ExternalLink,
   Bot,
   User,
-  CheckCircle2,
   Layers,
 } from "lucide-react";
 
@@ -25,6 +21,24 @@ interface LekkiAIPanelProps {
   onOpenDoc: (docId: string) => void;
   onOpenWiki: (wikiId: string) => void;
   initialQuestion?: string;
+}
+
+// Helper component for the typing effect
+function TypingText({ text }: { text: string }) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + text[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, 15); // Typing speed in ms
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text]);
+
+  return <span>{displayedText}</span>;
 }
 
 export function LekkiAIPanel({
@@ -38,6 +52,7 @@ export function LekkiAIPanel({
   const [messages, setMessages] = useState<LekkiAIChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lastAnimatedId, setLastAnimatedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -81,8 +96,7 @@ export function LekkiAIPanel({
     setLoading(true);
 
     try {
-      const response = await aiApi.ask(q);
-
+      const response = await aiApi.ask(q, activeWorkspaceId || undefined);
 
       const assistantMsg: LekkiAIChatMessage = {
         id: response.message_id || `assistant-${Date.now()}`,
@@ -94,6 +108,7 @@ export function LekkiAIPanel({
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
+      setLastAnimatedId(assistantMsg.id);
     } catch {
       toast.error("Erreur lors de l'interrogation de Lekki AI");
     } finally {
@@ -118,15 +133,20 @@ export function LekkiAIPanel({
     "Trouve-moi les TD de réseaux disponibles",
   ];
 
-  // Helper to clean location (Remove "Chapitre X, " etc. and keep only the page part)
+  // Helper to clean location
   const cleanLocation = (loc: string) => {
     if (!loc) return "";
-    // Look for "p." or "page" and take everything from there to the end
     const pageMatch = loc.match(/(p\.\s*\d+|page\s*\d+)/i);
     if (pageMatch) return pageMatch[0];
-    // If no "p." found, just return the last part after the last comma if exists
     const parts = loc.split(",");
     return parts[parts.length - 1].trim();
+  };
+
+  const sourceLocation = (src: LekkiAISource) => {
+    if (src.type === "document") {
+      return src.page ? `p. ${src.page}` : src.location ? cleanLocation(src.location) : "p. 1";
+    }
+    return src.location ? cleanLocation(src.location) : "Wiki";
   };
 
   return (
@@ -134,7 +154,7 @@ export function LekkiAIPanel({
       id="lekki-ai-panel-overlay"
       className="fixed inset-y-0 right-0 z-40 w-full sm:w-[480px] bg-[#12151B] border-l border-zinc-800 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
     >
-      {/* Header - Aligned with Global Header */}
+      {/* Header */}
       <div className="h-16 border-b border-zinc-800 bg-[#161922] px-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <img
@@ -162,24 +182,20 @@ export function LekkiAIPanel({
         </div>
       </div>
 
-      {/* Messages Scroll Area */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
         {messages.length === 0 && (
           <div className="py-8 space-y-4">
             <div className="p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 text-center space-y-3">
               <Bot className="h-10 w-10 mx-auto text-emerald-400 opacity-80" />
-              <div className="font-semibold text-zinc-200 text-sm">
-                Prêt pour vos questions
-              </div>
+              <div className="font-semibold text-zinc-200 text-sm">Prêt pour vos questions</div>
               <p className="text-zinc-400 text-xs leading-relaxed max-w-xs mx-auto">
                 Je parcours vos documents et le Wiki pour vous répondre avec précision.
               </p>
             </div>
 
             <div className="space-y-2">
-              <div className="text-[10px] font-mono uppercase text-zinc-500 font-semibold px-1">
-                Suggestions
-              </div>
+              <div className="text-[10px] font-mono uppercase text-zinc-500 font-semibold px-1">Suggestions</div>
               <div className="space-y-1.5">
                 {suggestedQuestions.map((q) => (
                   <button
@@ -195,7 +211,7 @@ export function LekkiAIPanel({
           </div>
         )}
 
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
           const uniqueSources = msg.sources ? Array.from(
             new Map(msg.sources.map(s => [s.id, s])).values()
           ) : [];
@@ -203,23 +219,14 @@ export function LekkiAIPanel({
           return (
             <div
               key={msg.id}
-              className={`flex flex-col space-y-2 ${
-                msg.role === "user" ? "items-end" : "items-start"
-              }`}
+              className={`flex flex-col space-y-2 ${msg.role === "user" ? "items-end" : "items-start"}`}
             >
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
                 {msg.role === "user" ? (
-                  <>
-                    <span>Vous</span>
-                    <User className="h-3 w-3" />
-                  </>
+                  <><span>Vous</span><User className="h-3 w-3" /></>
                 ) : (
                   <>
-                    <img
-                      src="/lekki-ai-logo.png"
-                      alt="Lekki AI"
-                      className="h-6 w-6 rounded-full"
-                    />
+                    <img src="/lekki-ai-logo.png" alt="Lekki AI" className="h-6 w-6 rounded-full" />
                     <span className="text-emerald-400 font-bold uppercase tracking-wider">Lekki AI</span>
                   </>
                 )}
@@ -232,7 +239,11 @@ export function LekkiAIPanel({
                     : "bg-zinc-900/90 border border-zinc-800 text-zinc-200 shadow-sm"
                 }`}
               >
-                {msg.content}
+                {msg.role === "assistant" && msg.id === lastAnimatedId ? (
+                  <TypingText text={msg.content} />
+                ) : (
+                  msg.content
+                )}
               </div>
 
               {uniqueSources.length > 0 && (
@@ -268,20 +279,18 @@ export function LekkiAIPanel({
                                 WIKI
                               </span>
                             )}
-                            <span className="font-medium text-zinc-200 truncate">
-                              {src.title}
-                            </span>
+                            <span className="font-medium text-zinc-200 truncate">{src.title}</span>
                           </div>
-                          {src.location && (
+                          {(src.location || src.type === "document" || src.page) && (
                             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60 shrink-0">
-                              {cleanLocation(src.location)}
+                              {sourceLocation(src)}
                             </span>
                           )}
                         </div>
 
                         {src.excerpt && (
                           <div className="mb-2">
-                            <p className="text-[10px] text-zinc-500 line-clamp-2 font-mono bg-black/30 p-1.5 rounded border border-zinc-800/50 italic">
+                            <p className="text-[10px] leading-relaxed text-zinc-400 whitespace-pre-wrap font-mono bg-black/30 p-2 rounded border border-zinc-800/50 italic max-h-40 overflow-y-auto">
                               « {src.excerpt} »
                             </p>
                           </div>
@@ -294,7 +303,7 @@ export function LekkiAIPanel({
                               <span>{workspaces.find(w => w.id === src.workspace_id)?.name || "Ext"}</span>
                             </div>
                           ) : (
-                            <div className="w-16" /> /* Spacer pour garder le bouton à droite */
+                            <div className="w-16" />
                           )}
 
                           {src.type === "document" ? (

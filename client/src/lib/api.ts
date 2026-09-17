@@ -181,14 +181,20 @@ export const drive = {
   },
 
   createFile(data: {
-    name: string;
-    extension?: string;
-    content?: string;
-    summary?: string;
+    file: File;
     workspace_id?: string | null;
     folder_id?: string | null;
+    tags?: string[];
   }): Promise<DriveFile> {
-    return jsonRequest<DriveFile>("/drive/files", "POST", data);
+    const formData = new FormData();
+    formData.append("file", data.file);
+    if (data.workspace_id) formData.append("workspace_id", data.workspace_id);
+    if (data.folder_id) formData.append("folder_id", data.folder_id);
+    if (data.tags) formData.append("tags", JSON.stringify(data.tags));
+    return request<DriveFile>("/drive/files", {
+      method: "POST",
+      body: formData,
+    });
   },
 
   updateFile(id: string, data: Partial<DriveFile>): Promise<DriveFile> {

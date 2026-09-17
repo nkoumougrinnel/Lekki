@@ -18,7 +18,22 @@ class Settings(BaseSettings):
     # AI / LLM
     GEMINI_API_KEY: str = ""
     GEMINI_LLM_MODEL: str = "gemini-2.5-flash"
-    
+
+    # Groq (OpenAI-compatible API)
+    GROQ_API_KEY: str = ""
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_MODEL: str = "qwen/qwen3.8-27b"
+
+    # Cerebras (OpenAI-compatible API)
+    CEREBRAS_API_KEY: str = ""
+    CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
+    CEREBRAS_MODEL: str = "llama-3.3-70b"
+
+    # Local LLM (Ollama)
+    OLLAMA_URL: str = "http://192.168.64.82:11434"
+    OLLAMA_MODEL: str = "qwen2.5-coder:7b"
+    OLLAMA_TIMEOUT_SECONDS: float = 180.0
+
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
 

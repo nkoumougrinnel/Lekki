@@ -30,6 +30,7 @@ export interface DriveFile {
   mime_type: string;
   content: string;
   summary?: string;
+  thumbnail_path?: string | null;
   owner_id: string;
   owner_name?: string;
   workspace_id?: string | null;

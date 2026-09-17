@@ -28,18 +28,16 @@ export function NewFileDialog({
   defaultFolderId,
   onFileCreated,
 }: NewFileDialogProps) {
-  const [name, setName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extension, setExtension] = useState<FileExtension>("pdf");
-  const [folderId, setFolderId] = useState<string>(defaultFolderId || "");
-  const [content, setContent] = useState("");
+  const [createdFile, setCreatedFile] = useState<DriveFile | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [creating, setCreating] = useState(false);
 
   React.useEffect(() => {
     if (open) {
-      setName("");
-      setContent("");
-      setFolderId(defaultFolderId || "");
+      setSelectedFile(null);
+      setCreatedFile(null);
     }
   }, [open, defaultFolderId]);
 
@@ -51,59 +49,44 @@ export function NewFileDialog({
     const droppedFile = e.dataTransfer.files?.[0];
     if (!droppedFile) return;
 
-    setName(droppedFile.name);
+    setSelectedFile(droppedFile);
     const ext = droppedFile.name.split(".").pop()?.toLowerCase();
     if (["pdf", "docx", "pptx", "txt", "md"].includes(ext || "")) {
       setExtension(ext as FileExtension);
     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result as string;
-      setContent(text || `Fichier ${droppedFile.name} importé avec succès.`);
-    };
-    reader.readAsText(droppedFile);
   };
 
   const handleManualFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    setName(selected.name);
+    setSelectedFile(selected);
     const ext = selected.name.split(".").pop()?.toLowerCase();
     if (["pdf", "docx", "pptx", "txt", "md"].includes(ext || "")) {
       setExtension(ext as FileExtension);
     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result as string;
-      setContent(text || `Fichier ${selected.name} importé avec succès.`);
-    };
-    reader.readAsText(selected);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      toast.error("Veuillez saisir un nom pour le document");
+    if (!selectedFile) {
+      toast.error("Sélectionnez un document à déposer");
       return;
     }
 
     setCreating(true);
     try {
-      const finalName = name.includes(".") ? name : `${name}.${extension}`;
       const newFile = await drive.createFile({
-        name: finalName,
-        extension,
-        content: content || `# ${finalName}\n\nDocument ajouté le ${new Date().toLocaleDateString("fr-FR")}.`,
+        file: selectedFile,
         workspace_id: defaultWorkspaceId || null,
-        folder_id: folderId || null,
+        folder_id: defaultFolderId || null,
       });
 
       toast.success(`Document « ${newFile.name} » ajouté`);
+      setCreatedFile(newFile);
       onFileCreated(newFile);
-      onOpenChange(false);
     } catch {
       toast.error("Erreur lors de l'ajout du document");
     } finally {
@@ -139,7 +122,7 @@ export function NewFileDialog({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Drag & Drop Area */}
+          {!selectedFile && (
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -170,73 +153,34 @@ export function NewFileDialog({
               />
             </label>
           </div>
+          )}
 
-          {/* Form Fields */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Nom du document
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Cours Réseaux — Routage.pdf"
-                className="w-full px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Format
-                </label>
-                <select
-                  value={extension}
-                  onChange={(e) => setExtension(e.target.value as FileExtension)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="pdf">PDF (Cours, TD, Livre)</option>
-                  <option value="docx">DOCX (Rapport, Cahier)</option>
-                  <option value="pptx">PPTX (Présentation)</option>
-                  <option value="md">Markdown (.md)</option>
-                  <option value="txt">Texte brut (.txt)</option>
-                </select>
+          {selectedFile && (
+            <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#11161D] p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <FileText className="h-5 w-5 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-zinc-100">{selectedFile.name}</div>
+                  <div className="text-[11px] text-zinc-500">{extension.toUpperCase()} · {Math.max(1, Math.round(selectedFile.size / 1024))} KB</div>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">
-                  Dossier de destination
-                </label>
-                <select
-                  value={folderId}
-                  onChange={(e) => setFolderId(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="">Racine (Sans dossier)</option>
-                  {folders.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      📁 {f.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3 text-xs text-zinc-300">
+                <div><span className="text-zinc-500">Dépôt</span><div className="font-medium text-zinc-100">{defaultFolderId ? "Dossier courant" : "Racine"}</div></div>
+                <div><span className="text-zinc-500">Statut</span><div className="font-medium text-amber-300">Prêt à déposer</div></div>
               </div>
+              {createdFile && <div className="border-t border-emerald-500/15 pt-3">
+                <div className="mb-2 text-xs font-semibold text-zinc-200">Structure détectée</div>
+                {createdFile.index_meta?.chapters_detected?.length ? (
+                  <ul className="space-y-1 text-xs text-zinc-400">
+                    {createdFile.index_meta.chapters_detected.map((chapter) => <li key={chapter}>• {chapter}</li>)}
+                  </ul>
+                ) : <div className="text-xs text-zinc-500">Aucun chapitre détecté.</div>}
+                <div className="mt-2 text-[11px] text-zinc-500">{createdFile.index_meta?.total_chunks || 0} passage(s) indexé(s)</div>
+              </div>}
             </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Contenu textuel (analysé par Lekki AI)
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Collez ou rédigez ici le contenu du document pour indexation..."
-                rows={4}
-                className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 font-mono"
-              />
-            </div>
-          </div>
+          )}
 
           <div className="p-3 border-t border-zinc-800 bg-zinc-950/40 flex items-center justify-end gap-2 -mx-4 -mb-4">
             <button
@@ -247,11 +191,12 @@ export function NewFileDialog({
               Annuler
             </button>
             <button
-              type="submit"
+              type={createdFile ? "button" : "submit"}
+              onClick={createdFile ? () => onOpenChange(false) : undefined}
               disabled={creating}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors disabled:opacity-50"
             >
-              {creating ? "Ajout en cours..." : "Enregistrer le document"}
+              {creating ? "Dépôt en cours..." : createdFile ? "OK" : "OK"}
             </button>
           </div>
         </form>

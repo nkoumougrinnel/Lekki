@@ -55,7 +55,7 @@ async def ask_question(
         sources=sources,
         contradiction=contradiction,
         confidence=confidence,
-        provider="Lekki AI (Gemini 2.5 Flash / Academic RAG)"
+        provider="Lekki AI (Groq / Gemini / Cerebras)"
     )
 
 

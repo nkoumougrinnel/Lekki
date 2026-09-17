@@ -3,8 +3,8 @@ from fastapi import Depends, HTTPException, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models.user import User
-from app.services.auth_service import decode_token
+from app.identity.models import User
+from app.identity.service import decode_token
 
 # Demo student user ID fallback for effortless local testing
 DEFAULT_DEMO_USER_ID = "u-grinnel"

@@ -28,6 +28,7 @@ interface DriveViewProps {
   currentView: NavView;
   files: DriveFile[];
   folders: DriveFolder[];
+  activeWorkspaceId?: string | null;
   activeWorkspaceName?: string;
   currentUser: User | null;
   onOpenFile: (file: DriveFile) => void;
@@ -41,6 +42,7 @@ export function DriveView({
   currentView,
   files,
   folders,
+  activeWorkspaceId,
   activeWorkspaceName,
   currentUser,
   onOpenFile,
@@ -60,7 +62,13 @@ export function DriveView({
     currentView === "shared_with_me" ||
     currentView === "trash";
 
+  React.useEffect(() => {
+    setCurrentFolderId(null);
+    setShowNewFolderInput(false);
+  }, [currentView]);
+
   const visibleFolders = folders.filter((f) => {
+    if (!["my_docs", "workspace_files"].includes(currentView)) return false;
     if (isPersonalScope) return !f.workspace_id;
     return Boolean(f.workspace_id);
   });
@@ -69,8 +77,8 @@ export function DriveView({
 
   // Filter files
   const displayedFiles = files.filter((file) => {
-    if (currentFolderId) {
-      return file.folder_id === currentFolderId;
+    if (currentFolder?.id) {
+      return file.folder_id === currentFolder.id;
     }
     // If at root of a folder-capable view, show files with no folder or root
     if (currentView === "workspace_files" || currentView === "my_docs") {
@@ -166,7 +174,7 @@ export function DriveView({
     try {
       await drive.createFolder({
         name: newFolderName.trim(),
-        workspace_id: isPersonalScope ? null : (folders[0]?.workspace_id || null),
+        workspace_id: isPersonalScope ? null : (currentFolder?.workspace_id || activeWorkspaceId || null),
         parent_id: currentFolderId || null,
       });
       toast.success(`Dossier « ${newFolderName} » créé`);
@@ -178,6 +186,20 @@ export function DriveView({
     }
   };
 
+  const handleDeleteFolder = async (folder: DriveFolder, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm(`Supprimer le dossier « ${folder.name} » ?`)) return;
+
+    try {
+      await drive.deleteFolder(folder.id);
+      if (currentFolderId === folder.id) setCurrentFolderId(null);
+      toast.success(`Dossier « ${folder.name} » supprimé`);
+      onRefresh();
+    } catch {
+      toast.error("Impossible de supprimer ce dossier : il doit être vide");
+    }
+  };
+
   return (
     <div id="drive-view-container" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
       {/* View Header */}
@@ -185,16 +207,22 @@ export function DriveView({
         {/* Breadcrumb Navigation */}
         <div className="flex items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-1.5 text-xs text-zinc-400 min-w-0">
-            {!["starred", "shared_with_me", "trash"].includes(currentView) && (
-              <button
-                onClick={() => setCurrentFolderId(null)}
-                className={`hover:text-emerald-400 transition-colors truncate ${
-                  !currentFolderId ? "text-emerald-400 font-semibold" : ""
-                }`}
-              >
-                {currentView === "my_docs" ? "Mes documents" : "Fichiers partagés"}
-              </button>
-            )}
+                <button
+                  onClick={() => setCurrentFolderId(null)}
+                  className={`hover:text-emerald-400 transition-colors truncate ${
+                    !currentFolder ? "text-emerald-400 font-semibold" : ""
+                  }`}
+                >
+                  {currentView === "trash"
+                    ? "Corbeille"
+                    : currentView === "starred"
+                      ? "Favoris"
+                      : currentView === "shared_with_me"
+                        ? "Partagés avec moi"
+                        : currentView === "my_docs"
+                          ? "Mes documents"
+                          : "Fichiers partagés"}
+                </button>
             {currentFolder && (
               <>
                 <ChevronRight className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
@@ -282,19 +310,42 @@ export function DriveView({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {visibleFolders.map((folder) => {
                 return (
-                  <button
+                  <div
                     key={folder.id}
                     onClick={() => setCurrentFolderId(folder.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setCurrentFolderId(folder.id);
+                      }
+                    }}
                     className="p-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-zinc-700 text-left transition-all flex items-center justify-between group shadow-sm"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentFolderId(folder.id);
+                      }}
+                      className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                    >
                       <Folder className="h-5 w-5 text-zinc-400 group-hover:text-emerald-400 transition-colors shrink-0 fill-zinc-400/20 group-hover:fill-emerald-400/20" />
                       <div className="text-sm font-medium text-zinc-300 group-hover:text-zinc-100 truncate">
                         {folder.name}
                       </div>
-                    </div>
-                    <MoreVertical className="h-4 w-4 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteFolder(folder, e)}
+                      aria-label={`Supprimer le dossier ${folder.name}`}
+                      title="Supprimer le dossier"
+                      className="p-1.5 rounded text-zinc-600 opacity-0 group-hover:opacity-100 hover:bg-rose-500/15 hover:text-rose-400 transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -338,9 +389,22 @@ export function DriveView({
                 >
                   {/* File Preview Area (Mocked with icon for now) */}
                   <div className="flex-1 bg-zinc-950/50 flex flex-col items-center justify-center relative overflow-hidden">
-                    <div className="transform scale-150 opacity-40 group-hover:scale-125 transition-transform duration-500 text-zinc-600">
-                      {getDocIcon(file.extension)}
-                    </div>
+                    {file.thumbnail_path ? (
+                      <img
+                        src={`/api/v1/drive/files/${file.id}/thumbnail`}
+                        alt={`Aperçu de ${file.name}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3">
+                        <div className="transform scale-150 opacity-40 group-hover:scale-125 transition-transform duration-500 text-zinc-600">
+                          {getDocIcon(file.extension)}
+                        </div>
+                        <p className="line-clamp-4 text-center text-[10px] leading-relaxed text-zinc-500">
+                          {file.summary || file.content || "Aucun aperçu disponible"}
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Action Overlay */}
                     <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-950/80 p-1.5 rounded-lg backdrop-blur-sm border border-zinc-800/80" onClick={(e) => e.stopPropagation()}>

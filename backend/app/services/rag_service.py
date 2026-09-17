@@ -1,11 +1,10 @@
-import re
-from typing import List, Dict, Any, Tuple
-from sqlalchemy import select, or_
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.drive import DriveFile
-from app.models.wiki import WikiPage
-from app.schemas.rag import AskSource
-from app.services.llm_service import generate_rag_answer
+from app.ai.rag_service import (
+    calculate_similarity,
+    execute_rag_pipeline,
+    extract_relevant_snippet,
+)
+
+__all__ = ["calculate_similarity", "execute_rag_pipeline", "extract_relevant_snippet"]
 
 
 def calculate_similarity(query: str, text: str) -> float:
