@@ -63,9 +63,13 @@ export function UnifiedSearchDialog({
       setLoading(true);
       try {
         const res = await searchApi.unified(query.trim(), activeWorkspaceId || undefined);
-        setResults(res);
+        setResults({
+          documents: Array.isArray(res?.documents) ? res.documents : [],
+          wiki: Array.isArray(res?.wiki) ? res.wiki : [],
+          shared: Array.isArray(res?.shared) ? res.shared : [],
+        });
       } catch {
-        // Safe fallback
+        setResults({ documents: [], wiki: [], shared: [] });
       } finally {
         setLoading(false);
       }

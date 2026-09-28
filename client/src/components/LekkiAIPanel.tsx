@@ -24,19 +24,20 @@ interface LekkiAIPanelProps {
 }
 
 // Helper component for the typing effect
-function TypingText({ text }: { text: string }) {
+function TypingText({ text }: { text: string | null | undefined }) {
+  const safeText = typeof text === "string" ? text : "";
   const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (currentIndex < text.length) {
+    if (currentIndex < safeText.length) {
       const timeout = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[currentIndex]);
+        setDisplayedText((prev) => prev + safeText[currentIndex]);
         setCurrentIndex((prev) => prev + 1);
       }, 15); // Typing speed in ms
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, text]);
+  }, [currentIndex, safeText]);
 
   return <span>{displayedText}</span>;
 }
@@ -55,13 +56,18 @@ export function LekkiAIPanel({
   const [lastAnimatedId, setLastAnimatedId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const safeMessages = Array.isArray(messages) ? messages : [];
 
   // Load chat history on open
   useEffect(() => {
     if (open) {
       aiApi
         .history()
-        .then((hist) => setMessages(hist))
+        .then((hist) => setMessages(Array.isArray(hist) ? hist.map((message) => ({
+          ...message,
+          content: typeof message?.content === "string" ? message.content : "",
+          sources: Array.isArray(message?.sources) ? message.sources : [],
+        })) : []))
         .catch(() => {});
       setTimeout(() => inputRef.current?.focus(), 100);
     }
@@ -91,7 +97,7 @@ export function LekkiAIPanel({
       created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, tempUserMsg]);
+    setMessages((prev) => [...(Array.isArray(prev) ? prev : []), tempUserMsg]);
     setInput("");
     setLoading(true);
 
@@ -107,7 +113,7 @@ export function LekkiAIPanel({
         created_at: new Date().toISOString(),
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...(Array.isArray(prev) ? prev : []), assistantMsg]);
       setLastAnimatedId(assistantMsg.id);
     } catch {
       toast.error("Erreur lors de l'interrogation de Lekki AI");
@@ -184,7 +190,7 @@ export function LekkiAIPanel({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
-        {messages.length === 0 && (
+        {safeMessages.length === 0 && (
           <div className="py-8 space-y-4">
             <div className="p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 text-center space-y-3">
               <Bot className="h-10 w-10 mx-auto text-emerald-400 opacity-80" />
@@ -211,7 +217,7 @@ export function LekkiAIPanel({
           </div>
         )}
 
-        {messages.map((msg, index) => {
+        {safeMessages.map((msg, index) => {
           const uniqueSources = msg.sources ? Array.from(
             new Map(msg.sources.map(s => [s.id, s])).values()
           ) : [];

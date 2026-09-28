@@ -36,6 +36,7 @@ export function Header({
 }: HeaderProps) {
   const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
   const { user, allUsers, switchUser, logout } = useAuth();
+  const safeAllUsers = Array.isArray(allUsers) ? allUsers : [];
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCreateWsDialog, setShowCreateWsDialog] = useState(false);
@@ -272,7 +273,7 @@ export function Header({
                   Personas (Test)
                 </div>
                 <div className="py-1 max-h-40 overflow-y-auto">
-                  {allUsers.map((u) => (
+                  {safeAllUsers.map((u) => (
                     <button
                       key={u.id}
                       onClick={() => {

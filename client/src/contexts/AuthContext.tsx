@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function initAuth() {
       try {
         const usersList = await usersApi.list().catch(() => []);
-        if (!cancelled) setAllUsers(usersList);
+        if (!cancelled) setAllUsers(Array.isArray(usersList) ? usersList : []);
 
         const token = getToken();
         if (token) {
