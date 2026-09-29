@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DriveFolder, FileExtension, DriveFile } from "@/types/lekki";
-import { drive } from "@/lib/api";
+import { ApiError, drive } from "@/lib/api";
 import { toast } from "sonner";
 import {
   UploadCloud,
@@ -87,8 +87,8 @@ export function NewFileDialog({
       toast.success(`Document « ${newFile.name} » ajouté`);
       setCreatedFile(newFile);
       onFileCreated(newFile);
-    } catch {
-      toast.error("Erreur lors de l'ajout du document");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Erreur lors de l'ajout du document");
     } finally {
       setCreating(false);
     }

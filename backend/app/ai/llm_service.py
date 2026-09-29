@@ -145,11 +145,11 @@ LLM_CHAIN: List[Callable[[str, str], Awaitable[Optional[str]]]] = [
     call_cerebras,
 ]
 
-async def generate_rag_answer(
+async def generate_rag_answer_with_provider(
     question: str,
     context_chunks: List[Dict[str, str]],
     chat_history: Optional[List[Dict[str, str]]] = None,
-) -> str:
+) -> tuple[str, str]:
     # 1. Build the System Prompt
     context_text = "\n\n".join(
         f"--- Source [{chunk.get('type', 'doc').upper()}]: {chunk.get('title')} ---\n{chunk.get('content', '')[:700]}"
@@ -174,10 +174,15 @@ DOCUMENTS SOURCES DE L'ESPACE :
     user_prompt = f"QUESTION DE L'ÉTUDIANT :\n{question}"
 
     # 2. Iterate through the failover chain
+    provider_names = {
+        call_groq: "Groq",
+        call_gemini: "Gemini",
+        call_cerebras: "Cerebras",
+    }
     for provider in LLM_CHAIN:
         answer = await provider(system_prompt, user_prompt)
         if answer:
-            return answer
+            return answer, provider_names.get(provider, provider.__name__)
 
     # 3. Absolute Fallback: Return raw content if no LLM is available
     if context_chunks:
@@ -192,6 +197,22 @@ Voici l'essentiel à retenir à partir de **{source.get('title')}** :
 
 ### Source
 Cette réponse s'appuie sur « {source.get('title')} ».
-"""
+""", "Mode dégradé (aucun fournisseur LLM disponible)"
 
-    return "Aucun document correspondant n'a été trouvé dans votre espace pour répondre avec certitude à cette question."
+    return (
+        "Aucun document correspondant n'a été trouvé dans votre espace pour répondre avec certitude à cette question.",
+        "Mode dégradé (aucun fournisseur LLM disponible)",
+    )
+
+
+async def generate_rag_answer(
+    question: str,
+    context_chunks: List[Dict[str, str]],
+    chat_history: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    answer, _provider = await generate_rag_answer_with_provider(
+        question,
+        context_chunks,
+        chat_history,
+    )
+    return answer

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { WikiHeaderBar } from "./WikiHeaderBar";
 import { WikiPage, WikiStatus, DriveFile } from "@/types/lekki";
-import { wiki } from "@/lib/api";
+import { apiUrl, wiki } from "@/lib/api";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -292,7 +292,7 @@ export function WikiPageReader({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const downloadUrl = `/api/v1/drive/files/${file.id}/download`;
+                        const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
                         const link = document.createElement("a");
                         link.href = downloadUrl;
                         link.setAttribute("download", file.name);

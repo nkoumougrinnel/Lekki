@@ -110,6 +110,7 @@ export function LekkiAIPanel({
         content: response.answer,
         sources: response.sources,
         contradiction: response.contradiction || undefined,
+        provider: response.provider,
         created_at: new Date().toISOString(),
       };
 
@@ -251,6 +252,12 @@ export function LekkiAIPanel({
                   msg.content
                 )}
               </div>
+
+              {msg.role === "assistant" && msg.provider && (
+                <div className={`text-[9px] font-mono ${msg.provider.startsWith("Mode dégradé") ? "text-amber-400" : "text-zinc-500"}`}>
+                  Modèle : {msg.provider}
+                </div>
+              )}
 
               {uniqueSources.length > 0 && (
                 <div className="w-full p-3.5 rounded-xl bg-zinc-950/85 border border-zinc-800/80 space-y-2.5 text-[11px]">

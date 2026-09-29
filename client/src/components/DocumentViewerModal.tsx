@@ -1,5 +1,6 @@
 import React from "react";
 import { DriveFile, FileExtension, WikiPage } from "@/types/lekki";
+import { apiUrl } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
   X,
@@ -66,7 +67,7 @@ export function DocumentViewerModal({
   };
 
   const handleDownload = () => {
-    const downloadUrl = `/api/v1/drive/files/${file.id}/download`;
+    const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
     const link = document.createElement("a");
     link.href = downloadUrl;
     link.setAttribute("download", file.name);

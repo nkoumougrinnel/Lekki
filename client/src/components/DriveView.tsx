@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DriveFile, DriveFolder, FileExtension, User, NavView } from "@/types/lekki";
-import { drive } from "@/lib/api";
+import { apiUrl, drive } from "@/lib/api";
 import { toast } from "sonner";
 import {
   Folder,
@@ -28,6 +28,7 @@ interface DriveViewProps {
   currentView: NavView;
   files: DriveFile[];
   folders: DriveFolder[];
+  loading?: boolean;
   activeWorkspaceId?: string | null;
   activeWorkspaceName?: string;
   currentUser: User | null;
@@ -35,6 +36,8 @@ interface DriveViewProps {
   onOpenShare: (file: DriveFile) => void;
   onNewFileClick: (folderId?: string) => void;
   onRefresh: () => void;
+  onFileTrashed: (file: DriveFile, permanentlyDeleted?: boolean) => void;
+  onFileRestored: (file: DriveFile) => void;
   onAskAIAboutFile?: (file: DriveFile) => void;
 }
 
@@ -42,6 +45,7 @@ export function DriveView({
   currentView,
   files,
   folders,
+  loading = false,
   activeWorkspaceId,
   activeWorkspaceName,
   currentUser,
@@ -49,6 +53,8 @@ export function DriveView({
   onOpenShare,
   onNewFileClick,
   onRefresh,
+  onFileTrashed,
+  onFileRestored,
   onAskAIAboutFile,
 }: DriveViewProps) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -67,18 +73,21 @@ export function DriveView({
     setShowNewFolderInput(false);
   }, [currentView]);
 
-  const visibleFolders = folders.filter((f) => {
+  const folderScope = folders.filter((f) => {
     if (!["my_docs", "workspace_files"].includes(currentView)) return false;
     if (isPersonalScope) return !f.workspace_id;
     return Boolean(f.workspace_id);
   });
 
-  const currentFolder = visibleFolders.find((f) => f.id === currentFolderId);
+  const currentFolder = folderScope.find((f) => f.id === currentFolderId);
+  const visibleFolders = folderScope.filter((folder) =>
+    currentFolderId ? folder.parent_id === currentFolderId : !folder.parent_id
+  );
 
   // Filter files
   const displayedFiles = files.filter((file) => {
-    if (currentFolder?.id) {
-      return file.folder_id === currentFolder.id;
+    if (currentFolderId) {
+      return file.folder_id === currentFolderId;
     }
     // If at root of a folder-capable view, show files with no folder or root
     if (currentView === "workspace_files" || currentView === "my_docs") {
@@ -130,12 +139,14 @@ export function DriveView({
     try {
       if (isTrashView) {
         await drive.deleteFile(file.id, true);
+        onFileTrashed(file, true);
         toast.success("Document définitivement supprimé");
       } else {
-        await drive.updateFile(file.id, { is_deleted: true });
+        await drive.deleteFile(file.id);
+        onFileTrashed(file);
         toast.success(`« ${file.name} » déplacé dans la corbeille`);
       }
-      onRefresh();
+      await onRefresh();
     } catch {
       toast.error("Erreur lors de la suppression");
     }
@@ -145,8 +156,9 @@ export function DriveView({
     e.stopPropagation();
     try {
       await drive.updateFile(file.id, { is_deleted: false });
+      onFileRestored(file);
       toast.success(`« ${file.name} » restauré`);
-      onRefresh();
+      await onRefresh();
     } catch {
       toast.error("Erreur lors de la restauration");
     }
@@ -160,8 +172,9 @@ export function DriveView({
 
     try {
       await Promise.all(displayedFiles.map((file) => drive.deleteFile(file.id, true)));
+      displayedFiles.forEach((file) => onFileTrashed(file, true));
       toast.success("Corbeille vidée");
-      onRefresh();
+      await onRefresh();
     } catch {
       toast.error("Impossible de vider complètement la corbeille");
     }
@@ -180,7 +193,7 @@ export function DriveView({
       toast.success(`Dossier « ${newFolderName} » créé`);
       setNewFolderName("");
       setShowNewFolderInput(false);
-      onRefresh();
+      await onRefresh();
     } catch {
       toast.error("Erreur lors de la création du dossier");
     }
@@ -194,7 +207,7 @@ export function DriveView({
       await drive.deleteFolder(folder.id);
       if (currentFolderId === folder.id) setCurrentFolderId(null);
       toast.success(`Dossier « ${folder.name} » supprimé`);
-      onRefresh();
+      await onRefresh();
     } catch {
       toast.error("Impossible de supprimer ce dossier : il doit être vide");
     }
@@ -302,7 +315,7 @@ export function DriveView({
         )}
 
         {/* Folders Grid (shown if at root and folders exist) */}
-        {!currentFolderId && visibleFolders.length > 0 && (
+        {visibleFolders.length > 0 && (
           <div className="space-y-3">
             <div className="text-sm font-medium text-zinc-200">
               Dossiers
@@ -310,17 +323,8 @@ export function DriveView({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {visibleFolders.map((folder) => {
                 return (
-                  <div
+                    <div
                     key={folder.id}
-                    onClick={() => setCurrentFolderId(folder.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setCurrentFolderId(folder.id);
-                      }
-                    }}
                     className="p-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-zinc-700 text-left transition-all flex items-center justify-between group shadow-sm"
                   >
                     <button
@@ -341,7 +345,7 @@ export function DriveView({
                       onClick={(e) => handleDeleteFolder(folder, e)}
                       aria-label={`Supprimer le dossier ${folder.name}`}
                       title="Supprimer le dossier"
-                      className="p-1.5 rounded text-zinc-600 opacity-0 group-hover:opacity-100 hover:bg-rose-500/15 hover:text-rose-400 transition-all"
+                      className="p-1.5 rounded text-zinc-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-rose-500/15 hover:text-rose-400 transition-all"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -358,7 +362,11 @@ export function DriveView({
             <span>Fichiers</span>
           </div>
 
-          {displayedFiles.length === 0 ? (
+          {loading ? (
+            <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 p-8 text-sm text-zinc-400">
+              Chargement des fichiers…
+            </div>
+          ) : displayedFiles.length === 0 ? (
             <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 p-8 space-y-3">
               <FileText className="h-10 w-10 mx-auto text-zinc-600" />
               <div className="text-sm font-medium text-zinc-300">
@@ -389,9 +397,9 @@ export function DriveView({
                 >
                   {/* File Preview Area (Mocked with icon for now) */}
                   <div className="flex-1 bg-zinc-950/50 flex flex-col items-center justify-center relative overflow-hidden">
-                    {file.thumbnail_path ? (
+                    {file.thumbnail_path || file.extension?.toLowerCase().replace(/^\./, "") === "pdf" ? (
                       <img
-                        src={`/api/v1/drive/files/${file.id}/thumbnail`}
+                        src={apiUrl(`/drive/files/${file.id}/thumbnail`)}
                         alt={`Aperçu de ${file.name}`}
                         className="h-full w-full object-cover"
                       />
@@ -407,22 +415,16 @@ export function DriveView({
                     )}
                     
                     {/* Action Overlay */}
-                    <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-950/80 p-1.5 rounded-lg backdrop-blur-sm border border-zinc-800/80" onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 bg-zinc-950/95 p-1.5 rounded-lg border border-zinc-700 shadow-lg" onClick={(e) => e.stopPropagation()}>
                       {currentView === "trash" ? (
                         <>
                           <button
                             onClick={(e) => handleRestore(file, e)}
                             className="p-1.5 rounded hover:bg-zinc-700 text-emerald-400"
                             title="Restaurer"
+                            aria-label={`Restaurer ${file.name}`}
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleTrashOrDelete(file, e)}
-                            className="p-1.5 rounded hover:bg-zinc-700 text-rose-400"
-                            title="Supprimer définitivement"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </>
                       ) : (
@@ -430,7 +432,7 @@ export function DriveView({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const downloadUrl = `/api/v1/drive/files/${file.id}/download`;
+                              const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
                               const link = document.createElement("a");
                               link.href = downloadUrl;
                               link.setAttribute("download", file.name);
@@ -475,13 +477,6 @@ export function DriveView({
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            onClick={(e) => handleTrashOrDelete(file, e)}
-                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-rose-400"
-                            title="Corbeille"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
                         </>
                       )}
                     </div>
@@ -498,6 +493,15 @@ export function DriveView({
                           {file.name}
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleTrashOrDelete(file, e)}
+                        aria-label={currentView === "trash" ? `Supprimer définitivement ${file.name}` : `Mettre ${file.name} à la corbeille`}
+                        title={currentView === "trash" ? "Supprimer définitivement" : "Mettre à la corbeille"}
+                        className="relative z-20 shrink-0 rounded-md p-1.5 text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

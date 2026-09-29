@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     poppler-utils \
+    tesseract-ocr \
+    tesseract-ocr-fra \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

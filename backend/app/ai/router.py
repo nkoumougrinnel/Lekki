@@ -16,7 +16,7 @@ router = APIRouter(tags=["RAG & AI"])
 
 @router.post("/ask", response_model=AskResponse)
 async def ask_question(data: AskRequest, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    answer, sources, contradiction, confidence = await execute_rag_pipeline(
+    answer, sources, contradiction, confidence, provider = await execute_rag_pipeline(
         db,
         data.question,
         data.workspace_id,
@@ -27,6 +27,6 @@ async def ask_question(data: AskRequest, db: AsyncSession = Depends(get_db), cur
     assistant_message = ChatMessage(id=assistant_id, user_id=current_user.id, workspace_id=data.workspace_id, role="assistant", content=answer, sources_json=json.dumps([source.model_dump() for source in sources]), contradiction=contradiction)
     db.add_all([user_message, assistant_message])
     await db.commit()
-    return AskResponse(message_id=assistant_id, answer=answer, sources=sources, contradiction=contradiction, confidence=confidence, provider="Lekki AI (Groq / Gemini / Cerebras)")
+    return AskResponse(message_id=assistant_id, answer=answer, sources=sources, contradiction=contradiction, confidence=confidence, provider=provider)
 
 

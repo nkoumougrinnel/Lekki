@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -34,9 +34,14 @@ function LekkiMain() {
   // Domain Data State
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
+  const [personalFiles, setPersonalFiles] = useState<DriveFile[]>([]);
   const [trashedFiles, setTrashedFiles] = useState<DriveFile[]>([]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
   const [wikiPages, setWikiPages] = useState<WikiPage[]>([]);
+  const [loadedDataKey, setLoadedDataKey] = useState<string | null>(null);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const refreshSequence = useRef(0);
+  const driveDataKey = `${currentView}:${activeWorkspaceId || "none"}:${user?.id || "anon"}`;
 
   // Dialogs & Modals State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -71,6 +76,8 @@ function LekkiMain() {
 
   // Fetch all domain data according to current scope
   const refreshData = useCallback(async () => {
+    const requestId = ++refreshSequence.current;
+    setDriveLoading(true);
     try {
       // Determine scope
       let fileScope: "personal" | "shared_with_me" | "starred" | "trash" | "workspace" | "all" = "all";
@@ -80,34 +87,39 @@ function LekkiMain() {
       else if (currentView === "trash") fileScope = "trash";
       else if (currentView === "workspace_files") fileScope = "workspace";
 
-      const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles] = await Promise.all([
+      const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles, loadedPersonalFiles] = await Promise.all([
         drive.getFiles({
           scope: fileScope,
           workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
-        }),
+        }).catch(() => null),
         drive.getFolders({
           workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
-        }),
+        }).catch(() => null),
         wiki.getPages({
           workspace_id: activeWorkspaceId || undefined,
-        }),
-        drive.getFiles({ scope: "all" }),
-        drive.getFiles({ scope: "trash" }),
+        }).catch(() => null),
+        drive.getFiles({ scope: "all" }).catch(() => null),
+        drive.getFiles({ scope: "trash" }).catch(() => null),
+        drive.getFiles({ scope: "personal" }).catch(() => null),
       ]);
 
+      if (requestId !== refreshSequence.current) return;
+
       setFiles(Array.isArray(loadedFiles) ? loadedFiles : []);
-      setAllFiles(Array.isArray(loadedAllFiles) ? loadedAllFiles : []);
-      setTrashedFiles(Array.isArray(loadedTrashFiles) ? loadedTrashFiles : []);
-      setFolders(Array.isArray(loadedFolders) ? loadedFolders : []);
-      setWikiPages(Array.isArray(loadedWiki) ? loadedWiki : []);
+      if (Array.isArray(loadedAllFiles)) setAllFiles(loadedAllFiles);
+      if (Array.isArray(loadedTrashFiles)) setTrashedFiles(loadedTrashFiles);
+      if (Array.isArray(loadedPersonalFiles)) setPersonalFiles(loadedPersonalFiles);
+      if (Array.isArray(loadedFolders)) setFolders(loadedFolders);
+      if (Array.isArray(loadedWiki)) setWikiPages(loadedWiki);
+      setLoadedDataKey(driveDataKey);
     } catch {
+      if (requestId !== refreshSequence.current) return;
       setFiles([]);
-      setAllFiles([]);
-      setTrashedFiles([]);
-      setFolders([]);
-      setWikiPages([]);
+      setLoadedDataKey(driveDataKey);
+    } finally {
+      if (requestId === refreshSequence.current) setDriveLoading(false);
     }
-  }, [currentView, activeWorkspaceId]);
+  }, [currentView, activeWorkspaceId, user?.id, driveDataKey]);
 
   useEffect(() => {
     refreshData();
@@ -115,12 +127,36 @@ function LekkiMain() {
 
   // Sidebar Counts
   const counts = {
-    myDocs: allFiles.filter((f) => !f.workspace_id).length,
+    myDocs: personalFiles.length,
     starred: allFiles.filter((f) => f.is_starred).length,
     sharedWithMe: allFiles.filter((f) => (f.shared_with || []).includes(user?.id || "")).length,
     trash: trashedFiles.length,
     workspaceFiles: allFiles.filter((f) => f.workspace_id === activeWorkspaceId).length,
     workspaceWiki: wikiPages.length,
+  };
+
+  const handleFileTrashed = (file: DriveFile, permanentlyDeleted = false) => {
+    setFiles((current) => current.filter((item) => item.id !== file.id));
+    setAllFiles((current) => current.filter((item) => item.id !== file.id));
+    setPersonalFiles((current) => current.filter((item) => item.id !== file.id));
+    setTrashedFiles((current) => {
+      if (permanentlyDeleted) return current.filter((item) => item.id !== file.id);
+      if (current.some((item) => item.id === file.id)) return current;
+      return [...current, { ...file, is_deleted: true }];
+    });
+  };
+
+  const handleFileRestored = (file: DriveFile) => {
+    setTrashedFiles((current) => current.filter((item) => item.id !== file.id));
+    setAllFiles((current) => {
+      if (current.some((item) => item.id === file.id)) return current;
+      return [...current, { ...file, is_deleted: false }];
+    });
+    setFiles((current) => {
+      if (currentView === "trash") return current.filter((item) => item.id !== file.id);
+      if (current.some((item) => item.id === file.id)) return current;
+      return [...current, { ...file, is_deleted: false }];
+    });
   };
 
   const handleOpenDocFromId = async (docId: string) => {
@@ -247,9 +283,11 @@ function LekkiMain() {
             currentView === "trash" ||
             currentView === "workspace_files") && (
             <DriveView
+              key={currentView}
               currentView={currentView}
-              files={files}
+              files={loadedDataKey === driveDataKey ? files : []}
               folders={folders}
+              loading={driveLoading || loadedDataKey !== driveDataKey}
               activeWorkspaceId={activeWorkspaceId}
               activeWorkspaceName={activeWorkspace?.name}
               currentUser={user}
@@ -260,6 +298,8 @@ function LekkiMain() {
                 setIsNewFileOpen(true);
               }}
               onRefresh={refreshData}
+              onFileTrashed={handleFileTrashed}
+              onFileRestored={handleFileRestored}
               onAskAIAboutFile={handleAskAIAboutFile}
             />
           )}

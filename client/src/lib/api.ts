@@ -11,9 +11,16 @@ import {
   LekkiAIChatMessage,
 } from "@/types/lekki";
 
-const BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "/api/v1";
+const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+const BASE_URL = configuredApiUrl
+  ? configuredApiUrl.replace(/\/+$/, "")
+  : import.meta.env.PROD
+    ? "https://lekki-backend-production.up.railway.app/api/v1"
+    : "/api/v1";
+
+export function apiUrl(path: string): string {
+  return `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 const TOKEN_KEY = "lekki_token";
 
@@ -64,7 +71,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     if (res.status === 401) setToken(null);
-    throw new ApiError(res.status, extractDetail(data, res.statusText));
+    const message = res.status === 413
+      ? "Le fichier est trop volumineux pour être envoyé. Réduisez sa taille ou contactez l’administrateur."
+      : extractDetail(data, res.statusText);
+    throw new ApiError(res.status, message);
   }
   return data as T;
 }

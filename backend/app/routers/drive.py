@@ -343,6 +343,8 @@ async def create_file(
     # 1. File basics
     file_id = f"file-{uuid.uuid4().hex[:8]}"
     extension = os.path.splitext(file.filename)[1].lower()
+    if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
+        raise HTTPException(status_code=415, detail="Format accepté : PDF, DOCX, PPTX, TXT ou MD")
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
 
     # Save file to disk
@@ -353,8 +355,17 @@ async def create_file(
 
     # 2. Extraction & Parsing
     parsing_result = parser_service.parse(file_path, extension)
-    content = parsing_result["raw_text"]
-    structured_text = parsing_result["structured_text"]
+    content = (parsing_result.get("raw_text") or "").strip()
+    structured_text = (parsing_result.get("structured_text") or "").strip()
+    if not content and not structured_text:
+        os.remove(file_path)
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Aucun texte n'a pu être extrait. Vérifiez que le document n'est pas vide, "
+                "protégé ou scanné sans texte OCR exploitable."
+            ),
+        )
 
     # 3. Preview Generation
     thumb_path = None

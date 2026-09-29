@@ -1,14 +1,38 @@
 import re
+import unicodedata
 from typing import Any, Dict, List, Tuple
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm_service import generate_rag_answer
+from app.ai.llm_service import generate_rag_answer_with_provider
 from app.ai.schemas import AskSource
 from app.knowledge.drive.models import DriveFile
 from app.knowledge.wiki.models import WikiPage
 from app.workspaces.models import Workspace, WorkspaceMember
+
+
+_STOP_WORDS = {
+    "alors", "au", "aucun", "aux", "avec", "avoir", "ce", "ces", "ceux",
+    "chaque", "comme", "comment", "dans", "des", "du", "elle", "elles", "en",
+    "est", "et", "eux", "faire", "fait", "ici", "il", "ils", "je", "la", "le",
+    "les", "leur", "lui", "ma", "mais", "me", "meme", "mes", "moi", "mon",
+    "ne", "nos", "notre", "nous", "on", "ou", "par", "pas", "pour", "pourquoi",
+    "qu", "que", "quel", "quelle", "quelles", "quels", "qui", "sa", "sans", "se",
+    "ses", "son", "sur", "ta", "te", "tes", "toi", "ton", "tous", "tout", "toute",
+    "tres", "tu", "un", "une", "vos", "votre", "vous", "y", "explique", "expliquer",
+    "expliquez", "resume", "resumer", "donne", "donner", "indiquer", "indique", "cite",
+    "citer", "source", "sources", "document", "documents", "fiche", "cours", "aide",
+}
+
+
+def _query_terms(text: str) -> set[str]:
+    normalized = unicodedata.normalize("NFKD", text.lower())
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    return {
+        token for token in re.split(r"\W+", normalized)
+        if len(token) > 2 and token not in _STOP_WORDS
+    }
 
 
 def document_text(file: DriveFile) -> str:
@@ -28,10 +52,12 @@ def document_page_location(content: str) -> tuple[int, str]:
 
 
 def calculate_similarity(query: str, text: str) -> float:
-    words = {word.lower() for word in re.split(r"\W+", query) if len(word) > 2}
+    words = _query_terms(query)
     if not words:
         return 0.0
-    text_words = set(word.lower() for word in re.split(r"\W+", text) if len(word) > 2)
+    normalized_text = unicodedata.normalize("NFKD", text.lower())
+    normalized_text = "".join(char for char in normalized_text if not unicodedata.combining(char))
+    text_words = set(re.split(r"\W+", normalized_text))
     matches = words & text_words
     return len(matches) / len(words)
 
@@ -53,7 +79,7 @@ async def execute_rag_pipeline(
     question: str,
     workspace_id: str | None = None,
     user_id: str | None = None,
-) -> Tuple[str, List[AskSource], str | None, float]:
+) -> Tuple[str, List[AskSource], str | None, float, str]:
     accessible_workspace_ids: set[str] = set()
     if user_id:
         member_result = await db.execute(
@@ -91,9 +117,14 @@ async def execute_rag_pipeline(
     for file in drive_files:
         content = document_text(file)
         page, location = document_page_location(content)
-        score = calculate_similarity(question, f"{file.name} {file.summary or ''} {content}")
-        matched_words = calculate_similarity(question, f"{file.name} {file.summary or ''} {content}")
-        if score >= 0.35 and (len(set(re.findall(r"\w+", question))) <= 2 or matched_words >= 2):
+        searchable_text = f"{file.name} {file.summary or ''} {content}"
+        query_terms = _query_terms(question)
+        matched_terms = len(query_terms & _query_terms(searchable_text))
+        score = calculate_similarity(question, searchable_text)
+        # A single distinctive hit should be enough for short natural questions
+        # (e.g. "Explique-moi OSPF à partir de mes documents"). The score
+        # threshold still rejects one accidental hit in a long query.
+        if score >= 0.35 and matched_terms > 0:
             scored_items.append({
                 "type": "document",
                 "id": file.id,
@@ -109,8 +140,11 @@ async def execute_rag_pipeline(
             })
 
     for page in wiki_pages:
-        score = calculate_similarity(question, f"{page.title} {page.topic or ''} {page.section or ''} {page.content}")
-        if score >= 0.35 and (len(set(re.findall(r"\w+", question))) <= 2 or score >= 0.5):
+        searchable_text = f"{page.title} {page.topic or ''} {page.section or ''} {page.content}"
+        query_terms = _query_terms(question)
+        matched_terms = len(query_terms & _query_terms(searchable_text))
+        score = calculate_similarity(question, searchable_text)
+        if score >= 0.35 and matched_terms > 0:
             scored_items.append({
                 "type": "wiki",
                 "id": page.id,
@@ -141,5 +175,5 @@ async def execute_rag_pipeline(
     if any(term in q_lower for term in ("ospf", "cout", "coût", "bande")):
         contradiction = "Attention : les supports peuvent utiliser des bandes passantes de référence différentes."
     confidence = top_candidates[0]["score"] if top_candidates else 0.4
-    answer = await generate_rag_answer(question, top_candidates)
-    return answer, sources, contradiction, round(confidence, 2)
+    answer, provider = await generate_rag_answer_with_provider(question, top_candidates)
+    return answer, sources, contradiction, round(confidence, 2), provider

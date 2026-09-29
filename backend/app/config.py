@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     OLLAMA_TIMEOUT_SECONDS: float = 180.0
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,https://lekki-three.vercel.app"
 
     @property
     def cors_origins_list(self) -> List[str]:

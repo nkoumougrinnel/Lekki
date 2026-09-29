@@ -199,6 +199,7 @@ export interface LekkiAIChatMessage {
   created_at?: string;
   sources?: LekkiAISource[];
   contradiction?: string | null;
+  provider?: string | null;
 }
 
 export interface SearchItemDocument {
