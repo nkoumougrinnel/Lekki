@@ -3,8 +3,9 @@ import json
 import uuid
 import os
 import shutil
+from html import escape
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -248,6 +249,7 @@ async def list_files(
             extension=f.extension,
             size=f.size,
             content=f.content,
+            structured_text=f.structured_text,
             summary=f.summary,
             thumbnail_path=f.thumbnail_path,
             workspace_id=f.workspace_id,
@@ -285,6 +287,50 @@ async def download_file(file_id: str, db: AsyncSession = Depends(get_db)):
         )
 
     return FileResponse(file_path, filename=drive_file.name)
+
+
+@router.get("/files/{file_id}/preview")
+async def preview_file(file_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
+    drive_file = result.scalar_one_or_none()
+    if not drive_file:
+        raise HTTPException(status_code=404, detail="Document introuvable")
+
+    extension = _normalized_extension(drive_file.extension).lower()
+    file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
+    if extension == ".pdf" and os.path.isfile(file_path):
+        return FileResponse(
+            file_path,
+            media_type="application/pdf",
+            filename=drive_file.name,
+            content_disposition_type="inline",
+        )
+
+    text = drive_file.structured_text or drive_file.content or drive_file.summary or "Aucun texte extractible."
+    blocks = []
+    for line in text.splitlines():
+        safe_line = escape(line)
+        if line.startswith("# "):
+            blocks.append(f"<h1>{escape(line[2:])}</h1>")
+        elif line.startswith("## "):
+            blocks.append(f"<h2>{escape(line[3:])}</h2>")
+        elif line.startswith("[Diapositive ") or line.startswith("[Page "):
+            blocks.append(f"<h2>{safe_line}</h2>")
+        elif line.strip():
+            blocks.append(f"<p>{safe_line}</p>")
+
+    html = """<!doctype html><html lang="fr"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{margin:0;padding:32px;background:#f4f4f5;color:#18181b;font:16px/1.65 system-ui,sans-serif}
+      main{max-width:850px;margin:0 auto;padding:40px 52px;background:white;min-height:90vh;box-shadow:0 2px 16px #0001}
+      h1{font-size:1.8rem;margin:1.4em 0 .6em}h2{font-size:1.25rem;margin:1.5em 0 .5em;color:#047857}
+      p{white-space:pre-wrap;margin:.45em 0}@media(max-width:600px){body{padding:0}main{padding:24px 20px}}
+    </style></head><body><main>""" + "".join(blocks) + "</main></body></html>"
+    return HTMLResponse(
+        html,
+        headers={"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline';", "X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.get("/files/{file_id}/thumbnail")

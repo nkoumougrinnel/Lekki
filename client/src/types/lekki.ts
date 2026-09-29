@@ -29,6 +29,7 @@ export interface DriveFile {
   size_bytes: number;
   mime_type: string;
   content: string;
+  structured_text?: string | null;
   summary?: string;
   thumbnail_path?: string | null;
   owner_id: string;

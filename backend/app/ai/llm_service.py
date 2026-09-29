@@ -9,6 +9,7 @@ async def call_gemini(system_prompt: str, user_prompt: str) -> Optional[str]:
     """Calls Google Gemini API."""
     api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
     if not api_key:
+        print("[LLM] Gemini skipped: GEMINI_API_KEY is not configured")
         return None
 
     try:
@@ -59,6 +60,7 @@ async def call_groq(system_prompt: str, user_prompt: str) -> Optional[str]:
     """Calls Groq's OpenAI-compatible chat completions API."""
     api_key = settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")
     if not api_key:
+        print("[LLM] Groq skipped: GROQ_API_KEY is not configured")
         return None
 
     url = f"{settings.GROQ_BASE_URL.rstrip('/')}/chat/completions"
@@ -100,6 +102,7 @@ async def call_cerebras(system_prompt: str, user_prompt: str) -> Optional[str]:
     """Calls Cerebras' OpenAI-compatible chat completions API."""
     api_key = settings.CEREBRAS_API_KEY or os.environ.get("CEREBRAS_API_KEY")
     if not api_key:
+        print("[LLM] Cerebras skipped: CEREBRAS_API_KEY is not configured")
         return None
 
     url = f"{settings.CEREBRAS_BASE_URL.rstrip('/')}/chat/completions"

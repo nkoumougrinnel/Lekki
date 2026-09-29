@@ -82,9 +82,10 @@ export function DocumentViewerModal({
 
   const totalPages = file.page_count || 1;
   const chapters = file.detected_chapters || [];
+  const previewExtension = file.extension?.toLowerCase().replace(/^\./, "");
 
   // Check if document belongs to the active workspace
-  const isDifferentWorkspace = file.workspace_id && file.workspace_id !== activeWorkspaceId;
+  const isDifferentWorkspace = Boolean(file.workspace_id && file.workspace_id !== activeWorkspaceId);
   const fileWorkspace = workspaces.find(w => w.id === file.workspace_id);
   const fileWorkspaceName = fileWorkspace?.name || "un workspace inconnu";
 
@@ -171,6 +172,23 @@ export function DocumentViewerModal({
               </button>
             </div>
           </div>
+
+          {/* Document preview: PDF viewer or extracted Office text */}
+          {(["pdf", "docx", "pptx"].includes(previewExtension || "")) && (
+            <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#161A23]">
+              <div className="border-b border-zinc-800 px-5 py-3 text-xs font-mono uppercase tracking-wider text-zinc-300">
+                Aperçu du document
+              </div>
+              <iframe
+                key={`${file.id}-${previewExtension}`}
+                src={apiUrl(`/drive/files/${file.id}/preview`)}
+                title={`Aperçu de ${file.name}`}
+                className="h-[65vh] min-h-[420px] w-full bg-white"
+                loading="lazy"
+                sandbox=""
+              />
+            </section>
+          )}
 
           {/* 2. Sommaire & Chapitres Détectés */}
           {chapters.length > 0 && (

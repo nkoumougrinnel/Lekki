@@ -9,14 +9,25 @@ import {
   UnifiedSearchResults,
   LekkiAISource,
   LekkiAIChatMessage,
+  DocumentIndexInfo,
 } from "@/types/lekki";
 
 const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-const BASE_URL = configuredApiUrl
+const productionApiUrl = "https://lekki-backend-production.up.railway.app/api/v1";
+const configuredApiIsSameOrigin = (() => {
+  if (!configuredApiUrl || !import.meta.env.PROD || typeof window === "undefined") return false;
+  try {
+    const configuredUrl = new URL(configuredApiUrl, window.location.origin);
+    return configuredUrl.origin === window.location.origin || configuredUrl.hostname.endsWith(".vercel.app");
+  } catch {
+    return true;
+  }
+})();
+const BASE_URL = configuredApiUrl && !configuredApiIsSameOrigin
   ? configuredApiUrl.replace(/\/+$/, "")
   : import.meta.env.PROD
-    ? "https://lekki-backend-production.up.railway.app/api/v1"
-    : "/api/v1";
+    ? productionApiUrl
+    : configuredApiUrl?.replace(/\/+$/, "") || "/api/v1";
 
 export function apiUrl(path: string): string {
   return `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -68,6 +79,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 204) return null as T;
 
   const data = await res.json().catch(() => null);
+
+  if (res.ok && data === null && res.headers.get("content-type")?.includes("text/html")) {
+    throw new ApiError(
+      res.status,
+      "L'API a renvoyé la page du frontend au lieu des données. Vérifiez VITE_API_URL : elle doit pointer vers le backend Railway."
+    );
+  }
 
   if (!res.ok) {
     if (res.status === 401) setToken(null);
