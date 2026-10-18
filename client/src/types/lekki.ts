@@ -128,12 +128,12 @@ export interface Workspace {
 
 export interface WorkspaceMember {
   id: string;
-  workspace_id: string;
   user_id: string;
+  name: string;
+  email: string;
+  username: string;
   role: "owner" | "admin" | "member" | "verifier" | string;
-  joined_at: string;
-  user_name?: string;
-  user_email?: string;
+  joined_at?: string | null;
 }
 
 export interface User {

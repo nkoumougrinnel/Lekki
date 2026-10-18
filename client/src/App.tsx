@@ -109,16 +109,20 @@ function LekkiMain() {
       else if (currentView === "workspace_files") fileScope = "workspace";
 
       const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles, loadedPersonalFiles] = await Promise.all([
-        drive.getFiles({
-          scope: fileScope,
-          workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
-        }).catch(() => null),
-        drive.getFolders({
-          workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
-        }).catch(() => null),
-        wiki.getPages({
-          workspace_id: activeWorkspaceId || undefined,
-        }).catch(() => null),
+        currentView === "workspace_files" && !activeWorkspaceId
+          ? Promise.resolve([] as DriveFile[])
+          : drive.getFiles({
+              scope: fileScope,
+              workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
+            }).catch(() => null),
+        currentView === "workspace_files" && !activeWorkspaceId
+          ? Promise.resolve([] as DriveFolder[])
+          : drive.getFolders({
+              workspace_id: currentView === "workspace_files" ? activeWorkspaceId : undefined,
+            }).catch(() => null),
+        activeWorkspaceId
+          ? wiki.getPages({ workspace_id: activeWorkspaceId }).catch(() => null)
+          : Promise.resolve([] as WikiPage[]),
         drive.getFiles({ scope: "all" }).catch(() => null),
         drive.getFiles({ scope: "trash" }).catch(() => null),
         drive.getFiles({ scope: "personal" }).catch(() => null),
@@ -144,6 +148,14 @@ function LekkiMain() {
   useEffect(() => {
     refreshData();
   }, [refreshData, user?.id]);
+
+  useEffect(() => {
+    if (!activeWorkspaceId && (currentView === "workspace_files" || currentView === "workspace_wiki")) {
+      setCurrentView("home");
+      setActiveWikiPage(null);
+      setWikiFilterTopic(null);
+    }
+  }, [activeWorkspaceId, currentView]);
 
   // Sidebar Counts
   const counts = {
@@ -320,6 +332,9 @@ function LekkiMain() {
               onNewFileClick={(folderId) => {
                 setNewFileFolderId(folderId || null);
                 setIsNewFileOpen(true);
+              }}
+              onImportFolderClick={(folderId) => {
+                setNewFileFolderId(folderId || null);
               }}
               onRefresh={refreshData}
               onFileTrashed={handleFileTrashed}

@@ -10,6 +10,14 @@ class WorkspaceCreate(BaseModel):
     icon: Optional[str] = "school"
 
 
+class WorkspaceJoin(BaseModel):
+    code: str
+
+
+class WorkspaceJoinCode(BaseModel):
+    code: str
+
+
 class WorkspaceOut(BaseModel):
     id: str
     name: str

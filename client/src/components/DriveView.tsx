@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
 import { apiUrl, drive } from "@/lib/api";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
+import { ImportFolderDialog } from "./ImportFolderDialog";
 import { toast } from "sonner";
 import {
   Folder,
@@ -34,6 +35,7 @@ interface DriveViewProps {
   onOpenFile: (file: DriveFile) => void;
   onOpenShare: (file: DriveFile) => void;
   onNewFileClick: (folderId?: string) => void;
+  onImportFolderClick?: (folderId?: string) => void;
   onRefresh: () => void;
   onFileTrashed: (file: DriveFile, permanentlyDeleted?: boolean) => void;
   onFileRestored: (file: DriveFile) => void;
@@ -51,6 +53,7 @@ export function DriveView({
   onOpenFile,
   onOpenShare,
   onNewFileClick,
+  onImportFolderClick,
   onRefresh,
   onFileTrashed,
   onFileRestored,
@@ -59,6 +62,7 @@ export function DriveView({
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [importFolderOpen, setImportFolderOpen] = useState(false);
 
   // Filter folders for current scope
   const isPersonalScope =
@@ -240,7 +244,7 @@ export function DriveView({
               <span>Vider la corbeille</span>
             </button>
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
               <button
                 onClick={() => setShowNewFolderInput((prev) => !prev)}
                 aria-label="Nouveau dossier"
@@ -260,6 +264,21 @@ export function DriveView({
                 <Upload className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Déposer un document</span>
               </button>
+
+              {onImportFolderClick && (
+                <button
+                  onClick={() => {
+                    setImportFolderOpen(true);
+                    onImportFolderClick(currentFolderId || undefined);
+                  }}
+                  aria-label="Importer un dossier"
+                  title="Importer un dossier"
+                  className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-2 sm:px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
+                >
+                  <FolderPlus className="h-3.5 w-3.5 text-zinc-200" />
+                  <span className="hidden sm:inline">Importer un dossier</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -496,6 +515,19 @@ export function DriveView({
           )}
         </div>
       </div>
+      {importFolderOpen && (
+        <ImportFolderDialog
+          open={importFolderOpen}
+          onOpenChange={setImportFolderOpen}
+          folders={folders}
+          defaultWorkspaceId={activeWorkspaceId || null}
+          defaultFolderId={currentFolderId || null}
+          onImportCompleted={async (importedFiles) => {
+            setImportFolderOpen(false);
+            await onRefresh();
+          }}
+        />
+      )}
     </div>
   );
 }

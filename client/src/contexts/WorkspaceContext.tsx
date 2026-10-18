@@ -14,6 +14,7 @@ interface WorkspaceContextType {
   setActiveWorkspace: (id: string) => void;
   refresh: () => Promise<void>;
   createWorkspace: (data: { name: string; description?: string; icon?: string }) => Promise<Workspace>;
+  joinWorkspace: (code: string) => Promise<Workspace>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -72,6 +73,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return created;
   };
 
+  const joinWorkspace = async (code: string) => {
+    const joined = await workspacesApi.joinByCode(code);
+    await refresh();
+    setActiveWorkspaceId(joined.id);
+    return joined;
+  };
+
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? null;
 
   return (
@@ -85,6 +93,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setActiveWorkspace,
         refresh,
         createWorkspace,
+        joinWorkspace,
       }}
     >
       {children}

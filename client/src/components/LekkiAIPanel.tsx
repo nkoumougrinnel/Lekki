@@ -507,12 +507,12 @@ export function LekkiAIPanel({
 
       {/* CONVERSATION */}
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="mx-auto w-full max-w-2xl space-y-7 px-5 py-6">
           {/* ÉCRAN D'ACCUEIL */}
 
           {safeMessages.length === 0 && !loading && (
-            <div className="flex min-h-[60vh] flex-col justify-center">
+            <div className="flex min-h-[min(60vh,520px)] flex-col justify-center py-4">
               <div className="mb-8">
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-400/15 bg-sky-400/[0.07]">
                   <Sparkles className="h-5 w-5 text-sky-300" />
@@ -682,7 +682,7 @@ export function LekkiAIPanel({
                             <SourceCard
                               key={`${source.type}-${source.id}`}
                               source={source}
-                              activeWorkspaceId={activeWorkspaceId}
+                              activeWorkspaceId={activeWorkspaceId || undefined}
                               workspaces={workspaces}
                               onOpenDoc={onOpenDoc}
                               onOpenWiki={onOpenWiki}
@@ -725,7 +725,7 @@ export function LekkiAIPanel({
 
       {/* SAISIE */}
 
-      <footer className="shrink-0 border-t border-white/[0.07] bg-[#101318] px-4 pb-4 pt-3 sm:px-5">
+      <footer className="shrink-0 border-t border-white/[0.07] bg-[#101318] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -733,9 +733,10 @@ export function LekkiAIPanel({
           }}
           className="mx-auto max-w-2xl"
         >
-          <div className="group flex items-end gap-2 rounded-2xl border border-white/[0.09] bg-[#171b22] p-2 transition-colors focus-within:border-sky-400/30">
-            <textarea
-              ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+          <div className="group flex items-center gap-2 rounded-2xl border border-white/[0.09] bg-[#171b22] p-1.5 transition-colors focus-within:border-sky-400/30 focus-within:bg-[#1a1f27]">
+            <input
+              ref={inputRef}
+              type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -746,15 +747,14 @@ export function LekkiAIPanel({
               }}
               placeholder="Posez une question sur vos connaissances..."
               disabled={loading}
-              rows={1}
-              className="max-h-32 min-h-[42px] flex-1 resize-y bg-transparent px-2 py-3 text-[13px] leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-50"
+              className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-50"
             />
 
             <button
               type="submit"
               disabled={!input.trim() || loading}
               aria-label="Envoyer le message"
-              className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-400 text-[#101318] transition-all hover:bg-sky-300 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-zinc-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-400 text-[#101318] transition-all hover:bg-sky-300 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-zinc-600"
             >
               <Send className="h-4 w-4" />
             </button>

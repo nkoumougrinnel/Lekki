@@ -1,6 +1,7 @@
 from typing import AsyncGenerator
+import secrets
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
@@ -35,6 +36,7 @@ async def init_db() -> None:
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
         await connection.run_sync(_migrate_drive_file_columns)
+        await connection.run_sync(_migrate_workspace_join_codes)
 
 
 def _migrate_drive_file_columns(connection) -> None:
@@ -51,3 +53,32 @@ def _migrate_drive_file_columns(connection) -> None:
     for column, statement in migrations.items():
         if column not in existing_columns:
             connection.exec_driver_sql(statement)
+
+
+def _migrate_workspace_join_codes(connection) -> None:
+    """Add and backfill private workspace invitation codes on existing databases."""
+    columns = {column["name"] for column in inspect(connection).get_columns("workspaces")}
+    if "join_code" not in columns:
+        connection.exec_driver_sql("ALTER TABLE workspaces ADD COLUMN join_code VARCHAR")
+
+    rows = connection.execute(
+        text("SELECT id FROM workspaces WHERE join_code IS NULL OR join_code = ''")
+    ).fetchall()
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for (workspace_id,) in rows:
+        while True:
+            code = "".join(secrets.choice(alphabet) for _ in range(8))
+            exists = connection.execute(
+                text("SELECT 1 FROM workspaces WHERE join_code = :code"),
+                {"code": code},
+            ).first()
+            if not exists:
+                connection.execute(
+                    text("UPDATE workspaces SET join_code = :code WHERE id = :workspace_id"),
+                    {"code": code, "workspace_id": workspace_id},
+                )
+                break
+
+    connection.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_workspaces_join_code ON workspaces (join_code)"
+    ))

@@ -13,7 +13,7 @@ import {
 } from "@/types/lekki";
 
 const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-const productionApiUrl = "https://lekki-backend-production.up.railway.app/api/v1";
+const productionApiUrl = "https://lekki-backend-production-b392.up.railway.app/api/v1";
 const configuredApiIsSameOrigin = (() => {
   if (!configuredApiUrl || !import.meta.env.PROD || typeof window === "undefined") return false;
   try {
@@ -188,6 +188,22 @@ export const workspaces = {
     return jsonRequest<Workspace>("/workspaces", "POST", data);
   },
 
+  joinByCode(code: string): Promise<Workspace> {
+    return jsonRequest<Workspace>("/workspaces/join", "POST", { code });
+  },
+
+  getJoinCode(id: string): Promise<{ code: string }> {
+    return request<{ code: string }>(`/workspaces/${id}/join-code`);
+  },
+
+  rotateJoinCode(id: string): Promise<{ code: string }> {
+    return jsonRequest<{ code: string }>(`/workspaces/${id}/join-code/rotate`, "POST");
+  },
+
+  delete(id: string): Promise<null> {
+    return request<null>(`/workspaces/${id}`, { method: "DELETE" });
+  },
+
   getMembers(id: string): Promise<WorkspaceMember[]> {
     return request<WorkspaceMember[]>(`/workspaces/${id}/members`);
   },
@@ -266,6 +282,25 @@ export const drive = {
       method: "POST",
       body: formData,
     }).then(normalizeDriveFile);
+  },
+
+  importFiles(data: {
+    files: File[];
+    folder_ids?: (string | null)[];
+    workspace_id?: string | null;
+    tags?: string[];
+  }): Promise<DriveFile[]> {
+    const formData = new FormData();
+    data.files.forEach((file) => formData.append("files", file));
+    if (data.folder_ids) {
+      formData.append("folder_ids", JSON.stringify(data.folder_ids));
+    }
+    if (data.workspace_id) formData.append("workspace_id", data.workspace_id);
+    if (data.tags) formData.append("tags", JSON.stringify(data.tags));
+    return request<Array<DriveFile & { size?: number }>>("/drive/files/import", {
+      method: "POST",
+      body: formData,
+    }).then((items) => items.map(normalizeDriveFile));
   },
 
   updateFile(id: string, data: Partial<DriveFile>): Promise<DriveFile> {

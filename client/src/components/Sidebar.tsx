@@ -11,6 +11,7 @@ import {
   Files,
   BookOpen,
   Settings,
+  Settings2,
   X,
   ChevronsUpDown,
   Building2,
@@ -110,7 +111,7 @@ export function Sidebar({
               aria-label="Créer un workspace"
             >
               <Plus className="h-4 w-4" />
-              <span>Créer</span>
+              <span>Rejoindre / créer</span>
             </button>
             <button
               onClick={() => setWsSwitcherOpen(false)}
@@ -138,7 +139,7 @@ export function Sidebar({
           {!loading && !error && workspaces.length === 0 && (
             <div className="px-5 py-7 text-center">
               <p className="text-sm font-medium text-zinc-200">Aucun workspace disponible</p>
-              <p className="mt-1 text-xs text-zinc-500">Créez un espace pour commencer à collaborer.</p>
+              <p className="mt-1 text-xs text-zinc-500">Rejoignez un espace avec son code ou créez-en un.</p>
               <button
                 onClick={() => {
                   setWsSwitcherOpen(false);
@@ -147,7 +148,7 @@ export function Sidebar({
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                Créer un workspace
+                Rejoindre ou créer
               </button>
             </div>
           )}
@@ -239,54 +240,69 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* WORKSPACE — bouton switcher + liens */}
+      {/* WORKSPACE — aucun espace fictif : créer/rejoindre avant d’afficher le Drive partagé et le Wiki */}
       <div className="space-y-1">
-        {/* Bouton workspace cliquable = ouvre modal centré */}
-        <button
-          id="sidebar-workspace-switcher"
-          onClick={() => setWsSwitcherOpen(true)}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/80 hover:border-emerald-500/30 bg-zinc-900/30 hover:bg-emerald-500/5 text-sm transition-all group mb-1"
-          title="Changer de workspace"
-        >
-          <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20`}>
-            {getWorkspaceIcon(activeWorkspace?.icon)}
-          </div>
-          <span className="flex-1 text-left truncate font-semibold text-zinc-200 text-sm">
-            {activeWorkspace?.name || "Workspace"}
-          </span>
-          <ChevronsUpDown className="h-3.5 w-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors shrink-0" />
-        </button>
-
-        {/* Liens du workspace actif — toujours visibles */}
-        <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>
-          <div className="flex items-center gap-3">
-            <Files className={`h-4 w-4 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-            <span>Drive partagé</span>
-          </div>
-          {counts.workspaceFiles !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceFiles}</span>}
-        </button>
-
-        <button id="sidebar-nav-workspace-wiki" onClick={() => handleSelect("workspace_wiki")} className={navItemClass(currentView === "workspace_wiki")}>
-          <div className="flex items-center gap-3">
-            <BookOpen className={`h-4 w-4 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-            <span>Wiki d'équipe</span>
-          </div>
-          {counts.workspaceWiki !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceWiki}</span>}
-        </button>
-
-        {activeWorkspace &&
-          (activeWorkspace.role === "admin" || activeWorkspace.role === "owner") &&
-          onOpenWorkspaceSettings && (
+        {activeWorkspace ? (
+          <>
             <button
-              onClick={() => { onOpenWorkspaceSettings(); onMobileClose?.(); }}
-              className={navItemClass(false)}
+              id="sidebar-workspace-switcher"
+              onClick={() => setWsSwitcherOpen(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/80 hover:border-emerald-500/30 bg-zinc-900/30 hover:bg-emerald-500/5 text-sm transition-all group mb-1"
+              title="Changer de workspace"
             >
-              <div className="flex items-center gap-3">
-                <Settings className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
-                <span>Réglages</span>
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                {getWorkspaceIcon(activeWorkspace.icon)}
               </div>
+              <span className="flex-1 text-left truncate font-semibold text-zinc-200 text-sm">
+                {activeWorkspace.name}
+              </span>
+              <ChevronsUpDown className="h-3.5 w-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors shrink-0" />
             </button>
-          )}
+
+            <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>
+              <div className="flex items-center gap-3">
+                <Files className={`h-4 w-4 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Drive partagé</span>
+              </div>
+              {counts.workspaceFiles !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceFiles}</span>}
+            </button>
+
+            <button id="sidebar-nav-workspace-wiki" onClick={() => handleSelect("workspace_wiki")} className={navItemClass(currentView === "workspace_wiki")}>
+              <div className="flex items-center gap-3">
+                <BookOpen className={`h-4 w-4 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Wiki d'équipe</span>
+              </div>
+              {counts.workspaceWiki !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceWiki}</span>}
+            </button>
+
+            {(activeWorkspace.role === "admin" || activeWorkspace.role === "owner") && onOpenWorkspaceSettings && (
+              <button
+                onClick={() => { onOpenWorkspaceSettings(); onMobileClose?.(); }}
+                className={navItemClass(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings2 className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
+                  <span>Administration</span>
+                </div>
+              </button>
+            )}
+          </>
+        ) : (
+          <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3">
+            <div className="text-sm font-medium text-zinc-200">Aucun workspace rejoint</div>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              Rejoignez un espace avec son code ou créez-en un pour accéder au Drive partagé et au Wiki.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCreateWorkspaceOpen(true)}
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Rejoindre ou créer
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -330,32 +346,40 @@ export function Sidebar({
             {/* Profil utilisateur toujours ancré en bas du menu mobile */}
             <div className="shrink-0 border-t border-zinc-800/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               {mobileProfileOpen && (
-                <div className="mb-2 rounded-xl border border-zinc-800 bg-[#14171E] p-1 animate-in fade-in slide-in-from-bottom-1 duration-100">
-                  <button
+                <>
+                  <div
+                    className="absolute inset-0 z-40 bg-black/30 backdrop-blur-sm"
                     onClick={() => setMobileProfileOpen(false)}
-                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
+                  />
+                  <div
+                    className="absolute bottom-0 left-0 right-0 z-50 mb-[calc(0.75rem+env(safe-area-inset-bottom))] mx-2 rounded-xl border border-zinc-800 bg-[#0E1116]/95 backdrop-blur-md p-1 shadow-2xl animate-in fade-in slide-in-from-bottom-1 duration-100"
                   >
-                    <UserCircle className="h-4 w-4 text-zinc-500" />
-                    Mon profil
-                  </button>
-                  <button
-                    onClick={() => setMobileProfileOpen(false)}
-                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
-                  >
-                    <Settings className="h-4 w-4 text-zinc-500" />
-                    Paramètres du compte
-                  </button>
-                  <button
-                    onClick={() => {
-                      logout();
-                      onMobileClose?.();
-                    }}
-                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Déconnexion
-                  </button>
-                </div>
+                    <button
+                      onClick={() => setMobileProfileOpen(false)}
+                      className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
+                    >
+                      <UserCircle className="h-4 w-4 text-zinc-500" />
+                      Mon profil
+                    </button>
+                    <button
+                      onClick={() => setMobileProfileOpen(false)}
+                      className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
+                    >
+                      <Settings className="h-4 w-4 text-zinc-500" />
+                      Paramètres du compte
+                    </button>
+                    <button
+                      onClick={() => {
+                        logout();
+                        onMobileClose?.();
+                      }}
+                      className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </button>
+                  </div>
+                </>
               )}
               <button
                 type="button"

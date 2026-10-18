@@ -17,13 +17,19 @@ class WorkspaceRepository:
         result = await self.db.execute(select(Workspace).where(Workspace.id == workspace_id))
         return result.scalar_one_or_none()
 
+    async def get_by_join_code(self, join_code: str) -> Workspace | None:
+        result = await self.db.execute(
+            select(Workspace).where(Workspace.join_code == join_code)
+        )
+        return result.scalar_one_or_none()
+
     async def member_count(self, workspace_id: str) -> int:
         result = await self.db.execute(
             select(func.count(WorkspaceMember.id)).where(
                 WorkspaceMember.workspace_id == workspace_id
             )
         )
-        return result.scalar() or 1
+        return result.scalar() or 0
 
     async def role_for_user(self, workspace_id: str, user_id: str) -> str | None:
         result = await self.db.execute(

@@ -13,6 +13,7 @@ class Workspace(Base):
     description = Column(String, nullable=True)
     icon = Column(String, default="school")
     owner_id = Column(String, ForeignKey("users.id"), nullable=True)
+    join_code = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

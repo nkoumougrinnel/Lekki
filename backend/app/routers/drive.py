@@ -581,6 +581,104 @@ async def create_file(
     return _file_out(f)
 
 
+@router.post("/files/import", response_model=List[FileOut])
+async def import_files(
+    files: List[UploadFile] = File(...),
+    folder_ids: Optional[str] = Form(None),
+    workspace_id: Optional[str] = Form(None),
+    tags: Optional[str] = Form("[]"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Import several files at once, preserving a per-file folder destination.
+
+    `folder_ids` is a JSON array parallel to `files` (each entry a folder_id or null).
+    Folder hierarchy must be created on the client before calling this endpoint.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="Aucun fichier à importer.")
+
+    try:
+        folder_ids_list = json.loads(folder_ids) if folder_ids else []
+    except (TypeError, ValueError):
+        folder_ids_list = []
+
+    try:
+        tags_list = json.loads(tags) if tags else []
+        if not isinstance(tags_list, list):
+            tags_list = []
+    except (TypeError, ValueError):
+        tags_list = []
+
+    results: List[FileOut] = []
+
+    for index, file in enumerate(files):
+        filename = file.filename or f"document-{index}"
+        extension = os.path.splitext(filename)[1].lower()
+        if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
+            print(f"Skipping {filename}: unsupported format {extension}")
+            continue
+
+        folder_id = folder_ids_list[index] if index < len(folder_ids_list) else None
+        file_id = f"file-{uuid.uuid4().hex[:8]}"
+        file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
+
+        try:
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            file_size = os.path.getsize(file_path)
+
+            parsing_result = parser_service.parse(file_path, extension)
+            content = (parsing_result.get("raw_text") or "").strip()
+            structured_text = (parsing_result.get("structured_text") or "").strip()
+            if not content and not structured_text:
+                os.remove(file_path)
+                print(f"Skipping {filename}: no text extracted")
+                continue
+
+            thumb_path = None
+            if extension == ".pdf":
+                thumb_path = preview_service.generate_pdf_thumbnail(file_path, file_id)
+            elif extension in {".docx", ".pptx"}:
+                thumb_path = preview_service.generate_office_thumbnail(file_path, file_id)
+
+            snippet = preview_service.get_text_snippet(content)
+
+            f = DriveFile(
+                id=file_id,
+                name=filename,
+                extension=extension,
+                content=content,
+                structured_text=structured_text,
+                page_count=parsing_result.get("page_count"),
+                slide_count=parsing_result.get("slide_count"),
+                content_unit=parsing_result.get("content_unit"),
+                detected_chapters=json.dumps(parsing_result.get("detected_chapters") or [], ensure_ascii=False),
+                summary=snippet,
+                size=file_size,
+                tags=json.dumps(tags_list, ensure_ascii=False),
+                thumbnail_path=thumb_path,
+                workspace_id=workspace_id,
+                folder_id=folder_id,
+                owner_id=current_user.id,
+                scope="workspace" if workspace_id else "personal",
+            )
+            db.add(f)
+            await db.flush()
+            await db.refresh(f)
+            results.append(_file_out(f))
+        except Exception as error:
+            print(f"Error importing {filename}: {error}")
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
+
+    await db.commit()
+    return results
+
+
 @router.put("/files/{file_id}", response_model=FileOut)
 async def update_file(
     file_id: str,
