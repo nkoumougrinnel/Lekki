@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { NavView } from "@/types/lekki";
 import {
   Home,
@@ -17,7 +18,12 @@ import {
   Cpu,
   Folder,
   Check,
+  ChevronDown,
+  LogOut,
+  UserCircle,
+  Plus,
 } from "lucide-react";
+import { CreateWorkspaceDialog } from "./CreateWorkspaceDialog";
 
 interface SidebarProps {
   currentView: NavView;
@@ -43,8 +49,11 @@ export function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }: SidebarProps) {
-  const { activeWorkspace, workspaces, setActiveWorkspace } = useWorkspace();
+  const { activeWorkspace, workspaces, setActiveWorkspace, loading, error, refresh } = useWorkspace();
+  const { user, logout } = useAuth();
   const [wsSwitcherOpen, setWsSwitcherOpen] = useState(false);
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
 
   const getWorkspaceIcon = (iconName?: string) => {
     switch (iconName) {
@@ -91,16 +100,57 @@ export function Sidebar({
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500">
             Changer de workspace
           </span>
-          <button
-            onClick={() => setWsSwitcherOpen(false)}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setWsSwitcherOpen(false);
+                setCreateWorkspaceOpen(true);
+              }}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+              aria-label="Créer un workspace"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Créer</span>
+            </button>
+            <button
+              onClick={() => setWsSwitcherOpen(false)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+              aria-label="Fermer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Liste */}
         <div className="py-2 max-h-72 overflow-y-auto">
+          {loading && (
+            <p className="px-5 py-6 text-center text-sm text-zinc-500">Chargement des workspaces...</p>
+          )}
+          {!loading && error && (
+            <div className="px-5 py-6 text-center space-y-2">
+              <p className="text-sm text-amber-400">{error}</p>
+              <button onClick={() => void refresh()} className="text-xs text-emerald-400 hover:text-emerald-300">
+                Réessayer
+              </button>
+            </div>
+          )}
+          {!loading && !error && workspaces.length === 0 && (
+            <div className="px-5 py-7 text-center">
+              <p className="text-sm font-medium text-zinc-200">Aucun workspace disponible</p>
+              <p className="mt-1 text-xs text-zinc-500">Créez un espace pour commencer à collaborer.</p>
+              <button
+                onClick={() => {
+                  setWsSwitcherOpen(false);
+                  setCreateWorkspaceOpen(true);
+                }}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Créer un workspace
+              </button>
+            </div>
+          )}
           {workspaces.map((ws) => {
             const isActive = ws.id === activeWorkspace?.id;
             return (
@@ -245,6 +295,7 @@ export function Sidebar({
     <>
       {/* Modal centré de sélection du workspace */}
       {wsSwitcherOpen && <WorkspaceSwitcherModal />}
+      <CreateWorkspaceDialog open={createWorkspaceOpen} onOpenChange={setCreateWorkspaceOpen} />
 
       {/* ── Desktop sidebar ── */}
       <aside
@@ -260,7 +311,7 @@ export function Sidebar({
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onMobileClose} />
           <aside
             id="lekki-app-sidebar-mobile"
-            className="relative z-50 w-72 max-w-[85vw] bg-[#0E1116] border-r border-zinc-800/80 flex flex-col overflow-y-auto animate-in slide-in-from-left duration-200"
+            className="relative z-50 h-dvh max-h-dvh w-72 max-w-[85vw] bg-[#0E1116] border-r border-zinc-800/80 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200"
           >
             {/* Header drawer */}
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-zinc-800/80">
@@ -272,7 +323,59 @@ export function Sidebar({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {sidebarContent}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {sidebarContent}
+            </div>
+
+            {/* Profil utilisateur toujours ancré en bas du menu mobile */}
+            <div className="shrink-0 border-t border-zinc-800/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+              {mobileProfileOpen && (
+                <div className="mb-2 rounded-xl border border-zinc-800 bg-[#14171E] p-1 animate-in fade-in slide-in-from-bottom-1 duration-100">
+                  <button
+                    onClick={() => setMobileProfileOpen(false)}
+                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
+                  >
+                    <UserCircle className="h-4 w-4 text-zinc-500" />
+                    Mon profil
+                  </button>
+                  <button
+                    onClick={() => setMobileProfileOpen(false)}
+                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
+                  >
+                    <Settings className="h-4 w-4 text-zinc-500" />
+                    Paramètres du compte
+                  </button>
+                  <button
+                    onClick={() => {
+                      logout();
+                      onMobileClose?.();
+                    }}
+                    className="w-full px-3 py-2.5 text-left flex items-center gap-3 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Déconnexion
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setMobileProfileOpen((open) => !open)}
+                aria-expanded={mobileProfileOpen}
+                aria-label="Ouvrir le menu du profil"
+                className="w-full min-w-0 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-zinc-800/60 transition-colors"
+              >
+                <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-emerald-600/50 to-sky-600/50 border border-emerald-500/30 text-emerald-100 flex items-center justify-center font-bold text-sm">
+                  {user?.name?.charAt(0) || user?.username?.charAt(0) || "U"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-zinc-100">
+                    {user?.name || user?.username || "Mon compte"}
+                  </div>
+                  <div className="truncate text-xs text-zinc-500">{user?.email || "Profil et paramètres"}</div>
+                </div>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${mobileProfileOpen ? "rotate-180" : ""}`} />
+              </button>
+            </div>
           </aside>
         </div>
       )}

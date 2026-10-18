@@ -258,7 +258,7 @@ export function Header({
           <div className="h-5 w-[1px] bg-zinc-800/60 hidden sm:block" />
 
           {/* User Persona Switcher */}
-          <div className="relative">
+          <div className="relative hidden lg:block">
             <button
               id="header-user-persona-btn"
               onClick={() => setShowUserMenu((prev) => !prev)}

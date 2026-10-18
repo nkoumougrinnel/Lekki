@@ -3,11 +3,44 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["logo.svg"],
+      manifest: {
+        name: "Lekki — Espace documentaire intelligent",
+        short_name: "Lekki",
+        description: "Espace documentaire intelligent avec Drive, Wiki, recherche et assistant IA.",
+        lang: "fr",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        background_color: "#0D0F12",
+        theme_color: "#0D0F12",
+        icons: [
+          {
+            src: "/logo.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
+          {
+            src: "/logo.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "maskable",
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
