@@ -13,6 +13,7 @@ import {
   Users,
   Clock,
 } from "lucide-react";
+import { DocumentTypeIcon } from "./DocumentTypeIcon";
 
 interface HomeOverviewProps {
   files: DriveFile[];
@@ -185,7 +186,7 @@ export function HomeOverview({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="p-1.5 rounded bg-zinc-800 border border-zinc-700/60 shrink-0">
-                        <FileText className="h-4 w-4 text-rose-400" />
+                        <DocumentTypeIcon extension={file.extension} className="h-5 w-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-medium text-zinc-200 group-hover:text-emerald-300 truncate">

@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { searchApi } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { UnifiedSearchResults, FileExtension, WikiStatus } from "@/types/lekki";
+import { UnifiedSearchResults, WikiStatus } from "@/types/lekki";
+import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import {
   Search,
   X,
   FileText,
   BookOpen,
   Share2,
-  FileSpreadsheet,
-  FileCode,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
@@ -22,6 +21,7 @@ interface UnifiedSearchDialogProps {
   onSelectDocument: (docId: string) => void;
   onSelectWiki: (wikiId: string) => void;
   onAskAI: (query: string) => void;
+  fullScreen?: boolean;
 }
 
 export function UnifiedSearchDialog({
@@ -32,6 +32,7 @@ export function UnifiedSearchDialog({
   onSelectDocument,
   onSelectWiki,
   onAskAI,
+  fullScreen = false,
 }: UnifiedSearchDialogProps) {
   const { activeWorkspaceId } = useWorkspace();
   const [loading, setLoading] = useState(false);
@@ -80,22 +81,6 @@ export function UnifiedSearchDialog({
 
   if (!open) return null;
 
-  const getDocIcon = (ext: FileExtension) => {
-    switch (ext) {
-      case "pdf":
-        return <FileText className="h-4 w-4 text-rose-400 shrink-0" />;
-      case "docx":
-        return <FileSpreadsheet className="h-4 w-4 text-sky-400 shrink-0" />;
-      case "pptx":
-        return <FileText className="h-4 w-4 text-amber-400 shrink-0" />;
-      case "md":
-      case "txt":
-        return <FileCode className="h-4 w-4 text-emerald-400 shrink-0" />;
-      default:
-        return <FileText className="h-4 w-4 text-zinc-400 shrink-0" />;
-    }
-  };
-
   const getStatusBadge = (status: WikiStatus) => {
     switch (status) {
       case "verified":
@@ -125,14 +110,22 @@ export function UnifiedSearchDialog({
   return (
     <div
       id="unified-search-dropdown"
-      className="absolute left-0 right-0 top-full z-50 mt-2"
+      className={`${
+        fullScreen
+          ? "fixed inset-0 z-50 bg-[#0E1116]/97 backdrop-blur-md"
+          : "absolute left-0 right-0 top-full z-50 mt-2"
+      }`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
     >
       <div
         id="unified-search-modal"
-        className="w-full bg-[#14171E] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
+        className={`w-full bg-[#14171E] border border-zinc-700/80 ${
+          fullScreen
+            ? "rounded-none h-full shadow-none"
+            : "rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
+        } overflow-hidden`}
       >
         {/* Ask Lekki AI prompt banner if query present */}
         {query.trim().length > 2 && (
@@ -206,7 +199,7 @@ export function UnifiedSearchDialog({
                     }}
                     className="w-full text-left p-2.5 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-start gap-2.5 group"
                   >
-                    <div className="mt-0.5">{getDocIcon(doc.extension)}</div>
+                    <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-zinc-200 group-hover:text-emerald-400 truncate">
@@ -278,7 +271,7 @@ export function UnifiedSearchDialog({
                     }}
                     className="w-full text-left p-2.5 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-start gap-2.5 group"
                   >
-                    <div className="mt-0.5">{getDocIcon(doc.extension)}</div>
+                    <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-medium text-zinc-200 group-hover:text-emerald-400 truncate">

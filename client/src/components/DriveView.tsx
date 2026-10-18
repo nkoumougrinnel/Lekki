@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { DriveFile, DriveFolder, FileExtension, User, NavView } from "@/types/lekki";
+import { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
 import { apiUrl, drive } from "@/lib/api";
+import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import { toast } from "sonner";
 import {
   Folder,
   FolderPlus,
   FileText,
-  FileSpreadsheet,
-  FileCode,
   Star,
   Share2,
   Trash2,
@@ -95,22 +94,6 @@ export function DriveView({
     }
     return true;
   });
-
-  const getDocIcon = (ext: FileExtension) => {
-    switch (ext) {
-      case "pdf":
-        return <FileText className="h-4 w-4 text-rose-400" />;
-      case "docx":
-        return <FileSpreadsheet className="h-4 w-4 text-sky-400" />;
-      case "pptx":
-        return <FileText className="h-4 w-4 text-amber-400" />;
-      case "md":
-      case "txt":
-        return <FileCode className="h-4 w-4 text-emerald-400" />;
-      default:
-        return <FileText className="h-4 w-4 text-zinc-400" />;
-    }
-  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -216,7 +199,7 @@ export function DriveView({
   return (
     <div id="drive-view-container" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
       {/* View Header */}
-      <div className="px-4 py-3 border-b border-zinc-800/80 bg-[#11141A]/70">
+      <div className="px-3 sm:px-4 py-3 border-b border-zinc-800/80 bg-[#11141A]/70">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center justify-between gap-4 font-mono">
           <div className="flex items-center gap-1.5 text-xs text-zinc-400 min-w-0">
@@ -257,32 +240,32 @@ export function DriveView({
               <span>Vider la corbeille</span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => setShowNewFolderInput((prev) => !prev)}
                 aria-label="Nouveau dossier"
                 title="Nouveau dossier"
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-2 sm:px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
               >
                 <FolderPlus className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Nouveau dossier</span>
+                <span className="hidden sm:inline">Nouveau dossier</span>
               </button>
 
               <button
                 onClick={() => onNewFileClick(currentFolderId || undefined)}
                 aria-label="Déposer un document"
                 title="Déposer un document"
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500 px-3 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm text-xs font-semibold"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500 px-2 sm:px-3 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm text-xs font-semibold"
               >
                 <Upload className="h-3.5 w-3.5" />
-                <span>Déposer un document</span>
+                <span className="hidden sm:inline">Déposer un document</span>
               </button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Create Folder inline form */}
         {showNewFolderInput && (
           <form
@@ -395,20 +378,23 @@ export function DriveView({
                   onClick={() => onOpenFile(file)}
                   className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl overflow-hidden hover:bg-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group flex flex-col aspect-[4/3] sm:aspect-square relative"
                 >
-                  {/* File Preview Area (Mocked with icon for now) */}
+                  {/* File preview: rendered first page for PDFs and Office files */}
                   <div className="flex-1 bg-zinc-950/50 flex flex-col items-center justify-center relative overflow-hidden">
                     {file.thumbnail_path || file.extension?.toLowerCase().replace(/^\./, "") === "pdf" ? (
                       <img
                         src={apiUrl(`/drive/files/${file.id}/thumbnail`)}
                         alt={`Aperçu de ${file.name}`}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full bg-zinc-900 object-contain p-2"
                       />
                     ) : (
-                      <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-3">
-                        <div className="transform scale-150 opacity-40 group-hover:scale-125 transition-transform duration-500 text-zinc-600">
-                          {getDocIcon(file.extension)}
+                      <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-white/[0.025] to-transparent p-4">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.07] bg-zinc-900/80 shadow-xl transition-transform duration-300 group-hover:-translate-y-1">
+                          <DocumentTypeIcon extension={file.extension} className="h-14 w-12 drop-shadow-lg" />
                         </div>
-                        <p className="line-clamp-4 text-center text-[10px] leading-relaxed text-zinc-500">
+                        <span className="rounded-md border border-white/[0.08] bg-zinc-900/80 px-2 py-1 text-[9px] font-semibold tracking-wider text-zinc-400">
+                          {file.extension.toUpperCase()} · APERÇU TEXTE
+                        </span>
+                        <p className="line-clamp-2 max-w-full text-center text-[10px] leading-relaxed text-zinc-500">
                           {file.summary || file.content || "Aucun aperçu disponible"}
                         </p>
                       </div>
@@ -486,7 +472,7 @@ export function DriveView({
                   <div className="p-3 border-t border-zinc-800/80 bg-[#161A22] shrink-0">
                     <div className="flex items-center gap-2">
                       <div className="shrink-0 p-1 bg-zinc-800/50 rounded">
-                        {getDocIcon(file.extension)}
+                        <DocumentTypeIcon extension={file.extension} className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-[11px] sm:text-xs text-zinc-300 group-hover:text-zinc-100 truncate" title={file.name}>

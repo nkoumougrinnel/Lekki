@@ -9,6 +9,15 @@ class DocumentIndexInfo(BaseModel):
     total_pages_analyzed: int = 0
     total_chunks: int = 0
     chapters_detected: List[str] = []
+    content_unit: Optional[str] = None
+
+
+class DetectedChapter(BaseModel):
+    number: str
+    title: str
+    page: Optional[int] = None
+    location: Optional[str] = None
+    subtopics: List[str] = []
 
 
 class FolderCreate(BaseModel):
@@ -62,6 +71,10 @@ class FileOut(BaseModel):
     content: Optional[str] = None
     summary: Optional[str] = None
     structured_text: Optional[str] = None
+    page_count: Optional[int] = None
+    slide_count: Optional[int] = None
+    content_unit: Optional[str] = None
+    detected_chapters: List[DetectedChapter] = []
     thumbnail_path: Optional[str] = None
     workspace_id: Optional[str] = None
     folder_id: Optional[str] = None

@@ -12,9 +12,14 @@ import { WikiPageReader } from "./components/WikiPageReader";
 import { DocumentViewerModal } from "./components/DocumentViewerModal";
 import { ShareDialog } from "./components/ShareDialog";
 import { NewFileDialog } from "./components/NewFileDialog";
+import { WorkspaceAdminDialog } from "./components/WorkspaceAdminDialog";
 import { WikiEditorModal } from "./components/WikiEditorModal";
 import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
+import { LoginView } from "./components/LoginView";
+import { RegisterView } from "./components/RegisterView";
+import { AuthSplash, LandingPage } from "./components/LandingPage";
+import { Redirect, Route, Switch } from "wouter";
 import {
   DriveFile,
   DriveFolder,
@@ -22,6 +27,19 @@ import {
   NavView,
 } from "./types/lekki";
 import { drive, wiki } from "./lib/api";
+
+function PublicRoutes() {
+  return (
+    <Switch>
+      <Route path="/login" component={LoginView} />
+      <Route path="/register" component={RegisterView} />
+      <Route path="/" component={LandingPage} />
+      <Route>
+        <Redirect to="/" />
+      </Route>
+    </Switch>
+  );
+}
 
 function LekkiMain() {
   const { user, allUsers } = useAuth();
@@ -51,7 +69,9 @@ function LekkiMain() {
   const [viewingFile, setViewingFile] = useState<DriveFile | null>(null);
   const [sharingFile, setSharingFile] = useState<DriveFile | null>(null);
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [newFileFolderId, setNewFileFolderId] = useState<string | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Wiki State
   const [activeWikiPage, setActiveWikiPage] = useState<WikiPage | null>(null);
@@ -59,6 +79,7 @@ function LekkiMain() {
   const [editingWikiPage, setEditingWikiPage] = useState<WikiPage | null>(null);
   const [wikiEditorTopic, setWikiEditorTopic] = useState<string | undefined>();
   const [wikiEditorSection, setWikiEditorSection] = useState<string | undefined>();
+  const [wikiEditorKind, setWikiEditorKind] = useState<"page" | "organization">("page");
   const [isWikiEditorOpen, setIsWikiEditorOpen] = useState(false);
   const [historyWikiPage, setHistoryWikiPage] = useState<WikiPage | null>(null);
 
@@ -105,7 +126,7 @@ function LekkiMain() {
 
       if (requestId !== refreshSequence.current) return;
 
-      setFiles(Array.isArray(loadedFiles) ? loadedFiles : []);
+      if (Array.isArray(loadedFiles)) setFiles(loadedFiles);
       if (Array.isArray(loadedAllFiles)) setAllFiles(loadedAllFiles);
       if (Array.isArray(loadedTrashFiles)) setTrashedFiles(loadedTrashFiles);
       if (Array.isArray(loadedPersonalFiles)) setPersonalFiles(loadedPersonalFiles);
@@ -114,7 +135,6 @@ function LekkiMain() {
       setLoadedDataKey(driveDataKey);
     } catch {
       if (requestId !== refreshSequence.current) return;
-      setFiles([]);
       setLoadedDataKey(driveDataKey);
     } finally {
       if (requestId === refreshSequence.current) setDriveLoading(false);
@@ -229,7 +249,7 @@ function LekkiMain() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0D0F12] text-zinc-100 overflow-hidden select-none font-sans">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0D0F12] font-sans text-zinc-100">
       {/* Top Application Header */}
       <Header
         onSelectDocument={handleOpenDocFromId}
@@ -240,6 +260,7 @@ function LekkiMain() {
         }}
         onToggleAI={() => setIsAIOpen((prev) => !prev)}
         isAIOpen={isAIOpen}
+        onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
       />
 
       {/* Main Split Layout: Sidebar + Active View */}
@@ -252,6 +273,9 @@ function LekkiMain() {
             setWikiFilterTopic(null);
           }}
           counts={counts}
+          onOpenWorkspaceSettings={() => setShowAdminDialog(true)}
+          mobileOpen={isMobileSidebarOpen}
+          onMobileClose={() => setIsMobileSidebarOpen(false)}
         />
 
         {/* Dynamic Center Stage View */}
@@ -323,6 +347,7 @@ function LekkiMain() {
                   setEditingWikiPage(p);
                   setWikiEditorTopic(p.topic);
                   setWikiEditorSection(p.section);
+                  setWikiEditorKind("page");
                   setIsWikiEditorOpen(true);
                 }}
                 onViewHistory={(p) => setHistoryWikiPage(p)}
@@ -339,10 +364,11 @@ function LekkiMain() {
                 availableFiles={files}
                 activeWorkspaceName={activeWorkspace?.name}
                 onSelectPage={(p) => setActiveWikiPage(p)}
-                onNewPageClick={(topic, section) => {
+                onNewPageClick={(topic, section, kind = "page") => {
                   setEditingWikiPage(null);
                   setWikiEditorTopic(topic);
                   setWikiEditorSection(section);
+                  setWikiEditorKind(kind);
                   setIsWikiEditorOpen(true);
                 }}
                 filterTopic={wikiFilterTopic}
@@ -390,6 +416,8 @@ function LekkiMain() {
         }}
       />
 
+      <WorkspaceAdminDialog open={showAdminDialog} onOpenChange={setShowAdminDialog} />
+
       {/* New File / Upload Dialog */}
       <NewFileDialog
         open={isNewFileOpen}
@@ -397,7 +425,23 @@ function LekkiMain() {
         folders={folders}
         defaultWorkspaceId={currentView === "workspace_files" ? activeWorkspaceId : null}
         defaultFolderId={newFileFolderId}
-        onFileCreated={() => refreshData()}
+        onFileCreated={async (createdFile) => {
+          const upsertFile = (current: DriveFile[]) =>
+            current.some((file) => file.id === createdFile.id)
+              ? current.map((file) =>
+                  file.id === createdFile.id ? createdFile : file
+                )
+              : [createdFile, ...current];
+
+          // Affiche le fichier dès que le serveur confirme sa création.
+          setFiles(upsertFile);
+          setAllFiles(upsertFile);
+          if (!createdFile.workspace_id) {
+            setPersonalFiles(upsertFile);
+          }
+
+          await refreshData();
+        }}
       />
 
       {/* Wiki Editor Modal */}
@@ -410,6 +454,7 @@ function LekkiMain() {
         activeWorkspaceId={activeWorkspaceId}
         defaultTopic={wikiEditorTopic}
         defaultSection={wikiEditorSection}
+        initialKind={wikiEditorKind}
         onSaved={(saved) => {
           if (activeWikiPage?.id === saved.id) {
             setActiveWikiPage(saved);
@@ -431,9 +476,15 @@ function LekkiMain() {
         }}
       />
 
-      <Toaster position="bottom-right" richColors />
     </div>
   );
+}
+
+function AuthGate() {
+  const { user, ready } = useAuth();
+  if (!ready) return <AuthSplash />;
+  if (!user) return <PublicRoutes />;
+  return <LekkiMain />;
 }
 
 export default function App() {
@@ -441,7 +492,8 @@ export default function App() {
     <ThemeProvider defaultTheme="dark">
       <AuthProvider>
         <WorkspaceProvider>
-          <LekkiMain />
+          <AuthGate />
+          <Toaster position="bottom-right" richColors />
         </WorkspaceProvider>
       </AuthProvider>
     </ThemeProvider>

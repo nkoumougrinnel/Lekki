@@ -1,18 +1,19 @@
-import React from "react";
-import { DriveFile, FileExtension, WikiPage } from "@/types/lekki";
+import React, { useEffect, useMemo, useState } from "react";
+import { DriveFile, WikiPage } from "@/types/lekki";
 import { apiUrl } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import {
   X,
-  FileText,
-  FileSpreadsheet,
-  FileCode,
   Download,
   BookPlus,
   BookOpen,
   ArrowRight,
   Compass,
   ExternalLink,
+  ImageOff,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface DocumentViewerModalProps {
@@ -28,298 +29,346 @@ interface DocumentViewerModalProps {
   onSwitchWorkspace: (workspaceId: string) => void;
 }
 
+const THUMBNAIL_ROUTE = (fileId: string) =>
+  apiUrl(`/drive/files/${fileId}/thumbnail`);
+
 export function DocumentViewerModal({
   file,
   open,
   onOpenChange,
-  onAskAIAboutDoc,
   onCreateWikiFromDoc,
-  onShareDoc,
   onOpenWikiPage,
   wikiPages = [],
   activeWorkspaceId,
   onSwitchWorkspace,
 }: DocumentViewerModalProps) {
   const { workspaces } = useWorkspace();
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const [showAllChapters, setShowAllChapters] = useState(false);
+
+  useEffect(() => {
+    setThumbnailFailed(false);
+    setShowAllChapters(false);
+  }, [file?.id, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onOpenChange(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onOpenChange]);
+
+  const formatFileSize = (bytes?: number | null) => {
+    if (bytes == null || bytes <= 0) return null;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  };
+
+  const linkedWikiList = useMemo(() => {
+    if (!file) return [];
+    return (file.linked_wiki_ids || [])
+      .map((wikiId) => wikiPages.find((page) => page.id === wikiId))
+      .filter((page): page is WikiPage => Boolean(page));
+  }, [file, wikiPages]);
+
   if (!open || !file) return null;
 
-  const getDocIcon = (ext: FileExtension) => {
-    switch (ext) {
-      case "pdf":
-        return <FileText className="h-6 w-6 text-rose-400" />;
-      case "docx":
-        return <FileSpreadsheet className="h-6 w-6 text-sky-400" />;
-      case "pptx":
-        return <FileText className="h-6 w-6 text-amber-400" />;
-      case "md":
-      case "txt":
-        return <FileCode className="h-6 w-6 text-emerald-400" />;
-      default:
-        return <FileText className="h-6 w-6 text-zinc-400" />;
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (!bytes) return "0 B";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  const extension = (file.extension || "").toLowerCase().replace(/^\./, "");
+  const isPdf = extension === "pdf";
+  const isOfficeDocument = extension === "docx" || extension === "pptx";
+  const totalPages = file.page_count;
+  const totalSlides = file.slide_count;
+  const chapters = file.detected_chapters || [];
+  const fileWorkspace = workspaces.find((workspace) => workspace.id === file.workspace_id);
+  const hasKnownWorkspace = Boolean(file.workspace_id && fileWorkspace);
+  const isDifferentWorkspace = Boolean(
+    hasKnownWorkspace && file.workspace_id !== activeWorkspaceId,
+  );
+  const canUseWiki = hasKnownWorkspace && !isDifferentWorkspace;
+  const visibleChapters = showAllChapters ? chapters : chapters.slice(0, 7);
+  const fileSize = formatFileSize(file.size_bytes);
 
   const handleDownload = () => {
-    const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
     const link = document.createElement("a");
-    link.href = downloadUrl;
+    link.href = apiUrl(`/drive/files/${file.id}/download`);
     link.setAttribute("download", file.name);
+    link.rel = "noopener";
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
   };
 
-  const linkedWikiList = (file.linked_wiki_ids || [])
-    .map((wikiId) => wikiPages.find((p) => p.id === wikiId))
-    .filter((p): p is WikiPage => Boolean(p));
-
-  const totalPages = file.page_count || 1;
-  const chapters = file.detected_chapters || [];
-  const previewExtension = file.extension?.toLowerCase().replace(/^\./, "");
-
-  // Check if document belongs to the active workspace
-  const isDifferentWorkspace = Boolean(file.workspace_id && file.workspace_id !== activeWorkspaceId);
-  const fileWorkspace = workspaces.find(w => w.id === file.workspace_id);
-  const fileWorkspaceName = fileWorkspace?.name || "un workspace inconnu";
+  const handleCreateWiki = () => {
+    if (!canUseWiki) return;
+    onOpenChange(false);
+    onCreateWikiFromDoc(file);
+  };
 
   return (
     <div
       id="doc-viewer-overlay"
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onOpenChange(false);
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 backdrop-blur-sm sm:p-5"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onOpenChange(false);
       }}
     >
-      <div
+      <section
         id="doc-index-card-modal"
-        className="w-full max-w-3xl max-h-[90vh] bg-[#12151B] border border-zinc-700/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="document-viewer-title"
+        className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#11141a] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
-        {/* Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-zinc-800 bg-[#161A22] flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-              Fiche Documentaire
-            </span>
+        {/* En-tête fixe */}
+        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 py-3.5 sm:px-6">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Fiche documentaire
           </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            aria-label="Fermer la fiche documentaire"
+            className="rounded-lg p-2 text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-              title="Fermer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
-          {/* Workspace Switch Suggestion */}
-          {isDifferentWorkspace && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-2 text-xs text-amber-200/80">
-                <ExternalLink className="h-3.5 w-3.5 text-amber-400" />
-                <span>Ce document appartient au workspace <span className="font-bold text-amber-400">{fileWorkspaceName}</span>.</span>
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+          {/* Changement de workspace uniquement si le workspace est connu */}
+          {isDifferentWorkspace && fileWorkspace && (
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-2.5 text-sm text-zinc-300">
+                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                <span>
+                  Ce document appartient au workspace{" "}
+                  <strong className="font-medium text-amber-200">{fileWorkspace.name}</strong>.
+                </span>
               </div>
               <button
-                onClick={() => {
-                  if (file.workspace_id) onSwitchWorkspace(file.workspace_id);
-                }}
-                className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4"
+                type="button"
+                onClick={() => file.workspace_id && onSwitchWorkspace(file.workspace_id)}
+                className="shrink-0 self-start text-xs font-medium text-amber-200 transition hover:text-amber-100 sm:self-auto"
               >
-                Basculer vers ce workspace
+                Basculer vers ce workspace <span aria-hidden="true">→</span>
               </button>
             </div>
           )}
 
-          {/* 1. Main Resource Presentation Card */}
-          <div className="p-5 rounded-2xl bg-[#161A23] border border-zinc-800/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-            <div className="flex items-start gap-4 min-w-0">
-              <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0 shadow-inner">
-                {getDocIcon(file.extension)}
-              </div>
-              <div className="min-w-0 space-y-1">
-                <h2 className="text-base sm:text-lg font-semibold text-zinc-100 leading-snug break-words">
-                  {file.name}
-                </h2>
-                <div className="flex items-center gap-2.5 text-xs text-zinc-400 flex-wrap font-mono">
-                  <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-semibold uppercase text-[10px]">
-                    {file.extension.toUpperCase()}
-                  </span>
-                  <span>•</span>
-                  <span>{totalPages} {totalPages > 1 ? "pages" : "page"}</span>
-                  <span>•</span>
-                  <span className="text-zinc-400">{file.owner_name || "Auteur"}</span>
-                </div>
-              </div>
+          {/* Identité du document : volontairement compacte */}
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/[0.045] ring-1 ring-white/[0.07] sm:h-14 sm:w-14">
+              <DocumentTypeIcon extension={file.extension} className="h-7 w-7" />
             </div>
-
-            <div className="shrink-0">
-              <button
-                onClick={handleDownload}
-                className="p-2.5 rounded-xl text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all shadow-sm active:scale-95 border border-emerald-500/20"
-                title={`Télécharger l'original (${formatFileSize(file.size_bytes)})`}
+            <div className="min-w-0 flex-1">
+              <h2
+                id="document-viewer-title"
+                title={file.name}
+                className="break-words text-base font-semibold leading-snug text-zinc-100 sm:text-lg"
               >
-                <Download className="h-5 w-5" />
-              </button>
+                {file.name}
+              </h2>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+                <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 font-semibold uppercase tracking-wide text-zinc-300">
+                  {extension || "Fichier"}
+                </span>
+                {isPdf && totalPages != null && <span>{totalPages} {totalPages === 1 ? "page" : "pages"}</span>}
+                {extension === "pptx" && totalSlides != null && (
+                  <span>{totalSlides} {totalSlides === 1 ? "diapositive" : "diapositives"}</span>
+                )}
+                {extension === "docx" && totalPages != null && (
+                  <span>{totalPages} {totalPages === 1 ? "page" : "pages"} estimées par Word</span>
+                )}
+                {fileSize && <span>{fileSize}</span>}
+                {file.owner_name && <span>Par {file.owner_name}</span>}
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white"
+              title="Télécharger le document original"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Télécharger</span>
+            </button>
           </div>
 
-          {/* Document preview: PDF viewer or extracted Office text */}
-          {(["pdf", "docx", "pptx"].includes(previewExtension || "")) && (
-            <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#161A23]">
-              <div className="border-b border-zinc-800 px-5 py-3 text-xs font-mono uppercase tracking-wider text-zinc-300">
+          {/* L'aperçu agrandit la même vignette que celle de la liste */}
+          <section aria-labelledby="document-preview-heading">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 id="document-preview-heading" className="text-sm font-medium text-zinc-200">
                 Aperçu du document
+              </h3>
+              <span className="text-[11px] text-zinc-600">Première page</span>
+            </div>
+            <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-xl bg-[#1a1e26] p-3 sm:min-h-[340px] sm:p-5">
+              {!thumbnailFailed ? (
+                <img
+                  key={file.id}
+                  src={THUMBNAIL_ROUTE(file.id)}
+                  alt={`Première page de ${file.name}`}
+                  onError={() => setThumbnailFailed(true)}
+                  className="max-h-[62vh] max-w-full rounded-sm object-contain shadow-[0_8px_36px_rgba(0,0,0,0.35)]"
+                  loading="eager"
+                />
+              ) : (
+                <div className="flex max-w-sm flex-col items-center px-5 py-10 text-center">
+                  <div className="mb-3 rounded-xl bg-white/[0.04] p-3 text-zinc-500">
+                    <ImageOff className="h-6 w-6" />
+                  </div>
+                  <p className="text-sm font-medium text-zinc-300">Aperçu indisponible</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                    La vignette de ce document n'a pas pu être chargée. Vous pouvez tout de même télécharger le fichier original.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailFailed(false)}
+                    className="mt-3 text-xs font-medium text-sky-300 transition hover:text-sky-200"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+            </div>
+            {isOfficeDocument && (
+              <p className="mt-2 text-[11px] text-zinc-600">
+                Aperçu de la première {extension === "pptx" ? "diapositive" : "page"} · la mise en page peut différer du document original.
+              </p>
+            )}
+          </section>
+
+          {/* Structure détectée : titres limités visuellement, contenu complet au survol */}
+          {chapters.length > 0 && (
+            <section aria-labelledby="document-structure-heading">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Compass className="h-4 w-4 shrink-0 text-sky-300" />
+                  <h3 id="document-structure-heading" className="text-sm font-medium text-zinc-200">
+                    Structure détectée
+                  </h3>
+                  <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500">
+                    {chapters.length}
+                  </span>
+                </div>
+                {chapters.length > 7 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllChapters((current) => !current)}
+                    className="inline-flex shrink-0 items-center gap-1 text-xs text-zinc-400 transition hover:text-zinc-200"
+                  >
+                    {showAllChapters ? "Réduire" : "Tout afficher"}
+                    {showAllChapters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                )}
               </div>
-              <iframe
-                key={`${file.id}-${previewExtension}`}
-                src={apiUrl(`/drive/files/${file.id}/preview`)}
-                title={`Aperçu de ${file.name}`}
-                className="h-[65vh] min-h-[420px] w-full bg-white"
-                loading="lazy"
-                sandbox=""
-              />
+              <div className="overflow-hidden rounded-xl border border-white/[0.07] divide-y divide-white/[0.055]">
+                {visibleChapters.map((chapter, index) => (
+                  <div
+                    key={`${chapter.number}-${chapter.title}-${index}`}
+                    className="flex min-w-0 items-center gap-3 px-3 py-3 transition hover:bg-white/[0.025] sm:px-4"
+                  >
+                    <span className="w-7 shrink-0 text-[11px] font-medium tabular-nums text-zinc-500">
+                      {String(chapter.number ?? index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p title={chapter.title} className="truncate text-xs font-medium text-zinc-200 sm:text-sm">
+                        {chapter.title}
+                      </p>
+                      {chapter.subtopics?.length > 0 && (
+                        <p title={chapter.subtopics.join(" · ")} className="mt-1 truncate text-[11px] text-zinc-600">
+                          {chapter.subtopics.slice(0, 3).join(" · ")}
+                          {chapter.subtopics.length > 3 ? " …" : ""}
+                        </p>
+                      )}
+                    </div>
+                    {(chapter.location || chapter.page != null) && (
+                      <span className="shrink-0 rounded-md bg-white/[0.045] px-2 py-1 text-[10px] tabular-nums text-zinc-500">
+                        {chapter.location || `p. ${chapter.page}`}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 
-          {/* 2. Sommaire & Chapitres Détectés */}
-          {chapters.length > 0 && (
-            <div className="p-5 rounded-2xl bg-[#161A23] border border-zinc-800/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-zinc-300 font-semibold">
-                  <Compass className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Chapitres & Structure détectés ({chapters.length})</span>
+          {/* Wiki : entièrement masqué si le document n'appartient pas à un workspace connu */}
+          {hasKnownWorkspace && (
+            <section aria-labelledby="associated-wiki-heading">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-sky-300" />
+                  <h3 id="associated-wiki-heading" className="text-sm font-medium text-zinc-200">
+                    Fiches Wiki associées
+                  </h3>
+                  {linkedWikiList.length > 0 && (
+                    <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500">
+                      {linkedWikiList.length}
+                    </span>
+                  )}
                 </div>
-              </div>
-
-              <div className="divide-y divide-zinc-800/60 pt-1">
-                {chapters.map((ch) => (
-                  <div
-                    key={ch.number}
-                    className="py-3 flex items-center justify-between gap-3 group hover:bg-zinc-900/40 px-2 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xs font-mono font-bold text-emerald-400 shrink-0">
-                        {ch.number}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-medium text-zinc-200 truncate">
-                          {ch.title}
-                        </div>
-                        {ch.subtopics && ch.subtopics.length > 0 && (
-                          <div className="text-[11px] text-zinc-500 truncate mt-0.5">
-                            {ch.subtopics.join(" • ")}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-mono text-zinc-400 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-                        p. {ch.page}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 3. Connaissances Wiki Associées */}
-          <div className="p-5 rounded-2xl bg-[#161A23] border border-zinc-800/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-                <BookOpen className="h-3.5 w-3.5" />
-                <span>Fiches Wiki associées dans le Workspace</span>
-              </div>
-              <button
-                onClick={() => {
-                  onOpenChange(false);
-                  onCreateWikiFromDoc(file);
-                }}
-                disabled={isDifferentWorkspace}
-                className={`inline-flex items-center gap-1 text-[11px] transition-colors ${
-                  isDifferentWorkspace
-                    ? "text-zinc-600 cursor-not-allowed"
-                    : "text-zinc-400 hover:text-emerald-400"
-                }`}
-                title={isDifferentWorkspace ? "Basculez vers le workspace du document pour créer une fiche" : ""}
-              >
-                <BookPlus className="h-3.5 w-3.5" />
-                <span>Rédiger une fiche</span>
-              </button>
-            </div>
-
-            {linkedWikiList.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {linkedWikiList.map((wPage) => (
-                  <div
-                    key={wPage.id}
-                    onClick={() => {
-                      onOpenChange(false);
-                      onOpenWikiPage?.(wPage.id);
-                    }}
-                    className="p-3.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800/90 border border-zinc-800 hover:border-emerald-500/40 cursor-pointer transition-all flex items-center justify-between gap-3 group shadow-sm"
-                  >
-                    <div className="min-w-0">
-                    <div className="min-w-0 flex items-center gap-2">
-                      <div className="text-xs font-semibold text-zinc-200 group-hover:text-emerald-300 truncate">
-                        {wPage.title}
-                      </div>
-                      {wPage.workspace_id && wPage.workspace_id !== activeWorkspaceId && (
-                        <div className="flex items-center gap-1 px-1 py-0.5 rounded bg-emerald-500 text-zinc-950 border border-emerald-400 text-[9px] font-bold shrink-0 shadow-sm" title={`Provenance : ${workspaces.find(w => w.id === wPage.workspace_id)?.name || "Workspace externe"}`}>
-                          <ExternalLink className="h-2.5 w-2.5" />
-                          <span className="hidden sm:inline">{workspaces.find(w => w.id === wPage.workspace_id)?.name || "Ext"}</span>
-                          <span className="sm:hidden">Ext</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1.5">
-                      <span className="text-emerald-400">
-                        {wPage.status === "verified" ? "● Vérifiée" : "● Communautaire"}
-                      </span>
-                      <span>•</span>
-                      <span>{wPage.topic || "Général"}</span>
-                    </div>
-                    </div>
-                    <ArrowRight className="h-3.5 w-3.5 text-zinc-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-zinc-900/40 border border-dashed border-zinc-800 text-center space-y-2">
-                <p className="text-xs text-zinc-400">
-                  Aucune fiche Wiki n'a encore synthétisé ce document.
-                </p>
                 <button
-                  onClick={() => {
-                    onOpenChange(false);
-                    onCreateWikiFromDoc(file);
-                  }}
-                  disabled={isDifferentWorkspace}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isDifferentWorkspace
-                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-zinc-700"
-                      : "bg-zinc-800 hover:bg-zinc-700 text-emerald-300 border border-emerald-500/30"
-                  }`}
-                  title={isDifferentWorkspace ? "Basculez vers le workspace du document pour créer une fiche" : ""}
+                  type="button"
+                  onClick={handleCreateWiki}
+                  disabled={!canUseWiki}
+                  title={isDifferentWorkspace ? "Basculez d'abord vers le workspace du document" : undefined}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <BookPlus className="h-3.5 w-3.5" />
-                  <span>Créer la première fiche Wiki pour ce document</span>
+                  Créer une fiche
                 </button>
               </div>
-            )}
-          </div>
+
+              {linkedWikiList.length > 0 ? (
+                <div className="overflow-hidden rounded-xl border border-white/[0.07] divide-y divide-white/[0.055]">
+                  {linkedWikiList.map((wikiPage) => (
+                    <button
+                      key={wikiPage.id}
+                      type="button"
+                      onClick={() => {
+                        onOpenChange(false);
+                        onOpenWikiPage?.(wikiPage.id);
+                      }}
+                      className="group flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-white/[0.035] sm:px-4"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p title={wikiPage.title} className="truncate text-sm font-medium text-zinc-200 transition group-hover:text-sky-200">
+                          {wikiPage.title}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500">
+                          <span className={wikiPage.status === "verified" ? "text-sky-300" : "text-zinc-500"}>
+                            {wikiPage.status === "verified" ? "Vérifiée" : "Communautaire"}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>{wikiPage.topic || "Général"}</span>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-sky-300" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/[0.09] px-4 py-5 text-center">
+                  <p className="text-xs text-zinc-500">Aucune fiche Wiki n'est encore associée à ce document.</p>
+                  <button
+                    type="button"
+                    onClick={handleCreateWiki}
+                    disabled={!canUseWiki}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <BookPlus className="h-3.5 w-3.5" />
+                    Créer la première fiche
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

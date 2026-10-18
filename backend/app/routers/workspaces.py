@@ -18,7 +18,9 @@ async def list_workspaces(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    query = select(Workspace)
+    member_ws = await db.execute(select(WorkspaceMember.workspace_id).where(WorkspaceMember.user_id == current_user.id))
+    member_ids = set(member_ws.scalars().all())
+    query = select(Workspace).where((Workspace.owner_id == current_user.id) | (Workspace.id.in_(member_ids)))
     result = await db.execute(query)
     workspaces = result.scalars().all()
     

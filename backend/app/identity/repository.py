@@ -15,8 +15,9 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_by_login(self, value: str) -> User | None:
+        identifier = value.strip().lower()
         result = await self.db.execute(
-            select(User).where((User.username == value) | (User.email == value))
+            select(User).where((User.username == identifier) | (User.email == identifier))
         )
         return result.scalar_one_or_none()
 

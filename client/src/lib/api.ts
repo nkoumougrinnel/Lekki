@@ -57,6 +57,13 @@ function extractDetail(data: unknown, fallback: string): string {
   if (data && typeof data === "object" && "detail" in data) {
     const detail = (data as { detail: unknown }).detail;
     if (typeof detail === "string") return detail;
+    if (Array.isArray(detail) && detail[0] && typeof detail[0] === "object") {
+      const first = detail[0] as { msg?: unknown; message?: unknown };
+      const msg = first.msg ?? first.message;
+      if (typeof msg === "string") {
+        return msg.replace(/^Value error,\s*/i, "");
+      }
+    }
     if (detail && typeof detail === "object" && "message" in detail) {
       return String((detail as { message: unknown }).message);
     }
@@ -105,13 +112,48 @@ function jsonRequest<T>(path: string, method: string, body?: unknown): Promise<T
   });
 }
 
+function normalizeDriveFile(file: DriveFile & { size?: number }): DriveFile {
+  const mimeTypes: Record<string, string> = {
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    txt: "text/plain",
+    md: "text/markdown",
+  };
+
+  return {
+    ...file,
+    size_bytes: Number(file.size_bytes ?? file.size ?? 0),
+    mime_type: file.mime_type || mimeTypes[file.extension] || "application/octet-stream",
+    content: file.content || "",
+    shared_with: Array.isArray(file.shared_with) ? file.shared_with : [],
+    is_starred: Boolean(file.is_starred),
+    is_deleted: Boolean(file.is_deleted),
+  };
+}
+
 // ── Auth & Users ─────────────────────────────────────────────────────────────
 export const auth = {
-  async login(username: string): Promise<{ user: User; access_token: string }> {
+  async login(username: string, password: string): Promise<{ user: User; access_token: string }> {
     const data = await jsonRequest<{ user: User; access_token: string }>(
       "/auth/login",
       "POST",
-      { username }
+      { username, password }
+    );
+    setToken(data.access_token);
+    return data;
+  },
+
+  async register(payload: {
+    name: string;
+    username: string;
+    email: string;
+    password: string;
+  }): Promise<{ user: User; access_token: string }> {
+    const data = await jsonRequest<{ user: User; access_token: string }>(
+      "/auth/register",
+      "POST",
+      payload
     );
     setToken(data.access_token);
     return data;
@@ -197,11 +239,12 @@ export const drive = {
     if (params?.folder_id !== undefined) qs.set("folder_id", params.folder_id || "");
     if (params?.search) qs.set("search", params.search);
     const qStr = qs.toString();
-    return request<DriveFile[]>(`/drive/files${qStr ? `?${qStr}` : ""}`);
+    return request<Array<DriveFile & { size?: number }>>(`/drive/files${qStr ? `?${qStr}` : ""}`)
+      .then((items) => items.map(normalizeDriveFile));
   },
 
   getFile(id: string): Promise<DriveFile> {
-    return request<DriveFile>(`/drive/files/${id}`);
+    return request<DriveFile & { size?: number }>(`/drive/files/${id}`).then(normalizeDriveFile);
   },
 
   getFileIndex(id: string): Promise<DocumentIndexInfo> {
@@ -219,10 +262,10 @@ export const drive = {
     if (data.workspace_id) formData.append("workspace_id", data.workspace_id);
     if (data.folder_id) formData.append("folder_id", data.folder_id);
     if (data.tags) formData.append("tags", JSON.stringify(data.tags));
-    return request<DriveFile>("/drive/files", {
+    return request<DriveFile & { size?: number }>("/drive/files", {
       method: "POST",
       body: formData,
-    });
+    }).then(normalizeDriveFile);
   },
 
   updateFile(id: string, data: Partial<DriveFile>): Promise<DriveFile> {

@@ -20,12 +20,6 @@ from app.routers import (
 async def lifespan(app: FastAPI):
     # Startup: initialize database tables
     await init_db()
-    # Auto-seed initial demo dataset if database is brand new
-    try:
-        from scripts.seed import seed_database
-        await seed_database()
-    except Exception as e:
-        print(f"[Lekki] Seed info: {e}")
     yield
 
 

@@ -1,47 +1,35 @@
-from typing import Optional
-from fastapi import Depends, HTTPException, status, Header
-from sqlalchemy import select
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_db
 from app.identity.models import User
+from app.identity.repository import UserRepository
 from app.identity.service import decode_token
-
-# Demo student user ID fallback for effortless local testing
-DEFAULT_DEMO_USER_ID = "u-grinnel"
 
 
 async def get_current_user(
-    authorization: Optional[str] = Header(None),
-    db: AsyncSession = Depends(get_db)
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
-    user_id = None
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-        # Try JWT decode first
-        payload = decode_token(token)
-        if payload and "sub" in payload:
-            user_id = payload["sub"]
-        else:
-            # Direct token / user ID support for dev convenience
-            user_id = token
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentification requise.",
+        )
 
-    if user_id:
-        result = await db.execute(select(User).where((User.id == user_id) | (User.username == user_id)))
-        user = result.scalar_one_or_none()
-        if user:
-            return user
+    token = authorization.split(" ", 1)[1].strip()
+    payload = decode_token(token)
+    user_id = payload.get("sub") if payload else None
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session invalide ou expirée.",
+        )
 
-    # Fallback to demo user
-    result = await db.execute(select(User).where(User.id == DEFAULT_DEMO_USER_ID))
-    demo_user = result.scalar_one_or_none()
-    if demo_user:
-        return demo_user
-
-    # If database not yet seeded, create temporary object
-    return User(
-        id=DEFAULT_DEMO_USER_ID,
-        username="grinnel",
-        email="grinnel@lekki.io",
-        name="Grinnel N.",
-        role="editor"
-    )
+    user = await UserRepository(db).get_by_id_or_username(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Compte introuvable.",
+        )
+    return user

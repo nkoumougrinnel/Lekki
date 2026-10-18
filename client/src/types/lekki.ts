@@ -12,7 +12,8 @@ export interface DriveFolder {
 export interface ChapterInfo {
   number: string;
   title: string;
-  page: number;
+  page?: number | null;
+  location?: string | null;
   subtopics?: string[];
 }
 
@@ -42,6 +43,8 @@ export interface DriveFile {
   created_at: string;
   updated_at: string;
   page_count?: number;
+  slide_count?: number;
+  content_unit?: "pages" | "slides" | "document" | string;
   indexed_chunks_count?: number;
   detected_chapters?: ChapterInfo[];
   key_passages?: KeyPassage[];
@@ -119,6 +122,7 @@ export interface Workspace {
   description?: string | null;
   owner_id: string;
   icon?: string;
+  role?: string;
   created_at: string;
 }
 

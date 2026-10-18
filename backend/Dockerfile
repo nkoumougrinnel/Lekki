@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     poppler-utils \
+    libreoffice-writer \
+    libreoffice-impress \
+    fonts-liberation \
     tesseract-ocr \
     tesseract-ocr-fra \
     tesseract-ocr-eng \
