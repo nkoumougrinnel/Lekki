@@ -3,7 +3,7 @@ import json
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -14,6 +14,66 @@ from app.middleware.auth import get_current_user
 from app.workspaces.models import Workspace, WorkspaceMember
 
 router = APIRouter(prefix="/wiki", tags=["Wiki"])
+
+
+async def require_wiki_manager(
+    workspace_id: Optional[str],
+    current_user: User,
+    db: AsyncSession,
+) -> None:
+    if current_user.role == "admin":
+        return
+    if not workspace_id:
+        raise HTTPException(status_code=403, detail="Droits d’administration requis")
+
+    workspace = await db.get(Workspace, workspace_id)
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    if workspace.owner_id == current_user.id:
+        return
+
+    membership_res = await db.execute(
+        select(WorkspaceMember.role).where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == current_user.id,
+        )
+    )
+    if membership_res.scalar_one_or_none() not in {"owner", "admin"}:
+        raise HTTPException(
+            status_code=403,
+            detail="Seuls les administrateurs et propriétaires du workspace peuvent supprimer du contenu Wiki",
+        )
+
+
+async def delete_wiki_pages(pages: list[WikiPage], db: AsyncSession) -> None:
+    page_ids = [page.id for page in pages]
+    if not page_ids:
+        return
+
+    # Remove links to the deleted pages from the surviving pages in the same workspace.
+    workspace_ids = {page.workspace_id for page in pages}
+    deleted_ids = set(page_ids)
+    for workspace_id in workspace_ids:
+        if not workspace_id:
+            continue
+        result = await db.execute(
+            select(WikiPage).where(
+                WikiPage.workspace_id == workspace_id,
+                WikiPage.id.not_in(deleted_ids),
+            )
+        )
+        for survivor in result.scalars().all():
+            try:
+                linked_ids = json.loads(survivor.related_wiki_ids or "[]")
+            except (TypeError, json.JSONDecodeError):
+                linked_ids = []
+            filtered_ids = [linked_id for linked_id in linked_ids if linked_id not in deleted_ids]
+            if filtered_ids != linked_ids:
+                survivor.related_wiki_ids = json.dumps(filtered_ids)
+
+    await db.execute(delete(WikiHistory).where(WikiHistory.page_id.in_(page_ids)))
+    await db.execute(delete(WikiPage).where(WikiPage.id.in_(page_ids)))
+    await db.commit()
 
 
 @router.get("/pages", response_model=List[WikiPageOut])
@@ -401,11 +461,39 @@ async def restore_page_version(
     return await get_wiki_page(page_id, db)
 
 
+@router.delete("/pages/section")
+async def delete_wiki_section(
+    workspace_id: str,
+    topic: str,
+    section: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await require_wiki_manager(workspace_id, current_user, db)
+    pages_result = await db.execute(
+        select(WikiPage).where(
+            WikiPage.workspace_id == workspace_id,
+            WikiPage.topic == topic,
+            WikiPage.section == section,
+        )
+    )
+    pages = pages_result.scalars().all()
+    if not pages:
+        raise HTTPException(status_code=404, detail="Section Wiki introuvable")
+    await delete_wiki_pages(pages, db)
+    return {"deleted_pages": len(pages)}
+
+
 @router.delete("/pages/{page_id}")
-async def delete_wiki_page(page_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_wiki_page(
+    page_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
     page = result.scalar_one_or_none()
-    if page:
-        await db.delete(page)
-        await db.commit()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+    await require_wiki_manager(page.workspace_id, current_user, db)
+    await delete_wiki_pages([page], db)
     return None

@@ -395,6 +395,13 @@ export const wiki = {
   deletePage(id: string): Promise<null> {
     return request<null>(`/wiki/pages/${id}`, { method: "DELETE" });
   },
+
+  deleteSection(workspaceId: string, topic: string, section: string): Promise<{ deleted_pages: number }> {
+    const qs = new URLSearchParams({ workspace_id: workspaceId, topic, section });
+    return request<{ deleted_pages: number }>(`/wiki/pages/section?${qs.toString()}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 // ── Unified Search ───────────────────────────────────────────────────────────

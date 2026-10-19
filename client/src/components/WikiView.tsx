@@ -9,6 +9,7 @@ import {
   Clock,
   CheckCircle2,
   Users,
+  Trash2,
   LayoutGrid,
   FileText,
   Lightbulb,
@@ -19,8 +20,10 @@ import { WikiBreadcrumbs } from "./WikiBreadcrumbs";
 interface WikiViewProps {
   pages: WikiPage[];
   availableFiles: DriveFile[];
+  canManageWiki?: boolean;
   onSelectPage: (page: WikiPage) => void;
   onNewPageClick: (defaultTopic?: string, defaultSection?: string, kind?: "page" | "organization") => void;
+  onDeleteSection?: (topic: string, section: string, pageCount: number) => void;
   filterTopic?: string | null;
   onClearFilter?: () => void;
   onNavigateToTopic?: (topic: string) => void;
@@ -28,8 +31,10 @@ interface WikiViewProps {
 
 export function WikiView({
   pages,
+  canManageWiki = false,
   onSelectPage,
   onNewPageClick,
+  onDeleteSection,
   filterTopic,
   onClearFilter,
   onNavigateToTopic,
@@ -308,9 +313,22 @@ export function WikiView({
                     <FolderTree className="h-4 w-4 text-emerald-400" />
                     {sectionName}
                   </h2>
-                  <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">
-                    {secPages.length}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">
+                      {secPages.length}
+                    </span>
+                    {canManageWiki && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteSection?.(filterTopic, sectionName, secPages.length)}
+                        aria-label={`Supprimer la section ${sectionName}`}
+                        title="Supprimer la section et toutes ses pages"
+                        className="rounded-lg p-2 text-zinc-500 transition hover:bg-rose-500/10 hover:text-rose-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="p-4 space-y-1.5">
                   {secPages.length === 0 ? (

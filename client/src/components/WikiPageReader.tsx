@@ -21,7 +21,8 @@ import {
   FileSearch,
   Download,
   Layers,
-  Settings2
+  Settings2,
+  Trash2
 } from "lucide-react";
 
 interface WikiPageReaderProps {
@@ -29,6 +30,7 @@ interface WikiPageReaderProps {
   availableFiles: DriveFile[];
   allPages?: WikiPage[];
   canVerifyWiki?: boolean;
+  canManageWiki?: boolean;
   onBack: () => void;
   onNavigateTopic?: (topic: string) => void;
   onSelectPage?: (page: WikiPage) => void;
@@ -37,6 +39,7 @@ interface WikiPageReaderProps {
   onOpenDoc: (docId: string) => void;
   onAskAI: (page: WikiPage, initialQuestion?: string) => void;
   onStatusChanged: (updatedPage: WikiPage) => void;
+  onDeletePage: (page: WikiPage) => void;
 }
 
 export function WikiPageReader({
@@ -44,6 +47,7 @@ export function WikiPageReader({
   availableFiles,
   allPages = [],
   canVerifyWiki = false,
+  canManageWiki = false,
   onBack,
   onNavigateTopic,
   onSelectPage,
@@ -52,6 +56,7 @@ export function WikiPageReader({
   onOpenDoc,
   onAskAI,
   onStatusChanged,
+  onDeletePage,
 }: WikiPageReaderProps) {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
@@ -210,6 +215,18 @@ export function WikiPageReader({
                     </div>
                   )}
                 </div>
+
+                {canManageWiki && (
+                  <button
+                    type="button"
+                    onClick={() => onDeletePage(page)}
+                    aria-label="Supprimer la page"
+                    title="Supprimer la page"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/[0.04] text-rose-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10 lg:hidden"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
 
                 <div className="flex items-center gap-x-3 gap-y-2 text-xs flex-wrap">
                   <div className="flex items-center gap-1.5">
@@ -379,6 +396,16 @@ export function WikiPageReader({
                 Historique
               </button>
             </div>
+            {canManageWiki && (
+              <button
+                type="button"
+                onClick={() => onDeletePage(page)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.04] p-2.5 text-xs font-medium text-rose-300 transition-colors hover:border-rose-500/40 hover:bg-rose-500/10"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Supprimer la page
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { WorkspaceProvider, useWorkspace } from "./contexts/WorkspaceContext";
@@ -44,6 +44,11 @@ function PublicRoutes() {
 function LekkiMain() {
   const { user, allUsers } = useAuth();
   const { activeWorkspace, activeWorkspaceId, setActiveWorkspace } = useWorkspace();
+  const canManageWiki = Boolean(
+    user?.role === "admin" ||
+    activeWorkspace?.owner_id === user?.id ||
+    ["owner", "admin"].includes(activeWorkspace?.role || "")
+  );
 
 
   // Navigation State
@@ -144,6 +149,38 @@ function LekkiMain() {
       if (requestId === refreshSequence.current) setDriveLoading(false);
     }
   }, [currentView, activeWorkspaceId, user?.id, driveDataKey]);
+
+  const handleDeleteWikiPage = async (page: WikiPage) => {
+    if (!window.confirm(`Supprimer définitivement la page « ${page.title} » et son historique ?`)) return;
+    try {
+      await wiki.deletePage(page.id);
+      setActiveWikiPage(null);
+      toast.success(`La page « ${page.title} » a été supprimée`);
+      await refreshData();
+    } catch {
+      toast.error("Impossible de supprimer cette page. Vérifiez vos droits d’administration.");
+    }
+  };
+
+  const handleDeleteWikiSection = async (topic: string, section: string, pageCount: number) => {
+    if (!activeWorkspaceId) return;
+    const confirmed = window.confirm(
+      `Supprimer la section « ${section} » du pôle « ${topic} » ?\n\n` +
+        `${pageCount} page${pageCount > 1 ? "s" : ""} et leur historique seront définitivement supprimés. ` +
+        "Cette action est irréversible."
+    );
+    if (!confirmed) return;
+    try {
+      const result = await wiki.deleteSection(activeWorkspaceId, topic, section);
+      if (activeWikiPage && wikiPages.some((page) => page.topic === topic && page.section === section && page.id === activeWikiPage.id)) {
+        setActiveWikiPage(null);
+      }
+      toast.success(`Section supprimée · ${result.deleted_pages} page${result.deleted_pages === 1 ? "" : "s"} supprimée${result.deleted_pages === 1 ? "" : "s"}`);
+      await refreshData();
+    } catch {
+      toast.error("Impossible de supprimer cette section. Vérifiez vos droits d’administration.");
+    }
+  };
 
   useEffect(() => {
     refreshData();
@@ -358,6 +395,7 @@ function LekkiMain() {
                   activeWorkspace?.owner_id === user?.id ||
                   ["owner", "admin", "verifier"].includes(activeWorkspace?.role || "")
                 )}
+                canManageWiki={canManageWiki}
                 onBack={() => {
                   setActiveWikiPage(null);
                   setWikiFilterTopic(null);
@@ -381,12 +419,15 @@ function LekkiMain() {
                   setActiveWikiPage(updated);
                   refreshData();
                 }}
+                onDeletePage={handleDeleteWikiPage}
               />
             ) : (
               <WikiView
                 pages={wikiPages}
                 availableFiles={files}
+                canManageWiki={canManageWiki}
                 onSelectPage={(p) => setActiveWikiPage(p)}
+                onDeleteSection={handleDeleteWikiSection}
                 onNewPageClick={(topic, section, kind = "page") => {
                   setEditingWikiPage(null);
                   setWikiEditorTopic(topic);
