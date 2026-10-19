@@ -18,6 +18,7 @@ import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import { LoginView } from "./components/LoginView";
 import { RegisterView } from "./components/RegisterView";
+import { UpdateNotifier } from "./components/UpdateNotifier";
 import { AuthSplash, LandingPage } from "./components/LandingPage";
 import { Redirect, Route, Switch } from "wouter";
 import {
@@ -558,6 +559,7 @@ export default function App() {
         <WorkspaceProvider>
           <AuthGate />
           <Toaster position="bottom-right" richColors />
+          <UpdateNotifier />
         </WorkspaceProvider>
       </AuthProvider>
     </ThemeProvider>

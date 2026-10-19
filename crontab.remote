@@ -1,0 +1,1 @@
+0 3 * * * /home/germain/MyProjects/Lekki/scripts/backup.sh >> /home/germain/MyProjects/Lekki/logs/cron-backup.log 2>&1

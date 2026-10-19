@@ -13,6 +13,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       includeAssets: ["logo.svg"],
       manifest: {
         name: "Lekki — Espace documentaire intelligent",

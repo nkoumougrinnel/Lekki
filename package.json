@@ -5,6 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
+    "dev:local": "concurrently -k -n api,web -c green,cyan \"npm:dev:backend\" \"npm:dev\"",
+    "dev:backend": "docker compose up --build --wait backend",
     "build": "vite build",
     "build:client": "vite build",
     "preview": "vite preview --host",
@@ -75,6 +77,7 @@
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^10.0.6",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.19.1",

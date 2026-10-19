@@ -34,21 +34,6 @@ services:
     networks:
       - lekki_net
 
-  # Frontend Web Client (Nginx + React SPA)
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: lekki_frontend
-    restart: unless-stopped
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - lekki_net
-
 volumes:
   lekki_db_data:
     driver: local

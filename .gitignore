@@ -17,3 +17,12 @@ data/chroma/
 
 # Node.js   
 node_modules/
+
+# Build
+dist/
+
+# backups
+backups/
+
+# logs
+logs/
