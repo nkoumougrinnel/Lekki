@@ -246,13 +246,19 @@ export function HomeOverview({
                           {page.title}
                         </span>
                         {page.status === "verified" && (
-                          <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" title="Vérifiée" />
+                          <span title="Vérifiée" aria-label="Vérifiée">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                          </span>
                         )}
                         {page.status === "community" && (
-                          <Users className="h-3 w-3 text-sky-400 shrink-0" title="Communautaire" />
+                          <span title="Communautaire" aria-label="Communautaire">
+                            <Users className="h-3 w-3 text-sky-400 shrink-0" />
+                          </span>
                         )}
                         {page.status === "draft" && (
-                          <Clock className="h-3 w-3 text-amber-400 shrink-0" title="Brouillon" />
+                          <span title="Brouillon" aria-label="Brouillon">
+                            <Clock className="h-3 w-3 text-amber-400 shrink-0" />
+                          </span>
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-400 line-clamp-1">

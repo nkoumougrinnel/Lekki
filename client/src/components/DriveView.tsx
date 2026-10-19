@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import type { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
 import { apiUrl, drive } from "@/lib/api";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
-import { ImportFolderDialog } from "./ImportFolderDialog";
 import { toast } from "sonner";
 import {
   Folder,
@@ -11,17 +10,17 @@ import {
   Star,
   Share2,
   Trash2,
-  Eye,
   Download,
   Upload,
   ChevronRight,
-  MoreVertical,
+  MoreHorizontal,
   RotateCcw,
   Sparkles,
-  Layers,
-  Calendar,
-  Lock,
-  Globe,
+  ArrowUpDown,
+  LoaderCircle,
+  FolderOpen,
+  Eye,
+  X,
 } from "lucide-react";
 
 interface DriveViewProps {
@@ -42,6 +41,27 @@ interface DriveViewProps {
   onAskAIAboutFile?: (file: DriveFile) => void;
 }
 
+type SortKey = "name" | "modified" | "size";
+
+const VIEW_TITLES: Partial<Record<NavView, string>> = {
+  my_docs: "Mes fichiers",
+  workspace_files: "Fichiers de l’espace",
+  starred: "Favoris",
+  shared_with_me: "Partagés avec moi",
+  trash: "Corbeille",
+};
+
+const getExtension = (file: DriveFile) =>
+  (file.extension || file.name.split(".").pop() || "").replace(/^\./, "").toLowerCase();
+
+const formatFileSize = (bytes?: number) => {
+  if (bytes == null || !Number.isFinite(bytes)) return "—";
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} Go`;
+};
+
 export function DriveView({
   currentView,
   files,
@@ -49,11 +69,9 @@ export function DriveView({
   loading = false,
   activeWorkspaceId,
   activeWorkspaceName,
-  currentUser,
   onOpenFile,
   onOpenShare,
   onNewFileClick,
-  onImportFolderClick,
   onRefresh,
   onFileTrashed,
   onFileRestored,
@@ -62,472 +80,626 @@ export function DriveView({
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
-  const [importFolderOpen, setImportFolderOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortAscending, setSortAscending] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [busyFileId, setBusyFileId] = useState<string | null>(null);
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const breadcrumbRef = useRef<HTMLElement>(null);
 
-  // Filter folders for current scope
+  const isTrashView = currentView === "trash";
   const isPersonalScope =
     currentView === "my_docs" ||
     currentView === "starred" ||
     currentView === "shared_with_me" ||
     currentView === "trash";
+  const canCreateFolder = currentView === "my_docs" || currentView === "workspace_files";
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentFolderId(null);
     setShowNewFolderInput(false);
-  }, [currentView]);
+    setNewFolderName("");
+    setOpenMenuId(null);
+  }, [currentView, activeWorkspaceId]);
 
-  const folderScope = folders.filter((f) => {
-    if (!["my_docs", "workspace_files"].includes(currentView)) return false;
-    if (isPersonalScope) return !f.workspace_id;
-    return Boolean(f.workspace_id);
-  });
+  useEffect(() => {
+    const closeMenu = () => setOpenMenuId(null);
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, []);
 
-  const currentFolder = folderScope.find((f) => f.id === currentFolderId);
-  const visibleFolders = folderScope.filter((folder) =>
-    currentFolderId ? folder.parent_id === currentFolderId : !folder.parent_id
+  useEffect(() => {
+    const breadcrumb = breadcrumbRef.current;
+    if (breadcrumb) {
+      breadcrumb.scrollTo({ left: breadcrumb.scrollWidth, behavior: "smooth" });
+    }
+  }, [currentFolderId]);
+
+  useEffect(() => {
+    if (!showNewFolderInput) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !creatingFolder) {
+        setShowNewFolderInput(false);
+        setNewFolderName("");
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [showNewFolderInput, creatingFolder]);
+
+  const folderScope = useMemo(() => {
+    if (!canCreateFolder) return [];
+    return folders.filter((folder) => {
+      if (isPersonalScope) return !folder.workspace_id;
+      return Boolean(folder.workspace_id) &&
+        (!activeWorkspaceId || folder.workspace_id === activeWorkspaceId);
+    });
+  }, [folders, canCreateFolder, isPersonalScope, activeWorkspaceId]);
+
+  const currentFolder = folderScope.find((folder) => folder.id === currentFolderId) ?? null;
+  const currentFolderPath = useMemo(() => {
+    if (!currentFolderId) return [] as DriveFolder[];
+
+    const path: DriveFolder[] = [];
+    let current: DriveFolder | null =
+      folderScope.find((folder) => folder.id === currentFolderId) ?? null;
+
+    while (current) {
+      path.unshift(current);
+      const parentId = current.parent_id;
+      current = parentId
+        ? folderScope.find((folder) => folder.id === parentId) ?? null
+        : null;
+    }
+
+    return path;
+  }, [folderScope, currentFolderId]);
+
+  const visibleFolders = useMemo(
+    () =>
+      folderScope
+        .filter((folder) =>
+          currentFolderId ? folder.parent_id === currentFolderId : !folder.parent_id
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, "fr")),
+    [folderScope, currentFolderId]
   );
 
-  // Filter files
-  const displayedFiles = files.filter((file) => {
-    if (currentFolderId) {
-      return file.folder_id === currentFolderId;
-    }
-    // If at root of a folder-capable view, show files with no folder or root
-    if (currentView === "workspace_files" || currentView === "my_docs") {
-      return !file.folder_id;
-    }
-    return true;
-  });
+  const displayedFiles = useMemo(() => {
+    return files
+      .filter((file) => {
+        if (currentFolderId) return file.folder_id === currentFolderId;
+        if (currentView === "workspace_files" || currentView === "my_docs") {
+          return !file.folder_id;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortKey === "name") comparison = a.name.localeCompare(b.name, "fr");
+        if (sortKey === "size") comparison = (a.size_bytes ?? 0) - (b.size_bytes ?? 0);
+        if (sortKey === "modified") {
+          const dateA = new Date((a as any).updated_at ?? (a as any).created_at ?? 0).getTime();
+          const dateB = new Date((b as any).updated_at ?? (b as any).created_at ?? 0).getTime();
+          comparison = dateA - dateB;
+        }
+        return sortAscending ? comparison : -comparison;
+      });
+  }, [files, currentFolderId, currentView, sortKey, sortAscending]);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  const title = VIEW_TITLES[currentView] ?? activeWorkspaceName ?? "Fichiers";
+  const rootLabel =
+    currentView === "workspace_files" ? activeWorkspaceName || title : title;
+  const canManageFiles = !isTrashView;
 
-  const handleToggleStar = async (file: DriveFile, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggleStar = async (file: DriveFile) => {
+    setBusyFileId(file.id);
     try {
       await drive.updateFile(file.id, { is_starred: !file.is_starred });
-      toast.success(
-        file.is_starred
-          ? `« ${file.name} » retiré des favoris`
-          : `« ${file.name} » ajouté aux favoris`
-      );
-      onRefresh();
+      toast.success(file.is_starred ? "Retiré des favoris" : "Ajouté aux favoris");
+      await onRefresh();
     } catch {
-      toast.error("Erreur lors de la mise à jour");
+      toast.error("Impossible de mettre à jour les favoris");
+    } finally {
+      setBusyFileId(null);
+      setOpenMenuId(null);
     }
   };
 
-  const handleTrashOrDelete = async (file: DriveFile, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const isTrashView = currentView === "trash";
+  const handleTrashOrDelete = async (file: DriveFile) => {
+    const confirmed = window.confirm(
+      isTrashView
+        ? `Supprimer définitivement « ${file.name} » ? Cette action est irréversible.`
+        : `Déplacer « ${file.name} » dans la corbeille ?`
+    );
+    if (!confirmed) return;
+    setBusyFileId(file.id);
     try {
-      if (isTrashView) {
-        await drive.deleteFile(file.id, true);
-        onFileTrashed(file, true);
-        toast.success("Document définitivement supprimé");
-      } else {
-        await drive.deleteFile(file.id);
-        onFileTrashed(file);
-        toast.success(`« ${file.name} » déplacé dans la corbeille`);
-      }
+      await drive.deleteFile(file.id, isTrashView);
+      onFileTrashed(file, isTrashView);
+      toast.success(isTrashView ? "Document supprimé définitivement" : "Document déplacé dans la corbeille");
       await onRefresh();
     } catch {
       toast.error("Erreur lors de la suppression");
+    } finally {
+      setBusyFileId(null);
+      setOpenMenuId(null);
     }
   };
 
-  const handleRestore = async (file: DriveFile, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleRestore = async (file: DriveFile) => {
+    setBusyFileId(file.id);
     try {
       await drive.updateFile(file.id, { is_deleted: false });
       onFileRestored(file);
-      toast.success(`« ${file.name} » restauré`);
+      toast.success("Document restauré");
       await onRefresh();
     } catch {
-      toast.error("Erreur lors de la restauration");
+      toast.error("Impossible de restaurer le document");
+    } finally {
+      setBusyFileId(null);
+      setOpenMenuId(null);
     }
   };
 
-  const handleEmptyTrash = async () => {
-    if (displayedFiles.length === 0) {
-      toast.info("La corbeille est déjà vide");
-      return;
-    }
-
-    try {
-      await Promise.all(displayedFiles.map((file) => drive.deleteFile(file.id, true)));
-      displayedFiles.forEach((file) => onFileTrashed(file, true));
-      toast.success("Corbeille vidée");
-      await onRefresh();
-    } catch {
-      toast.error("Impossible de vider complètement la corbeille");
-    }
+  const handleDownload = (file: DriveFile) => {
+    const link = document.createElement("a");
+    link.href = apiUrl(`/drive/files/${file.id}/download`);
+    link.setAttribute("download", file.name);
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setOpenMenuId(null);
   };
 
-  const handleCreateFolder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFolderName.trim()) return;
-
+  const handleCreateFolder = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = newFolderName.trim();
+    if (!name || creatingFolder) return;
+    setCreatingFolder(true);
     try {
       await drive.createFolder({
-        name: newFolderName.trim(),
-        workspace_id: isPersonalScope ? null : (currentFolder?.workspace_id || activeWorkspaceId || null),
+        name,
+        workspace_id: isPersonalScope
+          ? null
+          : currentFolder?.workspace_id || activeWorkspaceId || null,
         parent_id: currentFolderId || null,
       });
-      toast.success(`Dossier « ${newFolderName} » créé`);
+      toast.success(`Dossier « ${name} » créé`);
       setNewFolderName("");
       setShowNewFolderInput(false);
       await onRefresh();
     } catch {
-      toast.error("Erreur lors de la création du dossier");
+      toast.error("Impossible de créer le dossier");
+    } finally {
+      setCreatingFolder(false);
     }
   };
 
-  const handleDeleteFolder = async (folder: DriveFolder, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteFolder = async (folder: DriveFolder, event: React.MouseEvent) => {
+    event.stopPropagation();
     if (!window.confirm(`Supprimer le dossier « ${folder.name} » ?`)) return;
-
     try {
       await drive.deleteFolder(folder.id);
       if (currentFolderId === folder.id) setCurrentFolderId(null);
-      toast.success(`Dossier « ${folder.name} » supprimé`);
+      toast.success("Dossier supprimé");
       await onRefresh();
     } catch {
-      toast.error("Impossible de supprimer ce dossier : il doit être vide");
+      toast.error("Impossible de supprimer ce dossier. Vérifiez qu’il est vide.");
     }
   };
 
   return (
-    <div id="drive-view-container" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
-      {/* View Header */}
-      <div className="px-3 sm:px-4 py-3 border-b border-zinc-800/80 bg-[#11141A]/70">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center justify-between gap-4 font-mono">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400 min-w-0">
-                <button
-                  onClick={() => setCurrentFolderId(null)}
-                  className={`hover:text-emerald-400 transition-colors truncate ${
-                    !currentFolder ? "text-emerald-400 font-semibold" : ""
-                  }`}
-                >
-                  {currentView === "trash"
-                    ? "Corbeille"
-                    : currentView === "starred"
-                      ? "Favoris"
-                      : currentView === "shared_with_me"
-                        ? "Partagés avec moi"
-                        : currentView === "my_docs"
-                          ? "Mes documents"
-                          : "Fichiers partagés"}
-                </button>
-            {currentFolder && (
-              <>
-                <ChevronRight className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
-                <span className="text-emerald-400 font-semibold truncate">
-                  📁 {currentFolder.name}
-                </span>
-              </>
-            )}
-          </div>
-
-          {currentView === "trash" ? (
-            <button
-              onClick={handleEmptyTrash}
-              aria-label="Vider la corbeille"
-              title="Vider la corbeille"
-              className="flex h-8 items-center gap-1.5 rounded-lg bg-rose-500/15 px-3 text-xs font-semibold text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Vider la corbeille</span>
-            </button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-              <button
-                onClick={() => setShowNewFolderInput((prev) => !prev)}
-                aria-label="Nouveau dossier"
-                title="Nouveau dossier"
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-2 sm:px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
-              >
-                <FolderPlus className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="hidden sm:inline">Nouveau dossier</span>
-              </button>
-
-              <button
-                onClick={() => onNewFileClick(currentFolderId || undefined)}
-                aria-label="Déposer un document"
-                title="Déposer un document"
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500 px-2 sm:px-3 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm text-xs font-semibold"
-              >
-                <Upload className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Déposer un document</span>
-              </button>
-
-              {onImportFolderClick && (
-                <button
-                  onClick={() => {
-                    setImportFolderOpen(true);
-                    onImportFolderClick(currentFolderId || undefined);
-                  }}
-                  aria-label="Importer un dossier"
-                  title="Importer un dossier"
-                  className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 px-2 sm:px-3 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-colors text-xs font-medium"
-                >
-                  <FolderPlus className="h-3.5 w-3.5 text-zinc-200" />
-                  <span className="hidden sm:inline">Importer un dossier</span>
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-        {/* Create Folder inline form */}
-        {showNewFolderInput && (
-          <form
-            onSubmit={handleCreateFolder}
-            className="p-3.5 rounded-lg bg-zinc-900/80 border border-zinc-700/80 flex items-center gap-2.5 animate-in fade-in"
+    <div
+      id="drive-view-container"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#f8fafd] text-[#202124] dark:bg-[#131519] dark:text-zinc-100"
+    >
+      <header className="sticky top-0 z-20 border-b border-[#e4e7eb] bg-[#f8fafd]/95 px-4 py-3 backdrop-blur dark:border-white/[0.08] dark:bg-[#17191e]/95 sm:px-7">
+        <div className="flex items-center justify-between gap-3">
+          <nav
+            ref={breadcrumbRef}
+            aria-label="Fil d’Ariane"
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-sm text-zinc-600 dark:text-zinc-300"
+            style={{ scrollbarWidth: "none" }}
           >
-            <Folder className="h-4 w-4 text-emerald-400 shrink-0" />
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Nom du nouveau dossier (ex: Cours, Examens, TP...)"
-              className="flex-1 bg-zinc-950 px-3 py-1.5 rounded text-xs text-zinc-100 border border-zinc-700 focus:outline-none focus:border-emerald-500"
-              autoFocus
-            />
-            <button
-              type="submit"
-              className="px-3 py-1.5 rounded bg-emerald-500 text-zinc-950 font-semibold text-xs hover:bg-emerald-400 transition-colors"
-            >
-              Créer
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowNewFolderInput(false)}
-              className="px-2.5 py-1.5 rounded text-zinc-400 hover:text-zinc-200 text-xs"
-            >
-              Annuler
-            </button>
-          </form>
-        )}
-
-        {/* Folders Grid (shown if at root and folders exist) */}
-        {visibleFolders.length > 0 && (
-          <div className="space-y-3">
-            <div className="text-sm font-medium text-zinc-200">
-              Dossiers
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {visibleFolders.map((folder) => {
-                return (
-                    <div
-                    key={folder.id}
-                    className="p-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/80 hover:border-zinc-700 text-left transition-all flex items-center justify-between group shadow-sm"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentFolderId(folder.id);
-                      }}
-                      className="flex items-center gap-3 min-w-0 flex-1 text-left"
-                    >
-                      <Folder className="h-5 w-5 text-zinc-400 group-hover:text-emerald-400 transition-colors shrink-0 fill-zinc-400/20 group-hover:fill-emerald-400/20" />
-                      <div className="text-sm font-medium text-zinc-300 group-hover:text-zinc-100 truncate">
-                        {folder.name}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteFolder(folder, e)}
-                      aria-label={`Supprimer le dossier ${folder.name}`}
-                      title="Supprimer le dossier"
-                      className="p-1.5 rounded text-zinc-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:bg-rose-500/15 hover:text-rose-400 transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Files Section */}
-        <div className="space-y-3 pt-2">
-          <div className="text-sm font-medium text-zinc-200 flex items-center justify-between">
-            <span>Fichiers</span>
-          </div>
-
-          {loading ? (
-            <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 p-8 text-sm text-zinc-400">
-              Chargement des fichiers…
-            </div>
-          ) : displayedFiles.length === 0 ? (
-            <div className="py-16 text-center border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20 p-8 space-y-3">
-              <FileText className="h-10 w-10 mx-auto text-zinc-600" />
-              <div className="text-sm font-medium text-zinc-300">
-                Aucun document dans cet emplacement
-              </div>
-              <p className="text-xs text-zinc-400 max-w-md mx-auto">
-                {currentView === "trash"
-                  ? "La corbeille est vide."
-                  : "Déposez un cours, un TD ou un rapport pour le stocker et le rendre disponible pour la recherche et Lekki AI."}
-              </p>
-              {currentView !== "trash" && (
+            <FolderOpen className="mr-1 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            {currentFolderPath.length === 0 ? (
+              <span className="max-w-full truncate px-1 font-semibold text-zinc-900 dark:text-white" aria-current="page">
+                {rootLabel}
+              </span>
+            ) : (
+              <>
                 <button
-                  onClick={() => onNewFileClick(currentFolderId || undefined)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors"
+                  type="button"
+                  onClick={() => setCurrentFolderId(null)}
+                  title={rootLabel}
+                  className="max-w-[34vw] shrink-0 truncate rounded-lg px-2 py-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white sm:max-w-48"
                 >
-                  <Upload className="h-3.5 w-3.5" />
-                  Ajouter un premier document
+                  {rootLabel}
                 </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {displayedFiles.map((file) => (
-                <div
-                  key={file.id}
-                  onClick={() => onOpenFile(file)}
-                  className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl overflow-hidden hover:bg-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group flex flex-col aspect-[4/3] sm:aspect-square relative"
-                >
-                  {/* File preview: rendered first page for PDFs and Office files */}
-                  <div className="flex-1 bg-zinc-950/50 flex flex-col items-center justify-center relative overflow-hidden">
-                    {file.thumbnail_path || file.extension?.toLowerCase().replace(/^\./, "") === "pdf" ? (
-                      <img
-                        src={apiUrl(`/drive/files/${file.id}/thumbnail`)}
-                        alt={`Aperçu de ${file.name}`}
-                        className="h-full w-full bg-zinc-900 object-contain p-2"
-                      />
+                {currentFolderPath.map((folder, index) => (
+                  <React.Fragment key={folder.id}>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400/80" />
+                    {index === currentFolderPath.length - 1 ? (
+                      <span
+                        title={folder.name}
+                        aria-current="page"
+                        className="max-w-[42vw] shrink-0 truncate rounded-lg bg-emerald-500/10 px-2.5 py-1.5 font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/20 sm:max-w-64"
+                      >
+                        {folder.name}
+                      </span>
                     ) : (
-                      <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-b from-white/[0.025] to-transparent p-4">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.07] bg-zinc-900/80 shadow-xl transition-transform duration-300 group-hover:-translate-y-1">
-                          <DocumentTypeIcon extension={file.extension} className="h-14 w-12 drop-shadow-lg" />
-                        </div>
-                        <span className="rounded-md border border-white/[0.08] bg-zinc-900/80 px-2 py-1 text-[9px] font-semibold tracking-wider text-zinc-400">
-                          {file.extension.toUpperCase()} · APERÇU TEXTE
-                        </span>
-                        <p className="line-clamp-2 max-w-full text-center text-[10px] leading-relaxed text-zinc-500">
-                          {file.summary || file.content || "Aucun aperçu disponible"}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Action Overlay */}
-                    <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 bg-zinc-950/95 p-1.5 rounded-lg border border-zinc-700 shadow-lg" onClick={(e) => e.stopPropagation()}>
-                      {currentView === "trash" ? (
-                        <>
-                          <button
-                            onClick={(e) => handleRestore(file, e)}
-                            className="p-1.5 rounded hover:bg-zinc-700 text-emerald-400"
-                            title="Restaurer"
-                            aria-label={`Restaurer ${file.name}`}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
-                              const link = document.createElement("a");
-                              link.href = downloadUrl;
-                              link.setAttribute("download", file.name);
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              toast.success(`Téléchargement de « ${file.name} »`);
-                            }}
-                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-white"
-                            title="Télécharger"
-                          >
-                            <Download className="h-3.5 w-3.5" />
-                          </button>
-                          {onAskAIAboutFile && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onAskAIAboutFile(file);
-                              }}
-                              className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-emerald-400"
-                              title="Interroger avec Lekki AI"
-                            >
-                              <Sparkles className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => handleToggleStar(file, e)}
-                            className={`p-1.5 rounded hover:bg-zinc-800 ${
-                              file.is_starred ? "text-amber-400" : "text-zinc-300 hover:text-white"
-                            }`}
-                            title="Favoris"
-                          >
-                            <Star className="h-3.5 w-3.5" fill={file.is_starred ? "currentColor" : "none"} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenShare(file);
-                            }}
-                            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-300 hover:text-sky-400"
-                            title="Partager"
-                          >
-                            <Share2 className="h-3.5 w-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* File Info Footer */}
-                  <div className="p-3 border-t border-zinc-800/80 bg-[#161A22] shrink-0">
-                    <div className="flex items-center gap-2">
-                      <div className="shrink-0 p-1 bg-zinc-800/50 rounded">
-                        <DocumentTypeIcon extension={file.extension} className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-[11px] sm:text-xs text-zinc-300 group-hover:text-zinc-100 truncate" title={file.name}>
-                          {file.name}
-                        </div>
-                      </div>
                       <button
                         type="button"
-                        onClick={(e) => handleTrashOrDelete(file, e)}
-                        aria-label={currentView === "trash" ? `Supprimer définitivement ${file.name}` : `Mettre ${file.name} à la corbeille`}
-                        title={currentView === "trash" ? "Supprimer définitivement" : "Mettre à la corbeille"}
-                        className="relative z-20 shrink-0 rounded-md p-1.5 text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+                        onClick={() => setCurrentFolderId(folder.id)}
+                        title={folder.name}
+                        className="max-w-[24vw] shrink-0 truncate rounded-lg px-2 py-1.5 transition hover:bg-black/5 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white sm:max-w-40"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {folder.name}
                       </button>
-                    </div>
-                  </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {canCreateFolder && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewFolderName("");
+                  setShowNewFolderInput(true);
+                }}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+              >
+                <FolderPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">Dossier</span>
+              </button>
+            )}
+            {canManageFiles && (
+              <button
+                type="button"
+                onClick={() => onNewFileClick(currentFolderId || undefined)}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 shadow-sm transition hover:bg-emerald-400"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Fichier</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {showNewFolderInput && canCreateFolder && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !creatingFolder) {
+              setShowNewFolderInput(false);
+              setNewFolderName("");
+            }
+          }}
+        >
+          <form
+            onSubmit={handleCreateFolder}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-folder-title"
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#dadce0] bg-white shadow-2xl dark:border-white/10 dark:bg-[#1b1e24]"
+          >
+            <div className="flex items-start gap-3 border-b border-[#e8eaed] p-4 dark:border-white/[0.08] sm:p-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Folder className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <h2 id="new-folder-title" className="text-base font-semibold text-zinc-900 dark:text-white">Nouveau dossier</h2>
+                <p className="mt-1 text-xs text-zinc-500">{currentFolder ? `Créer dans « ${currentFolder.name} »` : `Créer dans « ${rootLabel} »`}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Fermer"
+                disabled={creatingFolder}
+                onClick={() => {
+                  setShowNewFolderInput(false);
+                  setNewFolderName("");
+                }}
+                className="-mr-1 -mt-1 rounded-full p-2 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 disabled:opacity-50 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 p-4 sm:p-5">
+              <label htmlFor="new-folder-name" className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                Nom du dossier
+              </label>
+              <input
+                id="new-folder-name"
+                autoFocus
+                value={newFolderName}
+                onChange={(event) => setNewFolderName(event.target.value)}
+                placeholder="Ex. Cours du semestre"
+                maxLength={120}
+                className="h-12 w-full rounded-xl border border-[#dadce0] bg-transparent px-3.5 text-sm outline-none transition placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:border-white/10 dark:placeholder:text-zinc-600"
+              />
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={creatingFolder}
+                  onClick={() => {
+                    setShowNewFolderInput(false);
+                    setNewFolderName("");
+                  }}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#dadce0] px-4 text-sm font-medium text-zinc-600 transition hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newFolderName.trim() || creatingFolder}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {creatingFolder && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                  Créer
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <main className="flex-1 space-y-4 px-4 py-4 sm:px-7">
+        {visibleFolders.length > 0 && (
+          <section className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Dossiers</h2>
+              <span className="rounded-full bg-[#f1f3f4] px-2 py-0.5 text-[10px] text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-300">
+                {visibleFolders.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {visibleFolders.map((folder) => (
+                <div
+                  key={folder.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setCurrentFolderId(folder.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") setCurrentFolderId(folder.id);
+                  }}
+                  className="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-[#dadce0] bg-white px-3 py-2.5 transition hover:border-[#c4c7c5] hover:bg-[#f1f3f4] dark:border-white/[0.09] dark:bg-[#1c1f25] dark:hover:bg-[#252932]"
+                >
+                  <Folder className="h-5 w-5 shrink-0 fill-emerald-200 text-emerald-600 dark:fill-emerald-500/20 dark:text-emerald-400" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{folder.name}</span>
+                  <button
+                    type="button"
+                    onClick={(event) => handleDeleteFolder(folder, event)}
+                    title="Supprimer le dossier"
+                    aria-label={`Supprimer le dossier ${folder.name}`}
+                    className="rounded-full p-1.5 text-zinc-500 opacity-100 transition hover:bg-black/5 hover:text-rose-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-white/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        <section className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Fichiers</h2>
+              <span className="rounded-full bg-[#f1f3f4] px-2 py-0.5 text-[10px] text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-300">
+                {displayedFiles.length}
+              </span>
+            </div>
+            {displayedFiles.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSortKey((key) => (key === "name" ? "modified" : key === "modified" ? "size" : "name"));
+                  setSortAscending(true);
+                }}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-zinc-600 transition hover:bg-[#f1f3f4] dark:text-zinc-300 dark:hover:bg-white/[0.08]"
+                title={`Tri actuel : ${sortKey}`}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {sortKey === "name" ? "Nom" : sortKey === "modified" ? "Modifié" : "Taille"}
+              </button>
+            )}
+          </div>
+          {loading ? (
+            <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#dadce0] text-sm text-zinc-500 dark:border-white/10">
+              <LoaderCircle className="h-6 w-6 animate-spin text-emerald-500" />
+              Chargement…
+            </div>
+          ) : displayedFiles.length === 0 ? (
+            <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-[#dadce0] px-5 py-8 text-center dark:border-white/10">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                {isTrashView ? <Trash2 className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
+              </div>
+              <h3 className="text-sm font-medium">
+                {isTrashView ? "La corbeille est vide" : "Aucun fichier ici"}
+              </h3>
+              <p className="mt-1 max-w-md text-xs text-zinc-500">
+                {isTrashView
+                  ? "Les fichiers supprimés apparaîtront ici."
+                  : "Ajoutez un document pour le retrouver ici et l’ouvrir directement."}
+              </p>
+              {canManageFiles && (
+                <button
+                  type="button"
+                  onClick={() => onNewFileClick(currentFolderId || undefined)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Ajouter un fichier
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+              {openMenuId && (
+                <button
+                  type="button"
+                  aria-label="Fermer les options du fichier"
+                  onClick={() => setOpenMenuId(null)}
+                  className="absolute inset-0 z-10 cursor-default bg-zinc-950/10 backdrop-blur-[2px]"
+                />
+              )}
+              {displayedFiles.map((file, index) => (
+                <article
+                  key={file.id}
+                  onClick={() => onOpenFile(file)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") onOpenFile(file);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className={`group relative flex min-w-0 cursor-pointer flex-col overflow-visible rounded-xl border bg-white transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-md dark:bg-[#202329] ${openMenuId === file.id ? "z-30 border-emerald-500 shadow-xl ring-2 ring-emerald-500/25 dark:border-emerald-400 dark:ring-emerald-400/20" : "border-[#dadce0] dark:border-white/[0.09]"}`}
+                >
+                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#f8fafd] dark:bg-[#17191e]">
+                    {file.thumbnail_path || getExtension(file) === "pdf" ? (
+                      <img
+                        src={apiUrl(`/drive/files/${file.id}/thumbnail`)}
+                        alt={`Aperçu de ${file.name}`}
+                        loading="lazy"
+                        className="h-full w-full rounded-t-xl object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 p-4 text-center">
+                        <DocumentTypeIcon extension={getExtension(file)} className="h-12 w-12" />
+                        <span className="line-clamp-2 text-[10px] text-zinc-500">{file.summary || file.content || "Document"}</span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenMenuId((id) => (id === file.id ? null : file.id));
+                      }}
+                      aria-label={`Options pour ${file.name}`}
+                      className="absolute right-2 top-2 z-20 rounded-full bg-white/95 p-1.5 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100"
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {openMenuId === file.id && (
+                    <FileActionMenu
+                      file={file}
+                      alignLeft={index % 2 === 0}
+                      isTrashView={isTrashView}
+                      canAskAI={Boolean(onAskAIAboutFile)}
+                      busy={busyFileId === file.id}
+                      onOpen={() => { setOpenMenuId(null); onOpenFile(file); }}
+                      onShare={() => { setOpenMenuId(null); onOpenShare(file); }}
+                      onStar={() => handleToggleStar(file)}
+                      onDownload={() => handleDownload(file)}
+                      onDelete={() => handleTrashOrDelete(file)}
+                      onRestore={() => handleRestore(file)}
+                      onAskAI={() => { setOpenMenuId(null); onAskAIAboutFile?.(file); }}
+                    />
+                  )}
+                  <div className="flex min-w-0 items-center gap-2 p-2.5">
+                    <DocumentTypeIcon extension={getExtension(file)} className="h-4 w-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium" title={file.name}>{file.name}</p>
+                      <p className="mt-1 text-[10px] text-zinc-500">{formatFileSize(file.size_bytes)}</p>
+                    </div>
+                    {file.is_starred && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />}
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
-        </div>
-      </div>
-      {importFolderOpen && (
-        <ImportFolderDialog
-          open={importFolderOpen}
-          onOpenChange={setImportFolderOpen}
-          folders={folders}
-          defaultWorkspaceId={activeWorkspaceId || null}
-          defaultFolderId={currentFolderId || null}
-          onImportCompleted={async (importedFiles) => {
-            setImportFolderOpen(false);
-            await onRefresh();
-          }}
-        />
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function FileActionMenu({
+  file,
+  alignLeft,
+  isTrashView,
+  canAskAI,
+  busy,
+  onOpen,
+  onShare,
+  onStar,
+  onDownload,
+  onDelete,
+  onRestore,
+  onAskAI,
+}: {
+  file: DriveFile;
+  alignLeft: boolean;
+  isTrashView: boolean;
+  canAskAI: boolean;
+  busy: boolean;
+  onOpen: () => void;
+  onShare: () => void;
+  onStar: () => void;
+  onDownload: () => void;
+  onDelete: () => void;
+  onRestore: () => void;
+  onAskAI: () => void;
+}) {
+  const itemClass =
+    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-[#f1f3f4] disabled:opacity-50 dark:text-zinc-200 dark:hover:bg-white/[0.08]";
+
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={`absolute top-12 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/35 bg-white p-1.5 shadow-2xl ring-1 ring-emerald-500/10 dark:border-emerald-400/30 dark:bg-[#252830] dark:ring-emerald-400/10 ${alignLeft ? "left-2 right-auto" : "right-2 left-auto"}`}
+    >
+      <button type="button" disabled={busy} onClick={onOpen} className={itemClass}>
+        <Eye className="h-4 w-4 text-zinc-500" />
+        Ouvrir le fichier
+      </button>
+      {isTrashView ? (
+        <button type="button" disabled={busy} onClick={onRestore} className={itemClass}>
+          <RotateCcw className="h-4 w-4 text-emerald-600" />
+          Restaurer
+        </button>
+      ) : (
+        <>
+          <button type="button" disabled={busy} onClick={onShare} className={itemClass}>
+            <Share2 className="h-4 w-4 text-zinc-500" />
+            Partager
+          </button>
+          <button type="button" disabled={busy} onClick={onStar} className={itemClass}>
+            <Star className={`h-4 w-4 ${file.is_starred ? "fill-amber-400 text-amber-400" : "text-zinc-500"}`} />
+            {file.is_starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+          </button>
+          {canAskAI && (
+            <button type="button" disabled={busy} onClick={onAskAI} className={itemClass}>
+              <Sparkles className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+              Interroger Lekki AI
+            </button>
+          )}
+          <button type="button" disabled={busy} onClick={onDownload} className={itemClass}>
+            <Download className="h-4 w-4 text-zinc-500" />
+            Télécharger
+          </button>
+        </>
       )}
+      <div className="my-1 border-t border-[#e8eaed] dark:border-white/[0.08]" />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={onDelete}
+        className={`${itemClass} ${isTrashView ? "text-rose-600 dark:text-rose-300" : ""}`}
+      >
+        {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-rose-500" />}
+        {isTrashView ? "Supprimer définitivement" : "Mettre à la corbeille"}
+      </button>
     </div>
   );
 }

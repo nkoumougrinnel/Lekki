@@ -26,7 +26,7 @@ import {
   WikiPage,
   NavView,
 } from "./types/lekki";
-import { drive, wiki } from "./lib/api";
+import { apiUrl, drive, wiki } from "./lib/api";
 
 function PublicRoutes() {
   return (
@@ -222,6 +222,10 @@ function LekkiMain() {
     }
   };
 
+  const handleOpenFileInBrowser = (file: DriveFile) => {
+    window.location.assign(apiUrl(`/drive/files/${file.id}/download`));
+  };
+
   const handleAskAIAboutFile = (file: DriveFile) => {
     setAIInitialQuestion(`Explique-moi le contenu du document « ${file.name} »`);
     setIsAIOpen(true);
@@ -302,7 +306,7 @@ function LekkiMain() {
                 setActiveWikiPage(null);
                 setWikiFilterTopic(null);
               }}
-              onOpenFile={(f) => setViewingFile(f)}
+              onOpenFile={handleOpenFileInBrowser}
               onOpenWiki={(p) => {
                 setActiveWikiPage(p);
                 setCurrentView("workspace_wiki");
@@ -327,7 +331,7 @@ function LekkiMain() {
               activeWorkspaceId={activeWorkspaceId}
               activeWorkspaceName={activeWorkspace?.name}
               currentUser={user}
-              onOpenFile={(f) => setViewingFile(f)}
+              onOpenFile={handleOpenFileInBrowser}
               onOpenShare={(f) => setSharingFile(f)}
               onNewFileClick={(folderId) => {
                 setNewFileFolderId(folderId || null);
@@ -349,6 +353,11 @@ function LekkiMain() {
                 page={activeWikiPage}
                 availableFiles={files}
                 allPages={wikiPages}
+                canVerifyWiki={Boolean(
+                  user?.role === "admin" ||
+                  activeWorkspace?.owner_id === user?.id ||
+                  ["owner", "admin", "verifier"].includes(activeWorkspace?.role || "")
+                )}
                 onBack={() => {
                   setActiveWikiPage(null);
                   setWikiFilterTopic(null);
@@ -377,7 +386,6 @@ function LekkiMain() {
               <WikiView
                 pages={wikiPages}
                 availableFiles={files}
-                activeWorkspaceName={activeWorkspace?.name}
                 onSelectPage={(p) => setActiveWikiPage(p)}
                 onNewPageClick={(topic, section, kind = "page") => {
                   setEditingWikiPage(null);

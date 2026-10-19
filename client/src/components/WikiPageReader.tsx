@@ -28,6 +28,7 @@ interface WikiPageReaderProps {
   page: WikiPage;
   availableFiles: DriveFile[];
   allPages?: WikiPage[];
+  canVerifyWiki?: boolean;
   onBack: () => void;
   onNavigateTopic?: (topic: string) => void;
   onSelectPage?: (page: WikiPage) => void;
@@ -42,6 +43,7 @@ export function WikiPageReader({
   page,
   availableFiles,
   allPages = [],
+  canVerifyWiki = false,
   onBack,
   onNavigateTopic,
   onSelectPage,
@@ -68,7 +70,7 @@ export function WikiPageReader({
       onStatusChanged(updated);
       setShowStatusMenu(false);
     } catch {
-      toast.error("Erreur lors de la mise à jour du statut");
+      toast.error("Impossible de modifier ce statut. La vérification est réservée aux référents et responsables du workspace.");
     } finally {
       setUpdatingStatus(false);
     }
@@ -82,38 +84,40 @@ export function WikiPageReader({
     .map((wikiId) => allPages.find((p) => p.id === wikiId))
     .filter((p): p is WikiPage => Boolean(p));
 
-  const topicName = page.topic || "Général";
-  const parentPath = useMemo(() => {
-    const ancestors: WikiPage[] = [];
-    const visited = new Set<string>([page.id]);
-    let parentId = page.parent_page_id;
-    while (parentId && !visited.has(parentId)) {
-      visited.add(parentId);
-      const parent = allPages.find((candidate) => candidate.id === parentId);
-      if (!parent) break;
-      ancestors.unshift(parent);
-      parentId = parent.parent_page_id;
-    }
-    return ancestors;
-  }, [allPages, page.id, page.parent_page_id]);
+  const latestHistory = [...(page.versions || page.history || [])].sort(
+    (a, b) => b.version - a.version
+  )[0];
+  const lastEditorName =
+    page.last_editor_name ||
+    page.author_name ||
+    latestHistory?.author_name ||
+    page.creator_name ||
+    "Membre";
+  const currentVersion =
+    page.current_version ??
+    Math.max(1, ...((page.versions || page.history || []).map((entry) => entry.version)));
+  const updatedDate = page.updated_at
+    ? new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(page.updated_at) ? page.updated_at : `${page.updated_at}Z`)
+    : null;
+  const formattedUpdatedAt = updatedDate && !Number.isNaN(updatedDate.getTime())
+    ? new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(updatedDate)
+    : "Date inconnue";
 
+  const topicName = page.topic || "Général";
   const breadcrumbs = useMemo<WikiBreadcrumbItem[]>(() => {
-    if (parentPath.length > 0) {
-      return [
-        ...parentPath.map((parent) => ({
-          label: parent.title,
-          onClick: () => onSelectPage?.(parent),
-        })),
-        { label: page.title },
-      ];
-    }
     return [
       ...(topicName && topicName !== "Général"
         ? [{ label: topicName, onClick: () => onNavigateTopic?.(topicName) }]
         : []),
       { label: page.title },
     ];
-  }, [onNavigateTopic, onSelectPage, page, parentPath, topicName]);
+  }, [onNavigateTopic, page.title, topicName]);
 
   const headings = useMemo(() => page.content
     .split("\n")
@@ -126,8 +130,6 @@ export function WikiPageReader({
     })
     .filter((heading): heading is { title: string; level: number; id: string } => Boolean(heading)),
   [page.content]);
-
-  const childPages = allPages.filter((candidate) => candidate.parent_page_id === page.id);
 
   return (
     <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-hidden">
@@ -154,7 +156,8 @@ export function WikiPageReader({
                 <div className="relative">
                   <button
                     onClick={() => setShowStatusMenu((prev) => !prev)}
-                    disabled={updatingStatus}
+                    disabled={updatingStatus || (page.status === "verified" && !canVerifyWiki)}
+                    title={page.status === "verified" && !canVerifyWiki ? "Une page vérifiée ne peut être modifiée que par un référent ou un responsable" : undefined}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all ${
                       page.status === "verified"
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
@@ -178,14 +181,18 @@ export function WikiPageReader({
 
                   {showStatusMenu && (
                     <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1 z-30 overflow-hidden">
+                      {canVerifyWiki && (
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange("verified")}
+                          className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-emerald-400 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 text-sm font-medium"><CheckCircle2 className="h-3.5 w-3.5"/> Vérifiée</div>
+                          <div className="text-[10px] text-zinc-500 pl-5.5">Validée par un référent</div>
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleStatusChange("verified")}
-                        className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-emerald-400 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 text-sm font-medium"><CheckCircle2 className="h-3.5 w-3.5"/> Vérifiée</div>
-                        <div className="text-[10px] text-zinc-500 pl-5.5">Validée par un référent</div>
-                      </button>
-                      <button
+                        type="button"
                         onClick={() => handleStatusChange("community")}
                         className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-sky-400 transition-colors"
                       >
@@ -193,6 +200,7 @@ export function WikiPageReader({
                         <div className="text-[10px] text-zinc-500 pl-5.5">Enrichie par les pairs</div>
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleStatusChange("draft")}
                         className="w-full px-4 py-2 text-left flex flex-col gap-0.5 hover:bg-zinc-800 text-amber-400 transition-colors"
                       >
@@ -203,37 +211,24 @@ export function WikiPageReader({
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 text-xs flex-wrap">
+                <div className="flex items-center gap-x-3 gap-y-2 text-xs flex-wrap">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-300">
-                      {(page.author_name || page.creator_name || "M")[0].toUpperCase()}
+                    <div className="w-6 h-6 rounded-full border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center text-[10px] font-bold text-emerald-300">
+                      {lastEditorName.trim().charAt(0).toUpperCase() || "M"}
                     </div>
-                    <span>{page.author_name || page.creator_name || "Membre"}</span>
+                    <span className="text-zinc-300">{lastEditorName}</span>
+                    <span className="text-zinc-600">a modifié cette page</span>
                   </div>
                   <span className="text-zinc-600">•</span>
-                  <span>Modifié le {new Date(page.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  <span>Le {formattedUpdatedAt}</span>
                   <span className="text-zinc-600">•</span>
-                  <span className="font-mono bg-zinc-800/50 px-1.5 py-0.5 rounded text-zinc-500">v{page.current_version || 1}</span>
+                  <span className="font-mono bg-zinc-800/50 px-1.5 py-0.5 rounded text-zinc-400">v{currentVersion}</span>
                 </div>
               </div>
             </header>
 
             {/* CONTENT */}
             <MarkdownContent content={page.content} className="max-w-[78ch] text-[15px] leading-relaxed" />
-
-            {childPages.length > 0 && (
-              <section className="space-y-3 border-t border-zinc-800/60 pt-6">
-                <h2 className="text-sm font-semibold text-zinc-200">Pages dans cette rubrique</h2>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {childPages.map((child) => (
-                    <button key={child.id} onClick={() => onSelectPage?.(child)} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-left transition-colors hover:border-emerald-500/40 hover:bg-zinc-800/60">
-                      <span className="truncate text-sm font-medium text-zinc-300">{child.title}</span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
 
             <div className="h-32" /> {/* Spacer for the bottom */}
           </div>

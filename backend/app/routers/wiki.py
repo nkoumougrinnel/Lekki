@@ -11,6 +11,7 @@ from app.models.user import User
 from app.knowledge.wiki.models import WikiPage, WikiHistory
 from app.knowledge.wiki.schemas import WikiPageOut, WikiPageCreate, WikiPageUpdate, WikiStatusUpdate, WikiHistoryOut
 from app.middleware.auth import get_current_user
+from app.workspaces.models import Workspace, WorkspaceMember
 
 router = APIRouter(prefix="/wiki", tags=["Wiki"])
 
@@ -46,6 +47,12 @@ async def list_wiki_pages(
             select(WikiHistory).where(WikiHistory.page_id == p.id).order_by(desc(WikiHistory.version))
         )
         histories = h_res.scalars().all()
+        editor_res = await db.execute(
+            select(User.name).where(
+                User.id == (p.last_editor_id or p.creator_id)
+            )
+        )
+        last_editor_name = editor_res.scalar_one_or_none()
 
         docs = []
         wikis = []
@@ -72,6 +79,9 @@ async def list_wiki_pages(
             status_verified_at=p.status_verified_at,
             creator_id=p.creator_id,
             last_editor_id=p.last_editor_id,
+            author_name=last_editor_name,
+            last_editor_name=last_editor_name,
+            current_version=max((h.version for h in histories), default=1),
             view_count=p.view_count or 1,
             related_document_ids=docs,
             related_wiki_ids=wikis,
@@ -107,6 +117,10 @@ async def get_wiki_page(page_id: str, db: AsyncSession = Depends(get_db)):
         select(WikiHistory).where(WikiHistory.page_id == p.id).order_by(desc(WikiHistory.version))
     )
     histories = h_res.scalars().all()
+    editor_res = await db.execute(
+        select(User.name).where(User.id == (p.last_editor_id or p.creator_id))
+    )
+    last_editor_name = editor_res.scalar_one_or_none()
 
     docs = []
     wikis = []
@@ -133,6 +147,9 @@ async def get_wiki_page(page_id: str, db: AsyncSession = Depends(get_db)):
         status_verified_at=p.status_verified_at,
         creator_id=p.creator_id,
         last_editor_id=p.last_editor_id,
+        author_name=last_editor_name,
+        last_editor_name=last_editor_name,
+        current_version=max((h.version for h in histories), default=1),
         view_count=p.view_count,
         related_document_ids=docs,
         related_wiki_ids=wikis,
@@ -169,7 +186,7 @@ async def create_wiki_page(
         category=data.category or "cours",
         topic=data.topic or "Général",
         section=data.section or "Général",
-        parent_page_id=data.parent_page_id,
+        parent_page_id=None,
         workspace_id=data.workspace_id,
         status="draft",
         creator_id=current_user.id,
@@ -207,6 +224,9 @@ async def create_wiki_page(
         status=page.status,
         creator_id=page.creator_id,
         last_editor_id=page.last_editor_id,
+        author_name=current_user.name,
+        last_editor_name=current_user.name,
+        current_version=1,
         view_count=1,
         related_document_ids=data.related_document_ids or [],
         related_wiki_ids=data.related_wiki_ids or [],
@@ -237,6 +257,9 @@ async def update_wiki_page(
     page = result.scalar_one_or_none()
     if not page:
         raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+
+    # Wiki pages are peers; other pages are linked as sources, not nested.
+    page.parent_page_id = None
 
     if data.title:
         page.title = data.title
@@ -272,8 +295,10 @@ async def update_wiki_page(
         )
         db.add(new_hist)
 
-        if page.status == "draft":
+        if page.status in {"draft", "verified"}:
             page.status = "community"
+            page.status_verified_by = None
+            page.status_verified_at = None
 
     page.last_editor_id = current_user.id
     page.updated_at = datetime.utcnow()
@@ -296,14 +321,42 @@ async def update_page_status(
     if not page:
         raise HTTPException(status_code=404, detail="Page Wiki introuvable")
 
-    if data.status in ["draft", "community", "verified"]:
-        page.status = data.status
-        if data.status == "verified":
-            page.status_verified_by = f"{current_user.name} (Référent)"
-            page.status_verified_at = datetime.utcnow()
-        else:
-            page.status_verified_by = None
-            page.status_verified_at = None
+    if data.status not in {"draft", "community", "verified"}:
+        raise HTTPException(status_code=400, detail="Statut Wiki invalide")
+
+    if data.status == "verified" or page.status == "verified":
+        can_verify = current_user.role == "admin"
+        if page.workspace_id:
+            workspace = await db.get(Workspace, page.workspace_id)
+            can_verify = can_verify or bool(
+                workspace and workspace.owner_id == current_user.id
+            )
+            membership_res = await db.execute(
+                select(WorkspaceMember.role).where(
+                    WorkspaceMember.workspace_id == page.workspace_id,
+                    WorkspaceMember.user_id == current_user.id,
+                )
+            )
+            can_verify = can_verify or membership_res.scalar_one_or_none() in {
+                "owner",
+                "admin",
+                "verifier",
+            }
+        if not can_verify:
+            raise HTTPException(
+                status_code=403,
+                detail="Seuls les référents, administrateurs ou propriétaires peuvent modifier le statut d’une page vérifiée",
+            )
+
+    page.status = data.status
+    page.last_editor_id = current_user.id
+    page.updated_at = datetime.utcnow()
+    if data.status == "verified":
+        page.status_verified_by = f"{current_user.name} (Référent)"
+        page.status_verified_at = page.updated_at
+    else:
+        page.status_verified_by = None
+        page.status_verified_at = None
 
     await db.commit()
     return await get_wiki_page(page_id, db)

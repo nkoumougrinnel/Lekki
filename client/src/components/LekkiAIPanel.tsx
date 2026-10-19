@@ -58,8 +58,8 @@ function formatAnswer(value: string | null | undefined): string {
     .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
 
     // Retirer le formatage gras et italique
-    .replace(/\*\*(.*?)\*\*/gs, "$1")
-    .replace(/__(.*?)__/gs, "$1")
+    .replace(/\*\*([\s\S]*?)\*\*/g, "$1")
+    .replace(/__([\s\S]*?)__/g, "$1")
     .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "$1")
     .replace(/(?<!_)_([^_\n]+)_(?!_)/g, "$1")
 

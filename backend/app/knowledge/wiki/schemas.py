@@ -59,6 +59,9 @@ class WikiPageOut(BaseModel):
     status_verified_at: Optional[datetime] = None
     creator_id: Optional[str] = None
     last_editor_id: Optional[str] = None
+    author_name: Optional[str] = None
+    last_editor_name: Optional[str] = None
+    current_version: int = 1
     view_count: int = 1
     related_document_ids: List[str] = []
     related_wiki_ids: List[str] = []

@@ -36,6 +36,10 @@ class MemberAdd(BaseModel):
     role: Optional[str] = "member"
 
 
+class MemberRoleUpdate(BaseModel):
+    role: str
+
+
 class WorkspaceMemberOut(BaseModel):
     id: str
     user_id: str

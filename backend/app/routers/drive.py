@@ -319,10 +319,14 @@ async def download_file(file_id: str, db: AsyncSession = Depends(get_db)):
         return Response(
             content=fallback_content.encode("utf-8"),
             media_type="text/plain",
-            headers={"Content-Disposition": f'attachment; filename="{safe_name}.txt"'},
+            headers={"Content-Disposition": f'inline; filename="{safe_name}.txt"'},
         )
 
-    return FileResponse(file_path, filename=drive_file.name)
+    return FileResponse(
+        file_path,
+        filename=drive_file.name,
+        content_disposition_type="inline",
+    )
 
 
 def _render_word_blocks(text: str) -> str:

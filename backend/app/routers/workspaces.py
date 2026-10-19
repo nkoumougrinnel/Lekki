@@ -7,7 +7,7 @@ import uuid
 from app.database import get_db
 from app.models.user import User
 from app.models.workspace import Workspace, WorkspaceMember
-from app.schemas.workspace import WorkspaceOut, WorkspaceCreate, WorkspaceMemberOut, MemberAdd
+from app.schemas.workspace import WorkspaceOut, WorkspaceCreate, WorkspaceMemberOut, MemberAdd, MemberRoleUpdate
 from app.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/workspaces", tags=["Workspaces"])
@@ -190,3 +190,39 @@ async def remove_member(
         await db.delete(member)
         await db.commit()
     return None
+
+
+@router.put("/{workspace_id}/members/{user_id}", response_model=WorkspaceMemberOut)
+async def update_member_role(
+    workspace_id: str,
+    user_id: str,
+    data: MemberRoleUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    query = (
+        select(WorkspaceMember, User)
+        .join(User, WorkspaceMember.user_id == User.id)
+        .where(
+            WorkspaceMember.workspace_id == workspace_id,
+            WorkspaceMember.user_id == user_id
+        )
+    )
+    result = await db.execute(query)
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Membre introuvable")
+
+    member, user = row
+    member.role = data.role or member.role
+    await db.commit()
+    await db.refresh(member)
+
+    return WorkspaceMemberOut(
+        id=member.id,
+        user_id=user.id,
+        name=user.name,
+        email=user.email,
+        username=user.username,
+        role=member.role,
+        joined_at=member.joined_at
+    )

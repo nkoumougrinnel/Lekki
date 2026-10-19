@@ -218,6 +218,18 @@ export const workspaces = {
   removeMember(workspaceId: string, userId: string): Promise<null> {
     return request<null>(`/workspaces/${workspaceId}/members/${userId}`, { method: "DELETE" });
   },
+
+  updateMemberRole(
+    workspaceId: string,
+    userId: string,
+    role: string
+  ): Promise<WorkspaceMember> {
+    return jsonRequest<WorkspaceMember>(
+      `/workspaces/${workspaceId}/members/${userId}`,
+      "PUT",
+      { role }
+    );
+  },
 };
 
 // ── Drive (Dossiers & Documents) ─────────────────────────────────────────────

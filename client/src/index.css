@@ -165,18 +165,31 @@ body {
   font-size: 0.88em;
 }
 
-.wiki-markdown pre {
+.wiki-markdown pre.wiki-code-content {
   max-width: 100%;
   margin: 1.1rem 0;
   overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 0.75rem;
-  background: #090c10;
-  padding: 1rem 1.1rem;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.25rem 0;
   color: #d4d4d8;
-  font-size: 0.86em;
-  line-height: 1.7;
+  font-size: 0.84rem;
+  line-height: 1.75;
   tab-size: 2;
+  scrollbar-color: rgb(161 161 170 / 35%) transparent;
+  scrollbar-width: thin;
+  white-space: pre;
+}
+
+@media (max-width: 640px) {
+  .wiki-markdown pre.wiki-code-content {
+    padding: 0.25rem 0;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .wiki-markdown pre code {

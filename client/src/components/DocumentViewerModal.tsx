@@ -278,10 +278,13 @@ export function DocumentViewerModal({
                       <p title={chapter.title} className="truncate text-xs font-medium text-zinc-200 sm:text-sm">
                         {chapter.title}
                       </p>
-                      {chapter.subtopics?.length > 0 && (
-                        <p title={chapter.subtopics.join(" · ")} className="mt-1 truncate text-[11px] text-zinc-600">
-                          {chapter.subtopics.slice(0, 3).join(" · ")}
-                          {chapter.subtopics.length > 3 ? " …" : ""}
+                      {(chapter.subtopics?.length ?? 0) > 0 && (
+                        <p
+                          title={chapter.subtopics?.join(" · ") ?? ""}
+                          className="mt-1 truncate text-[11px] text-zinc-600"
+                        >
+                          {(chapter.subtopics ?? []).slice(0, 3).join(" · ")}
+                          {(chapter.subtopics ?? []).length > 3 ? " …" : ""}
                         </p>
                       )}
                     </div>

@@ -31,10 +31,19 @@ function headingProps(children: ReactNode, className?: string) {
   };
 }
 
+function CodeBlock({ children, ...props }: React.ComponentProps<"pre">) {
+  return (
+    <pre {...props} className="wiki-code-content">
+      {children}
+    </pre>
+  );
+}
+
 export function MarkdownContent({ content, className = "" }: MarkdownContentProps) {
   return (
     <Streamdown
       mode="static"
+      shikiTheme={["vitesse-light", "vitesse-dark"]}
       className={`wiki-markdown ${className}`.trim()}
       components={{
         h1: ({ children, className: headingClass, ...props }) => (
@@ -46,6 +55,7 @@ export function MarkdownContent({ content, className = "" }: MarkdownContentProp
         h3: ({ children, className: headingClass, ...props }) => (
           <h3 {...props} {...headingProps(children, headingClass)}>{children}</h3>
         ),
+        pre: CodeBlock,
       }}
     >
       {content || ""}

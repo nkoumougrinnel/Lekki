@@ -20,6 +20,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   CornerDownRight,
+  LoaderCircle,
 } from "lucide-react";
 
 interface WikiEditorModalProps {
@@ -31,7 +32,6 @@ interface WikiEditorModalProps {
   activeWorkspaceId: string | null;
   defaultTopic?: string;
   defaultSection?: string;
-  defaultParentPageId?: string | null;
   initialKind?: "page" | "organization";
   onSaved: (savedPage: WikiPage) => void;
 }
@@ -44,7 +44,7 @@ const COMMON_TOPICS = [
 ];
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.09] bg-[#11151b] px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-colors focus:border-sky-500/60";
+  "w-full rounded-lg border border-white/[0.09] bg-[#11151b] px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10";
 
 const labelClass =
   "mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500";
@@ -58,14 +58,13 @@ export function WikiEditorModal({
   activeWorkspaceId,
   defaultTopic,
   defaultSection,
-  defaultParentPageId,
   initialKind = "page",
   onSaved,
 }: WikiEditorModalProps) {
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("Réseaux");
   const [customTopic, setCustomTopic] = useState("");
-  const [section, setSection] = useState("Fondamentaux");
+  const [section, setSection] = useState("");
   const [content, setContent] = useState("");
   const [comment, setComment] = useState("");
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
@@ -74,21 +73,26 @@ export function WikiEditorModal({
   const [saving, setSaving] = useState(false);
   const [showOrganization, setShowOrganization] = useState(false);
   const [linkSearch, setLinkSearch] = useState("");
-  const [parentPageId, setParentPageId] = useState("");
   const [activeSourceTab, setActiveSourceTab] = useState<
     "documents" | "pages"
   >("documents");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSourcesOpen, setMobileSourcesOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
+    setMobileSourcesOpen(false);
+
     if (page) {
       setTitle(page.title);
 
-      const pageTopic = page.topic || "Réseaux";
+      const pageTopic = page.topic || "";
 
-      if (COMMON_TOPICS.includes(pageTopic)) {
+      if (!pageTopic || pageTopic === "Général") {
+        setTopic("");
+        setCustomTopic("");
+      } else if (COMMON_TOPICS.includes(pageTopic)) {
         setTopic(pageTopic);
         setCustomTopic("");
       } else {
@@ -96,19 +100,15 @@ export function WikiEditorModal({
         setCustomTopic(pageTopic);
       }
 
-      setSection(page.section || "Général");
+      setSection(page.section === "Général" ? "" : page.section || "");
       setContent(page.content || "");
       setComment("");
       setSelectedDocIds(page.related_document_ids || []);
       setSelectedWikiIds(page.related_wiki_ids || []);
-      setParentPageId(page.parent_page_id || "");
     } else {
       setTitle("");
 
-      const initTopic =
-        initialKind === "organization" && !defaultTopic
-          ? "Autre"
-          : defaultTopic || "Réseaux";
+      const initTopic = defaultTopic || "";
 
       if (COMMON_TOPICS.includes(initTopic)) {
         setTopic(initTopic);
@@ -118,22 +118,21 @@ export function WikiEditorModal({
         setCustomTopic(initTopic === "Autre" ? "" : initTopic);
       }
 
-      setSection(defaultSection || "Fondamentaux");
+      setSection(defaultSection || "");
 
       setContent(
         initialKind === "organization"
-          ? "# Présentation\n\nPrésentez ce domaine et expliquez comment les connaissances y sont organisées.\n\n## Explorer ce domaine\n\nAjoutez des sous-pages pour détailler les notions, les procédures et les ressources utiles."
+          ? "# Présentation\n\nPrésentez ce domaine et expliquez les connaissances qui lui sont liées.\n\n## Notions principales\n\nAjoutez les notions utiles puis reliez-les aux autres pages et documents dans les sources."
           : "# Vue d'ensemble\n\nPrésentez le sujet et expliquez les notions essentielles.\n\n## Points essentiels\n\n- Premier principe\n- Deuxième principe\n\n## Exemple concret\n\nAjoutez un exemple, une configuration ou une commande utile."
       );
 
       setComment("Création initiale de la page");
       setSelectedDocIds([]);
       setSelectedWikiIds([]);
-      setParentPageId(defaultParentPageId || "");
     }
 
     setPreviewMode(false);
-    setShowOrganization(Boolean(page));
+    setShowOrganization(false);
     setLinkSearch("");
     setActiveSourceTab("documents");
   }, [
@@ -141,58 +140,25 @@ export function WikiEditorModal({
     page,
     defaultTopic,
     defaultSection,
-    defaultParentPageId,
     initialKind,
   ]);
 
   const finalTopic =
-    topic === "Autre"
-      ? customTopic.trim() ||
-        (initialKind === "organization" ? title.trim() : "Général")
-      : topic;
+    topic === "Autre" ? customTopic.trim() : topic.trim();
 
-  /**
-   * Recherche les descendants de la page actuelle.
-   * Ils ne doivent pas pouvoir devenir ses parents.
-   */
-  const forbiddenParentIds = useMemo(() => {
-    const forbidden = new Set<string>();
-
-    if (!page) return forbidden;
-
-    forbidden.add(page.id);
-
-    let changed = true;
-
-    while (changed) {
-      changed = false;
-
-      for (const candidate of allWikiPages) {
-        if (
-          candidate.parent_page_id &&
-          forbidden.has(candidate.parent_page_id) &&
-          !forbidden.has(candidate.id)
-        ) {
-          forbidden.add(candidate.id);
-          changed = true;
-        }
-      }
-    }
-
-    return forbidden;
-  }, [allWikiPages, page]);
-
-  const availableParents = allWikiPages.filter(
-    (candidate) => !forbiddenParentIds.has(candidate.id)
+  const workspaceFiles = availableFiles.filter(
+    (file) => Boolean(activeWorkspaceId) && file.workspace_id === activeWorkspaceId
   );
-
   const potentialLinkedWikis = allWikiPages.filter(
-    (candidate) => candidate.id !== page?.id
+    (candidate) =>
+      Boolean(activeWorkspaceId) &&
+      candidate.workspace_id === activeWorkspaceId &&
+      candidate.id !== page?.id
   );
 
   const normalizedSearch = linkSearch.trim().toLowerCase();
 
-  const filteredFiles = availableFiles
+  const filteredFiles = workspaceFiles
     .filter((file) => !selectedDocIds.includes(file.id))
     .filter(
       (file) =>
@@ -234,11 +200,6 @@ export function WikiEditorModal({
       return;
     }
 
-    if (parentPageId && forbiddenParentIds.has(parentPageId)) {
-      toast.error("Cette page ne peut pas être utilisée comme parent");
-      return;
-    }
-
     setSaving(true);
 
     try {
@@ -246,12 +207,16 @@ export function WikiEditorModal({
 
       const payload = {
         title: title.trim(),
-        topic: finalTopic,
+        topic: finalTopic || "Général",
         section: section.trim() || "Général",
         content,
-        parent_page_id: parentPageId || null,
-        related_document_ids: selectedDocIds,
-        related_wiki_ids: selectedWikiIds,
+        parent_page_id: null,
+        related_document_ids: selectedDocIds.filter((id) =>
+          workspaceFiles.some((file) => file.id === id)
+        ),
+        related_wiki_ids: selectedWikiIds.filter((id) =>
+          potentialLinkedWikis.some((candidate) => candidate.id === id)
+        ),
       };
 
       if (page) {
@@ -287,21 +252,21 @@ export function WikiEditorModal({
       className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0c0f14] text-zinc-100"
     >
       {/* HEADER */}
-      <header className="relative z-20 flex h-[68px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#101319] px-4 sm:px-6">
+      <header className="relative z-20 flex min-h-[68px] shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/[0.07] bg-[#101319] px-3 py-2 sm:h-[68px] sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
         <button
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="Fermer"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
         >
           <X className="h-[18px] w-[18px]" />
         </button>
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-400/15 bg-sky-400/[0.08]">
-          <BookOpen className="h-[17px] w-[17px] text-sky-400" />
+        <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/[0.08] sm:flex">
+          <BookOpen className="h-[17px] w-[17px] text-emerald-400" />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="order-3 w-full min-w-0 border-t border-white/[0.06] pt-2 sm:order-none sm:w-auto sm:flex-1 sm:border-0 sm:pt-0">
           <div className="mb-0.5 hidden text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-600 sm:block">
             Lekki / Wiki
           </div>
@@ -312,7 +277,7 @@ export function WikiEditorModal({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Titre de votre page..."
-            className="w-full min-w-0 bg-transparent text-sm font-semibold text-zinc-100 outline-none placeholder:text-zinc-600 sm:text-base"
+            className="w-full min-w-0 bg-transparent text-base font-semibold text-zinc-100 outline-none placeholder:text-zinc-600 sm:text-base"
           />
         </div>
 
@@ -336,13 +301,29 @@ export function WikiEditorModal({
         </button>
 
         <button
+          type="button"
+          onClick={() => setMobileSourcesOpen(true)}
+          aria-label={`Ouvrir les sources et relations (${selectedDocIds.length + selectedWikiIds.length} associées)`}
+          className="order-2 inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] lg:hidden"
+        >
+          <Link2 className="h-4 w-4 text-emerald-400" />
+          <span>Sources</span>
+          {(selectedDocIds.length + selectedWikiIds.length) > 0 && (
+            <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+              {selectedDocIds.length + selectedWikiIds.length}
+            </span>
+          )}
+        </button>
+
+        <button
           type="submit"
           form="wiki-editor-form"
           disabled={saving || !title.trim()}
-          className="flex h-9 shrink-0 items-center gap-2 rounded-lg bg-sky-400 px-3.5 text-xs font-semibold text-[#081018] transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
+          aria-label={saving ? "Publication en cours" : page ? "Enregistrer la page" : "Publier la page"}
+          className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#081018] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
         >
-          <Save className="h-3.5 w-3.5" />
-          <span>
+          {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">
             {saving
               ? "Publication..."
               : page
@@ -359,7 +340,7 @@ export function WikiEditorModal({
       >
         {/* MAIN EDITOR */}
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1040px] px-5 py-6 sm:px-8 sm:py-8 xl:px-12">
+          <div className="mx-auto max-w-[1040px] px-4 py-5 sm:px-8 sm:py-8 xl:px-12">
             {/* ORGANISATION */}
             <section className="mb-8">
               <button
@@ -368,10 +349,10 @@ export function WikiEditorModal({
                   setShowOrganization((previous) => !previous)
                 }
                 aria-expanded={showOrganization}
-                className="group flex w-full items-center gap-3 text-left"
+                className="group flex w-full items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 text-left transition hover:border-emerald-500/20 hover:bg-[#12171b] sm:p-4"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025]">
-                  <FolderTree className="h-4 w-4 text-zinc-400" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07]">
+                  <FolderTree className="h-4 w-4 text-emerald-400" />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -379,56 +360,20 @@ export function WikiEditorModal({
                     Organisation
                   </p>
 
-                  <p className="mt-1 truncate text-[11px] text-zinc-500">
-                    {finalTopic || "Sans pôle"} /{" "}
-                    {section || "Sans section"}
-                    {parentPageId
-                      ? ` · Sous-page de ${
-                          allWikiPages.find(
-                            (candidate) => candidate.id === parentPageId
-                          )?.title || "Page parente"
-                        }`
-                      : " · Racine du Wiki"}
+                  <p className={`mt-1 truncate text-[11px] ${finalTopic && section ? "text-zinc-500" : "text-amber-400/80"}`}>
+                    {finalTopic || "Pôle à choisir"} · {section || "Section à choisir"}
                   </p>
                 </div>
 
                 <ChevronDown
                   className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
-                    showOrganization ? "rotate-180" : ""
+                    showOrganization ? "rotate-180 text-emerald-400" : ""
                   }`}
                 />
               </button>
 
               {showOrganization && (
-                <div className="mt-4 grid gap-4 rounded-xl border border-white/[0.07] bg-[#101319] p-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>
-                      Emplacement dans le Wiki
-                    </label>
-
-                    <select
-                      value={parentPageId}
-                      onChange={(event) =>
-                        setParentPageId(event.target.value)
-                      }
-                      className={inputClass}
-                    >
-                      <option value="">Racine du Wiki</option>
-
-                      {availableParents.map((candidate) => (
-                        <option key={candidate.id} value={candidate.id}>
-                          {candidate.title}
-                          {candidate.topic ? ` · ${candidate.topic}` : ""}
-                        </option>
-                      ))}
-                    </select>
-
-                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-600">
-                      Choisissez une page pour créer une sous-page, ou
-                      laissez la racine pour créer une entrée principale.
-                    </p>
-                  </div>
-
+                <div className="mt-3 grid gap-4 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 sm:grid-cols-2 sm:p-4">
                   <div>
                     <label className={labelClass}>Pôle thématique</label>
 
@@ -437,6 +382,7 @@ export function WikiEditorModal({
                       onChange={(event) => setTopic(event.target.value)}
                       className={inputClass}
                     >
+                      <option value="">Choisir un pôle</option>
                       {COMMON_TOPICS.map((item) => (
                         <option key={item} value={item}>
                           {item}
@@ -482,14 +428,14 @@ export function WikiEditorModal({
                 </p>
               </div>
 
-              <div className="flex items-center gap-1 rounded-lg border border-white/[0.07] bg-[#11151b] p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#11151b] p-1">
                 <button
                   type="button"
                   onClick={() => setPreviewMode(false)}
                   aria-pressed={!previewMode}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition ${
+                  className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
                     !previewMode
-                      ? "bg-white/[0.09] text-zinc-100"
+                      ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
@@ -501,9 +447,9 @@ export function WikiEditorModal({
                   type="button"
                   onClick={() => setPreviewMode(true)}
                   aria-pressed={previewMode}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition ${
+                  className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
                     previewMode
-                      ? "bg-white/[0.09] text-zinc-100"
+                      ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
@@ -515,8 +461,8 @@ export function WikiEditorModal({
 
             {/* EDITING AREA */}
             {previewMode ? (
-              <div className="min-h-[55vh] rounded-lg border border-white/[0.07] bg-[#101319] px-5 py-6 sm:px-8 sm:py-8">
-                <h1 className="mb-8 text-2xl font-semibold tracking-tight text-zinc-100">
+              <div className="rounded-2xl border border-white/[0.07] bg-[#101319] px-3 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
+                <h1 className="mb-4 text-xl font-semibold tracking-tight text-zinc-100 sm:mb-8 sm:text-2xl">
                   {title || "Sans titre"}
                 </h1>
 
@@ -538,7 +484,7 @@ export function WikiEditorModal({
                   "# Vue d'ensemble\n\nPrésentez le sujet...\n\n## 1. Principes fondamentaux\n\nExpliquez les concepts essentiels.\n\n## 2. Exemple pratique\n\nAjoutez une configuration, une commande ou un cas concret."
                 }
                 spellCheck
-                className="min-h-[55vh] w-full resize-y rounded-lg border border-white/[0.07] bg-[#101319] p-5 font-mono text-[13px] leading-7 text-zinc-300 outline-none transition-colors placeholder:text-zinc-700 focus:border-sky-500/40 sm:p-7"
+                className="min-h-[45dvh] w-full resize-y rounded-2xl border border-white/[0.07] bg-[#101319] p-4 font-mono text-[13px] leading-7 text-zinc-300 outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10 sm:min-h-[55vh] sm:rounded-xl sm:p-7"
               />
             )}
 
@@ -578,12 +524,24 @@ export function WikiEditorModal({
         </main>
 
         {/* SOURCES SIDEBAR */}
-        {sidebarOpen && (
-          <aside className="flex max-h-[40vh] w-full shrink-0 flex-col border-t border-white/[0.07] bg-[#101319] lg:max-h-none lg:w-[310px] lg:border-l lg:border-t-0 xl:w-[350px]">
+        {(sidebarOpen || mobileSourcesOpen) && (
+          <>
+            {mobileSourcesOpen && (
+              <button
+                type="button"
+                aria-label="Fermer le panneau des sources"
+                onClick={() => setMobileSourcesOpen(false)}
+                className="fixed inset-0 z-30 bg-black/65 backdrop-blur-sm lg:hidden"
+              />
+            )}
+            <aside
+              className={`${mobileSourcesOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] animate-in slide-in-from-bottom duration-200 rounded-t-3xl border-x border-t shadow-2xl" : "hidden"} w-full shrink-0 flex-col border-white/[0.07] bg-[#101319] lg:static lg:z-auto lg:max-h-none lg:w-[310px] lg:animate-none lg:rounded-none lg:border-x-0 lg:border-y-0 lg:border-l lg:shadow-none xl:w-[350px] ${sidebarOpen ? "lg:flex" : "lg:hidden"}`}
+            >
             {/* SIDEBAR HEADER */}
-            <div className="shrink-0 px-5 pb-4 pt-5">
+            <div className="shrink-0 px-5 pb-4 pt-2 lg:pt-5">
+              <div className="mx-auto mb-3 mt-1 h-1 w-10 rounded-full bg-white/15 lg:hidden" />
               <div className="flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-sky-400" />
+                <Link2 className="h-4 w-4 text-emerald-400" />
 
                 <h2 className="text-xs font-semibold text-zinc-200">
                   Sources et relations
@@ -592,6 +550,14 @@ export function WikiEditorModal({
                 <span className="ml-auto rounded-md bg-white/[0.05] px-2 py-1 text-[10px] text-zinc-400">
                   {selectedDocIds.length + selectedWikiIds.length}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setMobileSourcesOpen(false)}
+                  aria-label="Fermer les sources"
+                  className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-white lg:hidden"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
               <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
@@ -617,7 +583,7 @@ export function WikiEditorModal({
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex max-h-[18dvh] flex-col gap-1.5 overflow-y-auto lg:max-h-none">
                   {selectedDocIds.map((id) => {
                     const file = availableFiles.find(
                       (item) => item.id === id
@@ -628,9 +594,9 @@ export function WikiEditorModal({
                     return (
                       <div
                         key={`doc-${id}`}
-                        className="flex min-w-0 items-center gap-2 rounded-lg border border-sky-400/10 bg-sky-400/[0.04] px-2.5 py-2"
+                        className="flex min-w-0 items-center gap-2 rounded-lg border border-emerald-400/10 bg-emerald-400/[0.04] px-2.5 py-2"
                       >
-                        <FileText className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
 
                         <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">
                           {file.name}
@@ -723,7 +689,7 @@ export function WikiEditorModal({
                       ? "Rechercher un document..."
                       : "Rechercher une page..."
                   }
-                  className="w-full rounded-lg border border-white/[0.07] bg-[#0c0f14] py-2.5 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-sky-500/40"
+                  className="w-full rounded-lg border border-white/[0.07] bg-[#0c0f14] py-3 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
                 />
               </div>
             </div>
@@ -741,15 +707,15 @@ export function WikiEditorModal({
                           onClick={() => toggleDoc(file.id)}
                           className="group flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-white/[0.045]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-400/[0.07]">
-                            <FileText className="h-4 w-4 text-sky-400" />
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-400/[0.07]">
+                            <FileText className="h-4 w-4 text-emerald-400" />
                           </div>
 
                           <span className="min-w-0 flex-1 truncate text-xs text-zinc-300">
                             {file.name}
                           </span>
 
-                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-sky-400" />
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-emerald-400" />
                         </button>
                       ))}
                     </div>
@@ -760,7 +726,7 @@ export function WikiEditorModal({
                       <p className="text-xs text-zinc-500">
                         {normalizedSearch
                           ? "Aucun document trouvé"
-                          : availableFiles.length === 0
+                            : workspaceFiles.length === 0
                             ? "Aucun document disponible"
                             : "Tous les documents correspondants sont associés"}
                       </p>
@@ -794,7 +760,7 @@ export function WikiEditorModal({
                             </p>
                           </div>
 
-                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-sky-400" />
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-emerald-400" />
                         </button>
                       ))}
                     </div>
@@ -805,7 +771,7 @@ export function WikiEditorModal({
                       <p className="text-xs text-zinc-500">
                         {normalizedSearch
                           ? "Aucune page trouvée"
-                          : allWikiPages.length === 0
+                            : potentialLinkedWikis.length === 0
                             ? "Aucune autre page Wiki"
                             : "Aucune page à associer"}
                       </p>
@@ -822,7 +788,8 @@ export function WikiEditorModal({
                 connaissances et leurs sources.
               </p>
             </div>
-          </aside>
+            </aside>
+          </>
         )}
       </form>
     </div>

@@ -19,7 +19,6 @@ import { WikiBreadcrumbs } from "./WikiBreadcrumbs";
 interface WikiViewProps {
   pages: WikiPage[];
   availableFiles: DriveFile[];
-  activeWorkspaceName?: string;
   onSelectPage: (page: WikiPage) => void;
   onNewPageClick: (defaultTopic?: string, defaultSection?: string, kind?: "page" | "organization") => void;
   filterTopic?: string | null;
@@ -29,7 +28,6 @@ interface WikiViewProps {
 
 export function WikiView({
   pages,
-  activeWorkspaceName,
   onSelectPage,
   onNewPageClick,
   filterTopic,
@@ -53,17 +51,8 @@ export function WikiView({
 
   const tree = useMemo(() => {
     const map = new Map<string, Map<string, WikiPage[]>>();
-    const pagesById = new Map(pages.map((page) => [page.id, page]));
     pages.forEach((p) => {
-      let rootPage = p;
-      const visited = new Set([p.id]);
-      while (rootPage.parent_page_id && !visited.has(rootPage.parent_page_id)) {
-        visited.add(rootPage.parent_page_id);
-        const parent = pagesById.get(rootPage.parent_page_id);
-        if (!parent) break;
-        rootPage = parent;
-      }
-      const topicName = rootPage.topic || rootPage.title || "Général";
+      const topicName = p.topic || "Général";
       if (filterTopic && topicName !== filterTopic) return;
       const sectionName = p.section || "Autres";
       if (!map.has(topicName)) map.set(topicName, new Map<string, WikiPage[]>());
@@ -76,17 +65,8 @@ export function WikiView({
 
   const topics = useMemo(() => {
     const map = new Map<string, number>();
-    const pagesById = new Map(pages.map((page) => [page.id, page]));
     pages.forEach((p) => {
-      let rootPage = p;
-      const visited = new Set([p.id]);
-      while (rootPage.parent_page_id && !visited.has(rootPage.parent_page_id)) {
-        visited.add(rootPage.parent_page_id);
-        const parent = pagesById.get(rootPage.parent_page_id);
-        if (!parent) break;
-        rootPage = parent;
-      }
-      const t = rootPage.topic || rootPage.title || "Général";
+      const t = p.topic || "Général";
       map.set(t, (map.get(t) || 0) + 1);
     });
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
@@ -130,6 +110,19 @@ export function WikiView({
         <Clock className="h-3 w-3" />
       </span>
     );
+  };
+
+  const formatUpdatedAt = (value?: string) => {
+    if (!value) return "Date inconnue";
+    const date = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : `${value}Z`);
+    if (Number.isNaN(date.getTime())) return "Date inconnue";
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
   };
 
   const isEmptyWiki = pages.length === 0;
@@ -277,7 +270,7 @@ export function WikiView({
                 <div className="flex items-start gap-3">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                   <p className="text-xs leading-relaxed text-zinc-400">
-                    Les fichiers conservent les ressources de l’équipe. Le wiki sert à en tirer des connaissances durables : créez une page, choisissez son emplacement, puis reliez-la aux documents utiles.
+                    Les fichiers conservent les ressources de l’équipe. Le wiki sert à en tirer des connaissances durables : classez chaque page par pôle et section, puis reliez-la aux autres pages et documents utiles.
                   </p>
                 </div>
               </div>
@@ -356,11 +349,6 @@ export function WikiView({
           </>
         ) : (
           <>
-            <section className="mb-7 rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#151b21] via-[#12151B] to-emerald-950/20 px-6 py-6 sm:px-8">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-400">Wiki d’équipe{activeWorkspaceName ? ` · ${activeWorkspaceName}` : ""}</p>
-              <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">Les connaissances de votre équipe</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">Organisez ce que vous apprenez, gardez les explications utiles et reliez-les aux fichiers sources. Les fichiers restent des ressources ; le wiki devient le point d’entrée pour comprendre.</p>
-            </section>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {topics.map((t) => (
                 <button
@@ -384,43 +372,60 @@ export function WikiView({
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-xl border border-zinc-800/60 bg-[#12151B] overflow-hidden">
-                <div className="px-5 py-3 border-b border-zinc-800/60 text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-                  Dernières modifications
+            <div className="max-w-4xl">
+              <section className="overflow-hidden rounded-2xl border border-zinc-800/70 bg-[#12151B] shadow-lg shadow-black/10">
+                <div className="flex items-center justify-between gap-3 border-b border-zinc-800/70 px-4 py-4 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-semibold text-zinc-100">Dernières modifications</h2>
+                      <p className="mt-0.5 text-[11px] text-zinc-500">Les pages récemment mises à jour</p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900/70 px-2 py-1 text-[10px] font-medium text-zinc-400">
+                    {recentPages.length} {recentPages.length === 1 ? "page" : "pages"}
+                  </span>
                 </div>
                 <div className="divide-y divide-zinc-800/60">
-                  {recentPages.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => onSelectPage(p)}
-                      className="w-full text-left px-5 py-3 hover:bg-zinc-800/40 flex items-center justify-between gap-3 group transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-zinc-200 group-hover:text-emerald-300 truncate">
-                          {p.title}
+                  {recentPages.map((p) => {
+                    const editorName = p.last_editor_name || p.author_name || p.creator_name || "Membre";
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => onSelectPage(p)}
+                        className="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-emerald-500/[0.035] sm:gap-4 sm:px-5"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07] text-sm font-semibold text-emerald-300 transition-colors group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10">
+                          {(editorName.trim().charAt(0) || "M").toUpperCase()}
                         </div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">
-                          {p.topic || "Général"} › {p.section || "Autres"} · {new Date(p.updated_at).toLocaleDateString("fr-FR")}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate text-sm font-medium text-zinc-200 transition-colors group-hover:text-emerald-300">{p.title}</span>
+                            {renderStatusBadge(p)}
+                          </div>
+                          <p className="mt-1 truncate text-[11px] text-zinc-500">
+                            {p.topic || "Général"}<span className="mx-1.5 text-zinc-700">·</span>{p.section || "Autres"}
+                          </p>
+                          <p className="mt-1 text-[10px] text-zinc-500">
+                            Modifiée par <span className="text-zinc-400">{editorName}</span>
+                          </p>
                         </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-zinc-600 group-hover:text-zinc-300" />
-                    </button>
-                  ))}
+                        <div className="hidden shrink-0 text-right sm:block">
+                          <p className="text-[11px] font-medium text-zinc-400">{formatUpdatedAt(p.updated_at)}</p>
+                          {p.current_version && <p className="mt-1 font-mono text-[10px] text-zinc-600">v{p.current_version}</p>}
+                        </div>
+                        <div className="shrink-0 text-right sm:hidden">
+                          <p className="text-[10px] text-zinc-400">{formatUpdatedAt(p.updated_at)}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-400" />
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-
-              <div className="rounded-xl border border-zinc-800/60 bg-[#12151B] overflow-hidden">
-                <div className="px-5 py-3 border-b border-zinc-800/60 text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-                  Bien démarrer
-                </div>
-                <div className="p-5">
-                  <p className="text-xs leading-relaxed text-zinc-400">Créez des pages librement, classez-les par thème et ajoutez des liens vers les pages ou les documents qui les complètent.</p>
-                  <button onClick={() => onNewPageClick()} className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300">
-                    <Plus className="h-3.5 w-3.5" /> Créer une page
-                  </button>
-                </div>
-              </div>
+              </section>
             </div>
           </>
         )}
