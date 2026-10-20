@@ -12,9 +12,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      injectRegister: false,
+      registerType: "prompt",
       workbox: {
-        skipWaiting: true,
+        skipWaiting: false,
         clientsClaim: true,
       },
       includeAssets: ["logo.svg"],
