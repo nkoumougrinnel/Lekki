@@ -285,10 +285,10 @@ export function LekkiAIPanel({
   const safeMessages = Array.isArray(messages) ? messages : [];
 
   const suggestedQuestions = [
-    "Explique-moi OSPF à partir de mes documents",
-    "Quelle est la différence entre TCP et UDP ?",
-    "Quelle est la métrique OSPF par défaut sur un lien Gigabit ?",
-    "Trouve-moi les TD de réseaux disponibles",
+    "Résume les documents disponibles dans cet espace",
+    "Quels sont les points clés de mes documents récents ?",
+    "Retrouve les documents qui parlent de…",
+    "Compare les informations de ces documents",
   ];
 
   /* Charger l'historique à l'ouverture */
