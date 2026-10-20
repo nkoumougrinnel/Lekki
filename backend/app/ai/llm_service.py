@@ -146,6 +146,7 @@ LLM_CHAIN: List[Callable[[str, str], Awaitable[Optional[str]]]] = [
     call_groq,
     call_gemini,
     call_cerebras,
+    call_ollama,
 ]
 
 async def generate_rag_answer_with_provider(
@@ -153,57 +154,96 @@ async def generate_rag_answer_with_provider(
     context_chunks: List[Dict[str, str]],
     chat_history: Optional[List[Dict[str, str]]] = None,
 ) -> tuple[str, str]:
-    # 1. Build the System Prompt
+    # 0. Aucun document : inutile d'appeler un LLM, il inventerait une réponse
+    if not context_chunks:
+        return (
+            "Je ne trouve aucun document de votre espace qui permette de répondre à cette question. "
+            "Vérifiez que le cours ou le TD concerné a bien été importé.",
+            "Mode dégradé (aucun document disponible)",
+        )
+
+    # 1. Contexte documentaire
     context_text = "\n\n".join(
-        f"--- Source [{chunk.get('type', 'doc').upper()}]: {chunk.get('title')} ---\n{chunk.get('content', '')[:700]}"
+        f"--- Document : {chunk.get('title', 'Sans titre')} "
+        f"(type : {chunk.get('type', 'doc')}) ---\n"
+        f"{chunk.get('content', '')[:700]}"
         for chunk in context_chunks
     )
 
-    system_prompt = f"""Tu es Lekki AI, l'assistant universitaire d'ingénierie (spécialisé en Réseaux, Télécoms, Cybersécurité et Informatique).
-Ton rôle est d'expliquer avec clarté, pédagogie et rigueur en citant explicitement les sources documentaires de l'espace de cours.
+    system_prompt = f"""Tu es Lekki AI, l'assistant pédagogique d'un espace universitaire d'ingénierie \
+(réseaux, télécommunications, cybersécurité, informatique). Tu aides un étudiant à comprendre \
+ses cours, ses TD et ses TP.
 
-Règles de réponse :
-1. Commence par une réponse directe en 1 ou 2 phrases.
-2. Développe ensuite avec des titres courts et des puces concrètes.
-3. Explique les notions présentes dans les documents, sans inventer ce qui n'est pas fourni.
-4. Cite les documents par leur titre entre parenthèses, sans recopier les en-têtes techniques ni les octets PDF.
-5. Signale clairement toute divergence entre supports de cours et TD.
-6. Termine par une phrase de révision ou un exemple seulement s'il est pertinent.
+PRINCIPE FONDAMENTAL
+Tu réponds à partir des documents fournis ci-dessous. Tu ne complètes pas une notion absente \
+des documents avec tes connaissances générales, sauf si l'étudiant le demande explicitement, \
+et tu le signales alors clairement.
+
+RÈGLES DE RÉPONSE
+1. Commence par une réponse directe en une ou deux phrases.
+2. Développe ensuite avec quelques intertitres courts et des puces concrètes. Pour une question \
+simple, reste en prose courte.
+3. Cite les documents par leur titre entre parenthèses, par exemple (Cours OSPF – Semaine 3). \
+Une citation par idée suffit.
+4. Ne recopie pas les en-têtes techniques, les métadonnées ni les fragments illisibles.
+5. Si les documents répondent partiellement, dis-le en une phrase, donne ce qu'ils permettent \
+d'affirmer, puis précise ce qui manque.
+6. Si aucun document ne traite la question, dis-le sans inventer de réponse.
+7. Si deux documents se contredisent ou utilisent des conventions différentes (cours et TD, par \
+exemple), signale-le explicitement, cite les deux sources et indique laquelle semble prévaloir \
+dans le contexte.
+8. Pour un exercice ou un calcul, explique la démarche avant le résultat.
+9. Termine, si c'est utile, par une phrase de révision ou une question de vérification. \
+Pas de formule de politesse finale.
+10. Réponds toujours en français.
 
 DOCUMENTS SOURCES DE L'ESPACE :
 {context_text}
 """
 
-    user_prompt = f"QUESTION DE L'ÉTUDIANT :\n{question}"
+    # 2. Historique récent (les questions de suivi en dépendent)
+    history_text = ""
+    if chat_history:
+        lines = []
+        for msg in chat_history[-6:]:
+            role = "Étudiant" if msg.get("role") == "user" else "Lekki AI"
+            lines.append(f"{role} : {msg.get('content', '')[:500]}")
+        history_text = "\n".join(lines)
 
-    # 2. Iterate through the failover chain
+    user_prompt = ""
+    if history_text:
+        user_prompt += f"HISTORIQUE RÉCENT (pour comprendre les questions de suivi) :\n{history_text}\n\n"
+    user_prompt += (
+        "QUESTION DE L'ÉTUDIANT (à laquelle tu réponds uniquement) :\n"
+        f"{question}"
+    )
+
+    # 3. Chaîne de basculement entre fournisseurs
     provider_names = {
         call_groq: "Groq",
         call_gemini: "Gemini",
         call_cerebras: "Cerebras",
+        call_ollama: "Ollama (Local)",
     }
     for provider in LLM_CHAIN:
         answer = await provider(system_prompt, user_prompt)
         if answer:
             return answer, provider_names.get(provider, provider.__name__)
 
-    # 3. Absolute Fallback: Return raw content if no LLM is available
-    if context_chunks:
-        source = context_chunks[0]
-        content = source.get("content", "").strip()
-        return f"""## Réponse (Mode Dégradé)
-
-Voici l'essentiel à retenir à partir de **{source.get('title')}** :
-
-### Points clés
-- {content[:700]}
-
-### Source
-Cette réponse s'appuie sur « {source.get('title')} ».
-""", "Mode dégradé (aucun fournisseur LLM disponible)"
-
+    # 4. Repli sans LLM : extrait du premier document, présenté comme tel
+    source = context_chunks[0]
+    title = source.get("title", "Sans titre")
+    excerpt = source.get("content", "").strip()[:700]
     return (
-        "Aucun document correspondant n'a été trouvé dans votre espace pour répondre avec certitude à cette question.",
+        f"""## Réponse en mode dégradé
+
+Aucun modèle n'est disponible pour le moment. Voici un extrait du document **{title}** \
+qui peut vous aider :
+
+> {excerpt}
+
+Reformulez votre question plus tard pour obtenir une réponse complète.
+""",
         "Mode dégradé (aucun fournisseur LLM disponible)",
     )
 

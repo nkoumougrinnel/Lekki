@@ -18,10 +18,12 @@ services:
       - CEREBRAS_API_KEY=${CEREBRAS_API_KEY:-}
       - CEREBRAS_BASE_URL=${CEREBRAS_BASE_URL:-https://api.cerebras.ai/v1}
       - CEREBRAS_MODEL=${CEREBRAS_MODEL:-llama-3.3-70b}
-      - OLLAMA_URL=${OLLAMA_URL:-http://192.168.64.82:11434}
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5-coder:7b}
       - OLLAMA_TIMEOUT_SECONDS=${OLLAMA_TIMEOUT_SECONDS:-180}
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - lekki_db_data:/app/data
       - lekki_storage:/app/storage

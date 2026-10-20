@@ -120,7 +120,32 @@ docker compose up -d
 
 ---
 
-## 7. Sauvegarde automatique du serveur distant (cron)
+## 7. Utiliser Ollama local (hors-ligne)
+
+Ollama peut servir de fournisseur LLM de secours quand il n'y a pas de connexion internet.
+
+### Lancer Ollama accessible depuis le conteneur
+
+Ollama doit écouter sur toutes les interfaces (pas seulement `localhost`) pour que le conteneur Docker puisse l'atteindre :
+
+```bash
+# Sur ta machine hôte (pas dans Docker)
+OLLAMA_HOST=0.0.0.0 ollama serve
+```
+
+Le conteneur backend est configuré pour appeler `http://host.docker.internal:11434` (résolu automatiquement vers l'hôte via `extra_hosts`).
+
+### Vérifier l'accès depuis le conteneur
+
+```bash
+docker compose exec backend curl http://host.docker.internal:11434/api/tags
+```
+
+Si la commande retourne la liste des modèles, Ollama est joignable. Le backend basculera automatiquement sur Ollama quand les providers cloud (Gemini, Groq, Cerebras) sont indisponibles.
+
+---
+
+## 9. Sauvegarde automatique du serveur distant (cron)
 
 Sur le serveur distant (dans le conteneur backend ou sur l'hôte), ajouter une entrée cron :
 
@@ -146,7 +171,7 @@ Les exécutions automatiques sont journalisées dans `logs/cron-backup.log` sur 
 
 ---
 
-## 7. Logs et traçabilité
+## 10. Logs et traçabilité
 
 | Opération | Fichier de log | Lieu |
 |-----------|---------------|------|
@@ -159,7 +184,7 @@ Chaque entrée contient : timestamp, utilisateur, hôte, archive concernée et s
 
 ---
 
-## 8. Récapitulatif des commandes
+## 11. Récapitulatif des commandes
 
 ```bash
 # Backend local
@@ -186,7 +211,7 @@ cat logs/restore.log
 
 ---
 
-## 9. Fichiers à la racine
+## 12. Fichiers à la racine
 
 | Fichier / Dossier | Rôle |
 |-------------------|------|

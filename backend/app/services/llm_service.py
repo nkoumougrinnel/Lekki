@@ -1,3 +1,3 @@
-from app.ai.llm_service import generate_rag_answer, get_genai_client
+from app.ai.llm_service import generate_rag_answer
 
-__all__ = ["generate_rag_answer", "get_genai_client"]
+__all__ = ["generate_rag_answer"]
