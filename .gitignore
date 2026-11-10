@@ -26,3 +26,7 @@ backups/
 
 # logs
 logs/
+
+# Clé secrète générée automatiquement et fichiers déposés en local
+.lekki_secret_key
+backend/storage/

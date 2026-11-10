@@ -138,13 +138,13 @@ export function DocumentViewerModal({
         </header>
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
-          {/* Changement de workspace uniquement si le workspace est connu */}
+          {/* Changement d’espace uniquement si l’espace est connu */}
           {isDifferentWorkspace && fileWorkspace && (
             <div className="flex flex-col gap-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-start gap-2.5 text-sm text-zinc-300">
                 <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                 <span>
-                  Ce document appartient au workspace{" "}
+                  Ce document appartient à l’espace{" "}
                   <strong className="font-medium text-amber-200">{fileWorkspace.name}</strong>.
                 </span>
               </div>
@@ -153,7 +153,7 @@ export function DocumentViewerModal({
                 onClick={() => file.workspace_id && onSwitchWorkspace(file.workspace_id)}
                 className="shrink-0 self-start text-xs font-medium text-amber-200 transition hover:text-amber-100 sm:self-auto"
               >
-                Basculer vers ce workspace <span aria-hidden="true">→</span>
+                Basculer vers cet espace <span aria-hidden="true">→</span>
               </button>
             </div>
           )}
@@ -299,7 +299,7 @@ export function DocumentViewerModal({
             </section>
           )}
 
-          {/* Wiki : entièrement masqué si le document n'appartient pas à un workspace connu */}
+          {/* Wiki : entièrement masqué si le document n'appartient pas à un espace connu */}
           {hasKnownWorkspace && (
             <section aria-labelledby="associated-wiki-heading">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -318,7 +318,7 @@ export function DocumentViewerModal({
                   type="button"
                   onClick={handleCreateWiki}
                   disabled={!canUseWiki}
-                  title={isDifferentWorkspace ? "Basculez d'abord vers le workspace du document" : undefined}
+                  title={isDifferentWorkspace ? "Basculez d'abord vers l’espace du document" : undefined}
                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <BookPlus className="h-3.5 w-3.5" />

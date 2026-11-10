@@ -13,6 +13,7 @@ from app.routers import (
     search_router,
     rag_router,
     conversations_router,
+    revision_router,
 )
 
 
@@ -55,3 +56,4 @@ app.include_router(wiki_router, prefix=v1_prefix)
 app.include_router(search_router, prefix=v1_prefix)
 app.include_router(rag_router, prefix=v1_prefix)
 app.include_router(conversations_router, prefix=v1_prefix)
+app.include_router(revision_router, prefix=v1_prefix)

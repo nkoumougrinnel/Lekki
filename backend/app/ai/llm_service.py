@@ -5,7 +5,7 @@ from app.config import settings
 
 # --- PROVIDER IMPLEMENTATIONS ---
 
-async def call_gemini(system_prompt: str, user_prompt: str) -> Optional[str]:
+async def call_gemini(system_prompt: str, user_prompt: str, max_tokens: int = 700) -> Optional[str]:
     """Calls Google Gemini API."""
     api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -27,7 +27,7 @@ async def call_gemini(system_prompt: str, user_prompt: str) -> Optional[str]:
         print(f"[LLM] Gemini Provider failed: {exc}")
     return None
 
-async def call_ollama(system_prompt: str, user_prompt: str) -> Optional[str]:
+async def call_ollama(system_prompt: str, user_prompt: str, max_tokens: int = 512) -> Optional[str]:
     """Calls Local Ollama API."""
     url = f"{settings.OLLAMA_URL}/api/generate"
     payload = {
@@ -38,7 +38,7 @@ async def call_ollama(system_prompt: str, user_prompt: str) -> Optional[str]:
         "options": {
             "temperature": 0.3,
             "num_ctx": 4096,
-            "num_predict": 512,
+            "num_predict": max_tokens,
         }
     }
 
@@ -56,7 +56,7 @@ async def call_ollama(system_prompt: str, user_prompt: str) -> Optional[str]:
         print(f"[LLM] Ollama Provider failed: {exc}")
     return None
 
-async def call_groq(system_prompt: str, user_prompt: str) -> Optional[str]:
+async def call_groq(system_prompt: str, user_prompt: str, max_tokens: int = 700) -> Optional[str]:
     """Calls Groq's OpenAI-compatible chat completions API."""
     api_key = settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -71,7 +71,7 @@ async def call_groq(system_prompt: str, user_prompt: str) -> Optional[str]:
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.3,
-        "max_tokens": 700,
+        "max_tokens": max_tokens,
     }
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -98,7 +98,7 @@ async def call_groq(system_prompt: str, user_prompt: str) -> Optional[str]:
     return None
 
 
-async def call_cerebras(system_prompt: str, user_prompt: str) -> Optional[str]:
+async def call_cerebras(system_prompt: str, user_prompt: str, max_tokens: int = 700) -> Optional[str]:
     """Calls Cerebras' OpenAI-compatible chat completions API."""
     api_key = settings.CEREBRAS_API_KEY or os.environ.get("CEREBRAS_API_KEY")
     if not api_key:
@@ -113,7 +113,7 @@ async def call_cerebras(system_prompt: str, user_prompt: str) -> Optional[str]:
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.3,
-        "max_tokens": 700,
+        "max_tokens": max_tokens,
     }
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -140,6 +140,22 @@ async def call_cerebras(system_prompt: str, user_prompt: str) -> Optional[str]:
     return None
 
 # --- FALLOVER CHAIN ---
+
+PROVIDER_NAMES = {
+    "call_groq": "Groq",
+    "call_gemini": "Gemini",
+    "call_cerebras": "Cerebras",
+    "call_ollama": "Ollama (Local)",
+}
+
+
+async def generate_text(system_prompt: str, user_prompt: str, max_tokens: int = 700) -> tuple[Optional[str], Optional[str]]:
+    """Essaie chaque fournisseur dans l'ordre. Renvoie (texte, fournisseur) ou (None, None)."""
+    for provider in LLM_CHAIN:
+        answer = await provider(system_prompt, user_prompt, max_tokens=max_tokens)
+        if answer:
+            return answer, PROVIDER_NAMES.get(provider.__name__, provider.__name__)
+    return None, None
 
 # List of providers in order of priority (now taking two arguments)
 LLM_CHAIN: List[Callable[[str, str], Awaitable[Optional[str]]]] = [

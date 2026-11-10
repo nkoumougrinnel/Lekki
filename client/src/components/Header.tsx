@@ -10,6 +10,8 @@ import {
   GraduationCap,
   Cpu,
   Folder,
+  Users,
+  BookMarked,
   LogOut,
   Settings,
   UserCircle,
@@ -56,6 +58,10 @@ export function Header({
         return <Building2 className="h-4 w-4 text-sky-400" />;
       case "Cpu":
         return <Cpu className="h-4 w-4 text-amber-400" />;
+      case "Users":
+        return <Users className="h-4 w-4 text-violet-400" />;
+      case "BookMarked":
+        return <BookMarked className="h-4 w-4 text-sky-400" />;
       default:
         return <Folder className="h-4 w-4 text-emerald-400" />;
     }
@@ -80,7 +86,7 @@ export function Header({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher dans tout le workspace..."
+                placeholder="Rechercher un cours, un sujet, une notion…"
                 className="w-full pl-10 pr-8 py-2 bg-transparent border-none text-base text-zinc-100 placeholder-zinc-500 focus:outline-none min-w-0"
               />
               {searchQuery && (
@@ -148,11 +154,11 @@ export function Header({
               id="header-workspace-selector"
               onClick={() => setShowWorkspaceMenu((prev) => !prev)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-zinc-800/60 text-zinc-300 hover:text-zinc-100 transition-colors"
-              title="Sélectionner le Workspace actif"
+              title="Choisir l’espace actif"
             >
               {getWorkspaceIcon(activeWorkspace?.icon)}
               <span className="truncate max-w-[200px]">
-                {activeWorkspace ? activeWorkspace.name : "Sélectionner un Workspace"}
+                {activeWorkspace ? activeWorkspace.name : "Choisir un espace"}
               </span>
               <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
             </button>
@@ -209,7 +215,7 @@ export function Header({
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
                 onFocus={() => setIsSearchOpen(true)}
-                placeholder="Rechercher dans tout le workspace..."
+                placeholder="Rechercher un cours, un sujet, une notion…"
                 className="w-full bg-transparent border-none text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none"
               />
               <div className="flex items-center gap-2">

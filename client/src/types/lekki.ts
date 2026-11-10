@@ -123,6 +123,7 @@ export interface Workspace {
   owner_id: string;
   icon?: string;
   role?: string;
+  members_count?: number;
   created_at: string;
 }
 

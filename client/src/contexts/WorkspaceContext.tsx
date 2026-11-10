@@ -47,7 +47,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setWorkspaces([]);
       setActiveWorkspaceId(null);
-      setError("Impossible de charger les workspaces.");
+      setError("Impossible de charger les espaces.");
     } finally {
       setLoading(false);
     }

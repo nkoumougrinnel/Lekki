@@ -75,7 +75,7 @@ export function WikiPageReader({
       onStatusChanged(updated);
       setShowStatusMenu(false);
     } catch {
-      toast.error("Impossible de modifier ce statut. La vérification est réservée aux référents et responsables du workspace.");
+      toast.error("Impossible de modifier ce statut. La vérification est réservée aux référents et responsables de l’espace.");
     } finally {
       setUpdatingStatus(false);
     }

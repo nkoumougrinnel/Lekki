@@ -177,7 +177,7 @@ export function UnifiedSearchDialog({
             <div className="py-8 text-center text-xs text-zinc-400 space-y-1">
               <p>Aucun document ou page Wiki trouvé pour « {query} ».</p>
               <p className="text-[11px] text-zinc-500">
-                Vérifiez que le contenu appartient à votre espace personnel ou à votre Workspace actif.
+                Vérifiez que le contenu appartient à votre espace personnel ou à votre espace actif.
               </p>
             </div>
           )}

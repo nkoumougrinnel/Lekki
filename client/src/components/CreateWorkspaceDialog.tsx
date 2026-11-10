@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { toast } from "sonner";
 import {
-  X, Building2, Plus, UserRoundPlus, GraduationCap, Cpu, Folder,
+  X, Building2, Plus, UserRoundPlus, GraduationCap, Users, BookMarked, Folder,
   ArrowRight, LoaderCircle, KeyRound,
 } from "lucide-react";
 
@@ -12,10 +12,22 @@ interface CreateWorkspaceDialogProps {
 }
 
 const workspaceTypes = [
-  { value: "GraduationCap", label: "Académique", description: "Cours, TD et ressources de formation", icon: GraduationCap },
-  { value: "Building2", label: "Organisation", description: "Département, association ou administration", icon: Building2 },
-  { value: "Cpu", label: "Équipe technique", description: "Produit, développement ou recherche", icon: Cpu },
-  { value: "Folder", label: "Projet", description: "Un espace de travail polyvalent", icon: Folder },
+  {
+    value: "GraduationCap", label: "Promo", description: "Cours, TD et anciens sujets d’une classe",
+    icon: GraduationCap, namePlaceholder: "Ex. ITT2 · SUP’PTIC 2026-2027",
+  },
+  {
+    value: "Users", label: "Club", description: "Projets, passations et archives du bureau",
+    icon: Users, namePlaceholder: "Ex. Club Informatique SUP’PTIC",
+  },
+  {
+    value: "BookMarked", label: "Groupe d’étude", description: "Révisions à quelques-uns, avant un examen",
+    icon: BookMarked, namePlaceholder: "Ex. Révisions Traitement du signal",
+  },
+  {
+    value: "Folder", label: "Autre", description: "Projet, équipe ou association",
+    icon: Folder, namePlaceholder: "Ex. Projet de fin d’année",
+  },
 ] as const;
 
 export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDialogProps) {
@@ -24,7 +36,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [code, setCode] = useState("");
-  const [icon, setIcon] = useState("Folder");
+  const [icon, setIcon] = useState<string>("GraduationCap");
   const [creating, setCreating] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,7 +61,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     setName("");
     setDescription("");
     setCode("");
-    setIcon("Folder");
+    setIcon("GraduationCap");
   }, [open]);
 
   if (!open) return null;
@@ -123,8 +135,8 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                 {mode === "create"
-                  ? "Rassemblez vos documents et votre équipe au même endroit."
-                  : "Utilisez le code partagé par un membre de l’espace."}
+                  ? "Une promo, un club ou un groupe : tout le savoir au même endroit."
+                  : "Entrez le code partagé par un camarade de l’espace."}
               </p>
             </div>
           </div>
@@ -182,7 +194,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder="Ex. SUP’PTIC · Télécoms & Réseaux"
+                    placeholder={workspaceTypes.find((type) => type.value === icon)?.namePlaceholder ?? "Nom de l’espace"}
                     maxLength={80}
                     autoComplete="off"
                     required
@@ -271,7 +283,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
 
           <footer className="flex items-center justify-between gap-3 border-t border-white/[0.06] bg-black/15 px-5 py-4 sm:px-6">
             <p className="hidden text-[10px] text-zinc-600 sm:block">
-              {mode === "create" ? "Vous pourrez inviter des membres ensuite." : "Le code donne accès à un espace existant."}
+              {mode === "create" ? "Vous pourrez inviter vos camarades avec un code." : "Le code donne accès à un espace existant."}
             </p>
             <div className="ml-auto flex items-center gap-2">
               <button

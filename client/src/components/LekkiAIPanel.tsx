@@ -173,7 +173,7 @@ function SourceCard({
 
   const workspaceName = isExternal
     ? workspaces.find((workspace) => workspace.id === source.workspace_id)
-        ?.name || "Workspace externe"
+        ?.name || "Autre espace"
     : null;
 
   return (

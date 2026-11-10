@@ -49,11 +49,17 @@ Pose une question à Lekki AI. L'assistant fouille tes documents et te répond e
    docker compose up -d backend
    ```
 
-3. **Lancer le frontend**
+3. **Lancer le frontend** (depuis la racine du dépôt : le `package.json` y est)
    ```bash
-   cd client
    npm install
    npm run dev
+   ```
+
+5. **Lancer les tests du backend**
+   ```bash
+   cd backend
+   pip install -r requirements.txt pytest
+   python -m pytest -q
    ```
 
 4. **Ouvrir Lekki** : [http://localhost:3000](http://localhost:3000)

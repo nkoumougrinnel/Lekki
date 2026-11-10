@@ -16,6 +16,7 @@ import { WorkspaceAdminDialog } from "./components/WorkspaceAdminDialog";
 import { WikiEditorModal } from "./components/WikiEditorModal";
 import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
+import { RevisionPanel, RevisionMode } from "./components/RevisionPanel";
 import { LoginView } from "./components/LoginView";
 import { RegisterView } from "./components/RegisterView";
 import { UpdateNotifier } from "./components/UpdateNotifier";
@@ -71,6 +72,15 @@ function LekkiMain() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiInitialQuestion, setAIInitialQuestion] = useState<string | undefined>(undefined);
+  const [revision, setRevision] = useState<{ open: boolean; mode: RevisionMode; fileId?: string | null }>({
+    open: false,
+    mode: "quiz",
+  });
+  const openRevision = (mode: RevisionMode, fileId?: string | null) => setRevision({ open: true, mode, fileId });
+  const askLekki = (question: string) => {
+    setAIInitialQuestion(question);
+    setIsAIOpen(true);
+  };
 
   const [viewingFile, setViewingFile] = useState<DriveFile | null>(null);
   const [sharingFile, setSharingFile] = useState<DriveFile | null>(null);
@@ -328,6 +338,7 @@ function LekkiMain() {
           }}
           counts={counts}
           onOpenWorkspaceSettings={() => setShowAdminDialog(true)}
+          onOpenRevision={() => openRevision("quiz")}
           mobileOpen={isMobileSidebarOpen}
           onMobileClose={() => setIsMobileSidebarOpen(false)}
         />
@@ -344,7 +355,7 @@ function LekkiMain() {
                 setActiveWikiPage(null);
                 setWikiFilterTopic(null);
               }}
-              onOpenFile={handleOpenFileInBrowser}
+              onOpenFile={(file) => setViewingFile(file)}
               onOpenWiki={(p) => {
                 setActiveWikiPage(p);
                 setCurrentView("workspace_wiki");
@@ -352,6 +363,8 @@ function LekkiMain() {
               }}
               onOpenSearch={() => setIsSearchOpen(true)}
               onOpenAI={() => setIsAIOpen(true)}
+              onAsk={askLekki}
+              onOpenRevision={openRevision}
             />
           )}
 
@@ -451,6 +464,22 @@ function LekkiMain() {
           onOpenDoc={handleOpenDocFromId}
           onOpenWiki={handleOpenWikiFromId}
           initialQuestion={aiInitialQuestion}
+        />
+
+        {/* Mode révision : quiz et correction d'anciens sujets */}
+        <RevisionPanel
+          open={revision.open}
+          onClose={() => setRevision((current) => ({ ...current, open: false }))}
+          files={(allFiles.length ? allFiles : files).filter((file) =>
+            activeWorkspaceId ? file.workspace_id === activeWorkspaceId : !file.workspace_id
+          )}
+          spaceName={activeWorkspace?.name}
+          initialMode={revision.mode}
+          initialFileId={revision.fileId}
+          onOpenDoc={(docId) => {
+            setRevision((current) => ({ ...current, open: false }));
+            void handleOpenDocFromId(docId);
+          }}
         />
       </div>
 

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
 import { fileUrl, drive } from "@/lib/api";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
+import { StudentDocBadge } from "./StudentDocBadge";
+import { classifyFile } from "@/lib/studentDocs";
 import { toast } from "sonner";
 import {
   Folder,
@@ -610,7 +612,13 @@ export function DriveView({
                     <DocumentTypeIcon extension={getExtension(file)} className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium" title={file.name}>{file.name}</p>
-                      <p className="mt-1 text-[10px] text-zinc-500">{formatFileSize(file.size_bytes)}</p>
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-zinc-500">
+                        <StudentDocBadge
+                          info={classifyFile(file, folders.find((folder) => folder.id === file.folder_id)?.name)}
+                          compact
+                        />
+                        <span className="truncate">{formatFileSize(file.size_bytes)}</span>
+                      </p>
                     </div>
                     {file.is_starred && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />}
                   </div>

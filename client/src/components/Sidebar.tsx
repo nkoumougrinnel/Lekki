@@ -18,6 +18,8 @@ import {
   GraduationCap,
   Cpu,
   Folder,
+  Users,
+  BookMarked,
   Check,
   ChevronDown,
   LogOut,
@@ -30,6 +32,7 @@ interface SidebarProps {
   currentView: NavView;
   onSelectView: (view: NavView) => void;
   onOpenWorkspaceSettings?: () => void;
+  onOpenRevision?: () => void;
   counts?: {
     myDocs?: number;
     starred?: number;
@@ -46,6 +49,7 @@ export function Sidebar({
   currentView,
   onSelectView,
   onOpenWorkspaceSettings,
+  onOpenRevision,
   counts = {},
   mobileOpen = false,
   onMobileClose,
@@ -61,6 +65,8 @@ export function Sidebar({
       case "GraduationCap": return <GraduationCap className="h-4 w-4" />;
       case "Building2":     return <Building2 className="h-4 w-4" />;
       case "Cpu":           return <Cpu className="h-4 w-4" />;
+      case "Users":         return <Users className="h-4 w-4" />;
+      case "BookMarked":    return <BookMarked className="h-4 w-4" />;
       default:              return <Folder className="h-4 w-4" />;
     }
   };
@@ -82,7 +88,7 @@ export function Sidebar({
     setWsSwitcherOpen(false);
   };
 
-  /* ── Modal centré pour switcher le workspace ── */
+  /* ── Modal centré pour switcher l’espace ── */
   const WorkspaceSwitcherModal = () => (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -99,7 +105,7 @@ export function Sidebar({
         {/* Header modal */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500">
-            Changer de workspace
+            Changer d’espace
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -108,7 +114,7 @@ export function Sidebar({
                 setCreateWorkspaceOpen(true);
               }}
               className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-              aria-label="Créer un workspace"
+              aria-label="Créer un espace"
             >
               <Plus className="h-4 w-4" />
               <span>Rejoindre / créer</span>
@@ -126,7 +132,7 @@ export function Sidebar({
         {/* Liste */}
         <div className="py-2 max-h-72 overflow-y-auto">
           {loading && (
-            <p className="px-5 py-6 text-center text-sm text-zinc-500">Chargement des workspaces...</p>
+            <p className="px-5 py-6 text-center text-sm text-zinc-500">Chargement des espaces...</p>
           )}
           {!loading && error && (
             <div className="px-5 py-6 text-center space-y-2">
@@ -138,7 +144,7 @@ export function Sidebar({
           )}
           {!loading && !error && workspaces.length === 0 && (
             <div className="px-5 py-7 text-center">
-              <p className="text-sm font-medium text-zinc-200">Aucun workspace disponible</p>
+              <p className="text-sm font-medium text-zinc-200">Aucun espace disponible</p>
               <p className="mt-1 text-xs text-zinc-500">Rejoignez un espace avec son code ou créez-en un.</p>
               <button
                 onClick={() => {
@@ -248,7 +254,7 @@ export function Sidebar({
               id="sidebar-workspace-switcher"
               onClick={() => setWsSwitcherOpen(true)}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/80 hover:border-emerald-500/30 bg-zinc-900/30 hover:bg-emerald-500/5 text-sm transition-all group mb-1"
-              title="Changer de workspace"
+              title="Changer d’espace"
             >
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
                 {getWorkspaceIcon(activeWorkspace.icon)}
@@ -262,7 +268,7 @@ export function Sidebar({
             <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>
               <div className="flex items-center gap-3">
                 <Files className={`h-4 w-4 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                <span>Drive partagé</span>
+                <span>Documents de l’espace</span>
               </div>
               {counts.workspaceFiles !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceFiles}</span>}
             </button>
@@ -270,10 +276,24 @@ export function Sidebar({
             <button id="sidebar-nav-workspace-wiki" onClick={() => handleSelect("workspace_wiki")} className={navItemClass(currentView === "workspace_wiki")}>
               <div className="flex items-center gap-3">
                 <BookOpen className={`h-4 w-4 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                <span>Wiki d'équipe</span>
+                <span>Wiki de révision</span>
               </div>
               {counts.workspaceWiki !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceWiki}</span>}
             </button>
+
+            {onOpenRevision && (
+              <button
+                id="sidebar-nav-revision"
+                onClick={() => { onOpenRevision(); onMobileClose?.(); }}
+                className={navItemClass(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <GraduationCap className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
+                  <span>Réviser</span>
+                </div>
+                <span className="rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">Nouveau</span>
+              </button>
+            )}
 
             {(activeWorkspace.role === "admin" || activeWorkspace.role === "owner") && onOpenWorkspaceSettings && (
               <button
@@ -289,7 +309,7 @@ export function Sidebar({
           </>
         ) : (
           <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3">
-            <div className="text-sm font-medium text-zinc-200">Aucun workspace rejoint</div>
+            <div className="text-sm font-medium text-zinc-200">Aucun espace rejoint</div>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
               Rejoignez un espace avec son code ou créez-en un pour accéder au Drive partagé et au Wiki.
             </p>
@@ -309,7 +329,7 @@ export function Sidebar({
 
   return (
     <>
-      {/* Modal centré de sélection du workspace */}
+      {/* Modal centré de sélection de l’espace */}
       {wsSwitcherOpen && <WorkspaceSwitcherModal />}
       <CreateWorkspaceDialog open={createWorkspaceOpen} onOpenChange={setCreateWorkspaceOpen} />
 

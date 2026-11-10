@@ -447,6 +447,40 @@ export const aiApi = {
   },
 };
 
+// ── Mode révision ────────────────────────────────────────────────────────────
+export interface QuizQuestion {
+  question: string;
+  choices: string[];
+  answer_index: number | null;
+  answer: string;
+  explanation: string;
+  source_title: string;
+}
+
+export interface QuizResponse {
+  questions: QuizQuestion[];
+  provider?: string | null;
+  degraded: boolean;
+}
+
+export interface CorrectionResponse {
+  subject_title: string;
+  answer: string;
+  sources: LekkiAISource[];
+  provider?: string | null;
+  degraded: boolean;
+}
+
+export const revisionApi = {
+  quiz(params: { file_ids?: string[]; wiki_ids?: string[]; count?: number; focus?: string }): Promise<QuizResponse> {
+    return jsonRequest<QuizResponse>("/revision/quiz", "POST", params);
+  },
+
+  correction(file_id: string): Promise<CorrectionResponse> {
+    return jsonRequest<CorrectionResponse>("/revision/correction", "POST", { file_id });
+  },
+};
+
 // Legacy compatibility for older components if any
 export const pages = {
   list(params?: { category?: string; workspaceId?: string }) {
