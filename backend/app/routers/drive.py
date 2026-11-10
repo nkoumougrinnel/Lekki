@@ -144,13 +144,17 @@ async def _accessible_folder(db: AsyncSession, user: User, folder_id: str) -> Dr
 
 async def _check_destination(
     db: AsyncSession, user: User, workspace_id: Optional[str], folder_id: Optional[str]
-) -> None:
-    """Vérifie qu'on a le droit d'écrire dans l'espace et le dossier cibles."""
+) -> Optional[str]:
+    """Vérifie qu'on a le droit d'écrire dans l'espace et le dossier cibles.
+    Renvoie l'espace effectif : un fichier déposé dans un dossier hérite de son espace."""
     await require_workspace_member(db, user, workspace_id)
     if folder_id:
         folder = await _accessible_folder(db, user, folder_id)
-        if (folder.workspace_id or None) != (workspace_id or None):
+        if not workspace_id:
+            return folder.workspace_id
+        if (folder.workspace_id or None) != workspace_id:
             raise HTTPException(status_code=400, detail="Ce dossier n'appartient pas à cet espace.")
+    return workspace_id
 
 
 # ── Folders ──────────────────────────────────────────────────────────────────
@@ -568,7 +572,7 @@ async def create_file(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    await _check_destination(db, current_user, workspace_id, folder_id)
+    workspace_id = await _check_destination(db, current_user, workspace_id, folder_id)
 
     # 1. File basics
     file_id = f"file-{uuid.uuid4().hex[:8]}"
