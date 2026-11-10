@@ -124,6 +124,8 @@ export interface Workspace {
   icon?: string;
   role?: string;
   members_count?: number;
+  /** Programme d'études d'une promo : { program: "supptic-itt", level: 2, specialty: "IR" } */
+  academic?: { program: "supptic-itt"; level: 1 | 2 | 3; specialty?: "IR" | "RC" | "RT" | null } | null;
   created_at: string;
 }
 
@@ -249,4 +251,6 @@ export type NavView =
   | "shared_with_me"
   | "trash"
   | "workspace_files"
-  | "workspace_wiki";
+  | "workspace_wiki"
+  | "subjects"
+  | "subject";

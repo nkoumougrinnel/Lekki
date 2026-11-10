@@ -18,6 +18,8 @@ from app.workspaces.schemas import (
     WorkspaceJoin,
     WorkspaceMemberOut,
     WorkspaceOut,
+    WorkspaceUpdate,
+    AcademicInfo,
 )
 
 
@@ -47,6 +49,7 @@ class WorkspaceService:
             name=data.name,
             description=data.description,
             icon=data.icon or "school",
+            academic=data.academic.model_dump_json() if data.academic else None,
             owner_id=owner.id,
             join_code=await self._generate_join_code(),
         )
@@ -199,6 +202,38 @@ class WorkspaceService:
             if not await self.repository.get_by_join_code(code):
                 return code
 
+    async def update(self, workspace_id: str, data: WorkspaceUpdate, user: User) -> WorkspaceOut:
+        workspace = await self._require_manager(workspace_id, user)
+        if data.name is not None:
+            workspace.name = data.name.strip()
+        if data.description is not None:
+            workspace.description = data.description.strip() or None
+        if data.icon:
+            workspace.icon = data.icon
+        if data.clear_academic:
+            workspace.academic = None
+        elif data.academic is not None:
+            workspace.academic = data.academic.model_dump_json()
+        await self.db.commit()
+        await self.db.refresh(workspace)
+        role = await self.repository.role_for_user(workspace.id, user.id)
+        return self._workspace_out(workspace, role or "owner", await self.repository.member_count(workspace.id))
+
     @staticmethod
     def _workspace_out(workspace: Workspace, role: str, members_count: int) -> WorkspaceOut:
-        return WorkspaceOut(id=workspace.id, name=workspace.name, description=workspace.description, icon=workspace.icon or "school", role=role, members_count=members_count, created_at=workspace.created_at)
+        academic = None
+        if workspace.academic:
+            try:
+                academic = AcademicInfo.model_validate_json(workspace.academic)
+            except ValueError:
+                academic = None
+        return WorkspaceOut(
+            id=workspace.id,
+            name=workspace.name,
+            description=workspace.description,
+            icon=workspace.icon or "school",
+            role=role,
+            members_count=members_count,
+            academic=academic,
+            created_at=workspace.created_at,
+        )

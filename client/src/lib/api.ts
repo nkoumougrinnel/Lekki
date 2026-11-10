@@ -184,6 +184,13 @@ export const usersApi = {
 };
 
 // ── Workspaces ───────────────────────────────────────────────────────────────
+export interface WorkspaceInput {
+  name: string;
+  description?: string;
+  icon?: string;
+  academic?: Workspace["academic"];
+}
+
 export const workspaces = {
   list(): Promise<Workspace[]> {
     return request<Workspace[]>("/workspaces");
@@ -193,8 +200,12 @@ export const workspaces = {
     return request<Workspace>(`/workspaces/${id}`);
   },
 
-  create(data: { name: string; description?: string; icon?: string }): Promise<Workspace> {
+  create(data: WorkspaceInput): Promise<Workspace> {
     return jsonRequest<Workspace>("/workspaces", "POST", data);
+  },
+
+  update(id: string, data: Partial<WorkspaceInput> & { clear_academic?: boolean }): Promise<Workspace> {
+    return jsonRequest<Workspace>(`/workspaces/${id}`, "PATCH", data);
   },
 
   joinByCode(code: string): Promise<Workspace> {
@@ -476,8 +487,8 @@ export const revisionApi = {
     return jsonRequest<QuizResponse>("/revision/quiz", "POST", params);
   },
 
-  correction(file_id: string): Promise<CorrectionResponse> {
-    return jsonRequest<CorrectionResponse>("/revision/correction", "POST", { file_id });
+  correction(file_id: string, course_file_ids?: string[]): Promise<CorrectionResponse> {
+    return jsonRequest<CorrectionResponse>("/revision/correction", "POST", { file_id, course_file_ids });
   },
 };
 

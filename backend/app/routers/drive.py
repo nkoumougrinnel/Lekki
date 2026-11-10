@@ -7,6 +7,7 @@ import shutil
 from html import escape
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from fastapi.responses import FileResponse, HTMLResponse, Response
+from pydantic import BaseModel, Field
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,7 @@ from app.knowledge.drive.preview import PreviewService
 from app.middleware.auth import get_current_user, get_current_user_for_file
 from app.core.access import (
     accessible_workspace_ids,
+    classmate_ids,
     can_access_folder,
     can_destroy_file,
     can_edit_file,
@@ -773,6 +775,32 @@ async def update_file(
     if data.scope:
         f.scope = data.scope
 
+    await db.commit()
+    await db.refresh(f)
+    return _file_out(f)
+
+
+class ShareRequest(BaseModel):
+    user_ids: List[str] = Field(default_factory=list, max_length=200)
+
+
+@router.post("/files/{file_id}/share", response_model=FileOut)
+async def share_file(
+    file_id: str,
+    data: ShareRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Partage un document avec des camarades (personnes d'un espace commun). Liste vide = privé."""
+    f = await _readable_file(db, current_user, file_id)
+    if f.owner_id != current_user.id and not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Seul l'auteur peut partager ce document.")
+    allowed = await classmate_ids(db, current_user)
+    targets = [uid for uid in dict.fromkeys(data.user_ids) if uid != current_user.id]
+    unknown = [uid for uid in targets if uid not in allowed and not is_platform_admin(current_user)]
+    if unknown:
+        raise HTTPException(status_code=400, detail="On ne peut partager qu'avec des membres de ses espaces.")
+    f.shared_with = json.dumps(targets)
     await db.commit()
     await db.refresh(f)
     return _file_out(f)

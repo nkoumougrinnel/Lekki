@@ -36,11 +36,23 @@ from app.middleware.auth import get_current_user
 router = APIRouter(prefix="/revision", tags=["Révision"])
 
 EXAM_PATTERN = re.compile(r"(sujet|examen|exam|rat|rattrapage|cc|controle|contrôle|partiel|devoir|ds)", re.I)
+CORRECTION_PATTERN = re.compile(r"(correction|corrige|corrigé|corriges|corrigés|solution|solutions)", re.I)
+
+
+def _name_tokens(name: str) -> list[str]:
+    spaced = re.sub(r"([a-zà-ÿ])([A-Z])", r"\1 \2", name)  # « CorrectionCcGenie » → mots
+    return [token for token in re.split(r"[\s_\-.()+&]+", spaced.lower()) if token]
+
+
+def is_correction_name(name: str) -> bool:
+    return any(CORRECTION_PATTERN.fullmatch(token) for token in _name_tokens(name))
 
 
 def is_exam_name(name: str) -> bool:
-    tokens = re.split(r"[\s_\-.()]+", name.lower())
-    return any(EXAM_PATTERN.fullmatch(token) for token in tokens if token)
+    """Un sujet (examen, rattrapage, CC…), mais pas son corrigé."""
+    if is_correction_name(name):
+        return False
+    return any(EXAM_PATTERN.fullmatch(token) for token in _name_tokens(name))
 
 
 # ── Schémas ──────────────────────────────────────────────────────────────────
@@ -69,6 +81,8 @@ class QuizResponse(BaseModel):
 
 class CorrectionRequest(BaseModel):
     file_id: str
+    # Cours de la même matière, choisis par l'interface (programme de la promo).
+    course_file_ids: List[str] = Field(default_factory=list, max_length=12)
 
 
 class CorrectionResponse(BaseModel):
@@ -268,6 +282,8 @@ async def correct_exam(
         query = query.where(DriveFile.workspace_id == subject.workspace_id)
     else:
         query = query.where(or_(DriveFile.workspace_id == None, DriveFile.owner_id == current_user.id))  # noqa: E711
+    if data.course_file_ids:
+        query = query.where(DriveFile.id.in_(data.course_file_ids))
     candidates = filter_visible_files(current_user, workspace_ids, (await db.execute(query)).scalars().all())
 
     probe = subject_text[:2500]
@@ -277,6 +293,10 @@ async def correct_exam(
             continue
         text = _clean(document_text(drive_file))
         score = calculate_similarity(probe, f"{drive_file.name} {text}")
+        if is_correction_name(drive_file.name):
+            score += 0.3  # un corrigé existant est la meilleure référence
+        if data.course_file_ids:
+            score += 0.05  # même matière : à garder même si peu de mots en commun
         if score > 0:
             scored.append((score, drive_file, text))
     wiki_query = select(WikiPage).where(WikiPage.workspace_id == subject.workspace_id) if subject.workspace_id else None

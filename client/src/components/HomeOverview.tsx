@@ -10,7 +10,7 @@ import {
   GraduationCap,
   UserPlus,
   Users,
-  Library,
+  Library as LibraryIcon,
   CheckCircle2,
   Clock,
   Upload,
@@ -18,7 +18,10 @@ import {
 } from "lucide-react";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import { StudentDocBadge } from "./StudentDocBadge";
-import { classifyFile, prettyName } from "@/lib/studentDocs";
+import { prettyName } from "@/lib/studentDocs";
+import type { Library } from "@/lib/library";
+import { academicLabel } from "@/lib/curriculum";
+import { SubjectCard } from "./SubjectsView";
 import { workspaces as workspacesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RevisionMode } from "./RevisionPanel";
@@ -34,6 +37,8 @@ interface HomeOverviewProps {
   onOpenAI: () => void;
   onAsk: (question: string) => void;
   onOpenRevision: (mode: RevisionMode, fileId?: string) => void;
+  library: Library;
+  onOpenSubject: (subjectId: string) => void;
 }
 
 export function HomeOverview({
@@ -45,23 +50,19 @@ export function HomeOverview({
   onOpenWiki,
   onAsk,
   onOpenRevision,
+  library,
+  onOpenSubject,
 }: HomeOverviewProps) {
   const { user } = useAuth();
   const [question, setQuestion] = useState("");
   const firstName = (user?.name || "").split(" ")[0];
 
-  const spaceFiles = useMemo(
-    () =>
-      files
-        .filter((f) => !f.is_deleted && (activeWorkspace ? f.workspace_id === activeWorkspace.id : !f.workspace_id))
-        .map((file) => ({ file, info: classifyFile(file) })),
-    [files, activeWorkspace]
-  );
+  const spaceFiles = library.entries;
   const exams = spaceFiles
     .filter(({ info }) => info.isExam)
     .sort((a, b) => (b.info.year || "").localeCompare(a.info.year || "") || b.file.updated_at.localeCompare(a.file.updated_at));
   const courses = spaceFiles
-    .filter(({ info }) => !info.isExam)
+    .filter(({ info }) => !info.isExam && info.kind !== "corrige")
     .sort((a, b) => new Date(b.file.updated_at).getTime() - new Date(a.file.updated_at).getTime());
   const recentWiki = [...wikiPages]
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
@@ -106,6 +107,8 @@ export function HomeOverview({
   };
 
   const isEmpty = spaceFiles.length === 0 && wikiPages.length === 0;
+  const semesterSubjects = library.current ? library.subjectsOfSemester(library.current) : [];
+  const canManage = ["owner", "admin"].includes(activeWorkspace?.role || "");
 
   return (
     <div id="home-overview-container" className="flex-1 overflow-y-auto bg-[#0E1116] p-4 sm:p-8 space-y-6 sm:space-y-8">
@@ -116,6 +119,7 @@ export function HomeOverview({
           <p className="text-xs font-medium text-emerald-300/90">
             {firstName ? `Bonjour ${firstName}` : "Bonjour"}
             {activeWorkspace ? ` · ${activeWorkspace.name}` : " · Mon espace"}
+            {library.academic && library.current ? ` · ${academicLabel(library.academic)}, semestre ${library.current}` : ""}
           </p>
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 leading-tight">
             Que révises-tu <span className="text-emerald-400 whitespace-nowrap">aujourd’hui&nbsp;?</span>
@@ -175,6 +179,39 @@ export function HomeOverview({
         </div>
       </section>
 
+      {library.academic && semesterSubjects.length > 0 && (
+        <section className="space-y-3">
+          <SectionTitle
+            icon={GraduationCap}
+            title={`Matières du semestre ${library.current}`}
+            action={{ label: "Tout le programme", onClick: () => onNavigate("subjects") }}
+          />
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            {semesterSubjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                shelf={library.shelves.get(subject.id)}
+                onOpen={() => onOpenSubject(subject.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {activeWorkspace && !library.academic && canManage && activeWorkspace.icon === "GraduationCap" && (
+        <button
+          onClick={() => onNavigate("subjects")}
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-left transition hover:bg-emerald-400/[0.08]"
+        >
+          <span>
+            <span className="block text-sm font-medium text-zinc-100">Range cet espace par matière</span>
+            <span className="mt-0.5 block text-xs text-zinc-400">Indique le niveau de la promo (ITT1, ITT2, ITT3) : Lekki classe les cours et les sujets tout seul.</span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-emerald-400" />
+        </button>
+      )}
+
       {isEmpty ? (
         <section className="rounded-2xl border border-dashed border-zinc-800 p-5 sm:p-8">
           <h2 className="text-sm font-semibold text-zinc-100">Lance l’espace de ta promo en 3 étapes</h2>
@@ -202,7 +239,7 @@ export function HomeOverview({
         <>
           {/* Chiffres clés de l'espace */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={Library} tone="text-emerald-400" value={courses.length} title="Cours & TD" hint="Documents de cours" onClick={() => onNavigate(activeWorkspace ? "workspace_files" : "my_docs")} />
+            <StatCard icon={LibraryIcon} tone="text-emerald-400" value={courses.length} title="Cours & TD" hint="Documents de cours" onClick={() => onNavigate(activeWorkspace ? "workspace_files" : "my_docs")} />
             <StatCard icon={FileCheck2} tone="text-rose-300" value={exams.length} title="Anciens sujets" hint="Examens, RAT, CC" onClick={() => onOpenRevision("correction")} />
             <StatCard icon={BookOpen} tone="text-sky-400" value={wikiPages.length} title="Fiches du wiki" hint={`${verifiedCount} vérifiée${verifiedCount > 1 ? "s" : ""}`} onClick={() => onNavigate(activeWorkspace ? "workspace_wiki" : "my_docs")} />
             <StatCard icon={Users} tone="text-violet-300" value={activeWorkspace?.members_count ?? 1} title="Membres" hint={activeWorkspace ? "Inviter avec un code" : "Espace personnel"} onClick={() => void invite()} />

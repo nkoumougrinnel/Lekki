@@ -4,9 +4,9 @@ import {
   X, GraduationCap, FileCheck2, Sparkles, LoaderCircle, Check, XCircle, ArrowRight,
   RotateCcw, Search, BookOpen, Eye, ThumbsUp, ThumbsDown, FileText,
 } from "lucide-react";
-import type { DriveFile } from "@/types/lekki";
+import type { Library, LibraryEntry } from "@/lib/library";
 import { revisionApi, QuizQuestion, CorrectionResponse } from "@/lib/api";
-import { classifyFile, prettyName } from "@/lib/studentDocs";
+import { prettyName } from "@/lib/studentDocs";
 import { StudentDocBadge } from "./StudentDocBadge";
 import { MarkdownContent } from "./MarkdownContent";
 
@@ -15,10 +15,11 @@ export type RevisionMode = "quiz" | "correction";
 interface RevisionPanelProps {
   open: boolean;
   onClose: () => void;
-  files: DriveFile[];
+  library: Library;
   spaceName?: string;
   initialMode?: RevisionMode;
   initialFileId?: string | null;
+  initialSubjectId?: string | null;
   onOpenDoc: (docId: string) => void;
 }
 
@@ -29,8 +30,9 @@ type QuizState =
   | { step: "done"; questions: QuizQuestion[]; score: number };
 
 export function RevisionPanel({
-  open, onClose, files, spaceName, initialMode = "quiz", initialFileId, onOpenDoc,
+  open, onClose, library, spaceName, initialMode = "quiz", initialFileId, initialSubjectId, onOpenDoc,
 }: RevisionPanelProps) {
+  const [subjectId, setSubjectId] = useState<string | null>(null);
   const [mode, setMode] = useState<RevisionMode>(initialMode);
   const [selected, setSelected] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
@@ -40,14 +42,25 @@ export function RevisionPanel({
   const [correctionLoading, setCorrectionLoading] = useState<string | null>(null);
   const [correction, setCorrection] = useState<CorrectionResponse | null>(null);
 
-  const usable = useMemo(
-    () => files.filter((file) => !file.is_deleted).map((file) => ({ file, info: classifyFile(file) })),
-    [files]
+  // Matières qui ont au moins un document, celles du semestre en cours d'abord.
+  const subjectOptions = useMemo(
+    () =>
+      Array.from(library.shelves.values())
+        .filter((shelf) => shelf.courses.length + shelf.exams.length > 0)
+        .sort(
+          (a, b) =>
+            Number(b.subject.semester === library.current) - Number(a.subject.semester === library.current) ||
+            a.subject.semester - b.subject.semester ||
+            a.subject.title.localeCompare(b.subject.title, "fr")
+        ),
+    [library]
   );
-  const courses = usable.filter(({ info }) => !info.isExam);
-  const exams = usable
-    .filter(({ info }) => info.isExam)
+  const inScope = (entry: LibraryEntry) => !subjectId || entry.subject?.id === subjectId;
+  const courses = library.entries.filter((entry) => !entry.info.isExam && entry.info.kind !== "corrige" && inScope(entry));
+  const exams = library.entries
+    .filter((entry) => entry.info.isExam && inScope(entry))
     .sort((a, b) => (b.info.year || "").localeCompare(a.info.year || "") || a.file.name.localeCompare(b.file.name));
+  const subjectTitle = subjectId ? library.shelves.get(subjectId)?.subject.title : undefined;
 
   // Réinitialise à chaque ouverture, et pré-sélectionne le document demandé.
   useEffect(() => {
@@ -57,11 +70,14 @@ export function RevisionPanel({
     setCorrection(null);
     setFocus("");
     setFilter("");
+    setSubjectId(
+      initialSubjectId ?? library.entries.find((entry) => entry.file.id === initialFileId)?.subject?.id ?? null
+    );
     if (initialFileId && initialMode === "quiz") setSelected([initialFileId]);
     else setSelected([]);
     if (initialFileId && initialMode === "correction") void runCorrection(initialFileId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialMode, initialFileId]);
+  }, [open, initialMode, initialFileId, initialSubjectId]);
 
   useEffect(() => {
     if (!open) return;
@@ -100,7 +116,11 @@ export function RevisionPanel({
     setCorrection(null);
     setCorrectionLoading(fileId);
     try {
-      setCorrection(await revisionApi.correction(fileId));
+      // Cours et corrigés de la même matière : la correction s'appuie d'abord sur eux.
+      const subject = library.entries.find((entry) => entry.file.id === fileId)?.subject;
+      const shelf = subject ? library.shelves.get(subject.id) : undefined;
+      const references = shelf ? [...shelf.corriges, ...shelf.courses].map((entry) => entry.file.id).slice(0, 12) : [];
+      setCorrection(await revisionApi.correction(fileId, references.length ? references : undefined));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossible de corriger ce sujet.");
     } finally {
@@ -159,6 +179,23 @@ export function RevisionPanel({
           </div>
         </div>
 
+        {subjectOptions.length > 0 && !(mode === "quiz" && quiz.step !== "setup") && !correction && !correctionLoading && (
+          <div className="flex gap-1.5 overflow-x-auto px-5 pt-3 sm:px-6" role="group" aria-label="Matière">
+            <SubjectChip selected={!subjectId} onClick={() => { setSubjectId(null); setSelected([]); }}>
+              Toutes les matières
+            </SubjectChip>
+            {subjectOptions.map(({ subject }) => (
+              <SubjectChip
+                key={subject.id}
+                selected={subjectId === subject.id}
+                onClick={() => { setSubjectId(subject.id); setSelected([]); }}
+              >
+                {subject.title}
+              </SubjectChip>
+            ))}
+          </div>
+        )}
+
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           {mode === "quiz" ? (
             <>
@@ -181,10 +218,16 @@ export function RevisionPanel({
                       </div>
                     )}
                     {courses.length === 0 ? (
-                      <EmptyHint text="Aucun cours ni TD dans cet espace pour l’instant. Importe tes cours depuis le Drive." />
+                      <EmptyHint
+                        text={
+                          subjectTitle
+                            ? `Aucun cours ni TD pour ${subjectTitle} pour l’instant.`
+                            : "Aucun cours ni TD dans cet espace pour l’instant. Importe tes cours depuis le Drive."
+                        }
+                      />
                     ) : (
-                      <ul className="max-h-[260px] space-y-1.5 overflow-y-auto pr-1">
-                        {visibleCourses.map(({ file, info }) => {
+                      <ul className="max-h-[240px] space-y-1.5 overflow-y-auto pr-1">
+                        {visibleCourses.map(({ file, info, subject }) => {
                           const checked = selected.includes(file.id);
                           return (
                             <li key={file.id}>
@@ -199,7 +242,12 @@ export function RevisionPanel({
                                 <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-emerald-400 bg-emerald-400 text-zinc-950" : "border-zinc-600"}`}>
                                   {checked && <Check className="h-3 w-3" />}
                                 </span>
-                                <span className="min-w-0 flex-1 truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
+                                  {!subjectId && subject && (
+                                    <span className="block truncate text-[10px] text-zinc-500">{subject.title}</span>
+                                  )}
+                                </span>
                                 <StudentDocBadge info={info} compact />
                               </button>
                             </li>
@@ -429,7 +477,7 @@ function QuizPlayer({
 function CorrectionView({
   exams, loadingId, result, onPick, onBack, onOpenDoc,
 }: {
-  exams: { file: DriveFile; info: ReturnType<typeof classifyFile> }[];
+  exams: LibraryEntry[];
   loadingId: string | null;
   result: CorrectionResponse | null;
   onPick: (id: string) => void;
@@ -492,14 +540,17 @@ function CorrectionView({
     <div className="space-y-3">
       <p className="text-xs text-zinc-400">Choisis un ancien sujet : Lekki AI propose une correction appuyée sur les cours de l’espace.</p>
       <ul className="space-y-1.5">
-        {exams.map(({ file, info }) => (
+        {exams.map(({ file, info, subject }) => (
           <li key={file.id}>
             <button
               onClick={() => onPick(file.id)}
               className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3 py-3 text-left transition hover:border-emerald-400/30 hover:bg-emerald-400/[0.04]"
             >
               <FileCheck2 className="h-4 w-4 shrink-0 text-rose-300" />
-              <span className="min-w-0 flex-1 truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
+                {subject && <span className="block truncate text-[10px] text-zinc-500">{subject.title}</span>}
+              </span>
               <StudentDocBadge info={info} />
               <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
             </button>
@@ -507,6 +558,21 @@ function CorrectionView({
         ))}
       </ul>
     </div>
+  );
+}
+
+function SubjectChip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+        selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

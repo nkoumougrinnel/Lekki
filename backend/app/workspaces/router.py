@@ -13,6 +13,7 @@ from app.workspaces.schemas import (
     WorkspaceJoinCode,
     WorkspaceMemberOut,
     WorkspaceOut,
+    WorkspaceUpdate,
 )
 from app.workspaces.service import WorkspaceService
 
@@ -37,6 +38,11 @@ async def join_workspace(data: WorkspaceJoin, db: AsyncSession = Depends(get_db)
 @router.get("/{workspace_id}", response_model=WorkspaceOut)
 async def get_workspace(workspace_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     return await WorkspaceService(db).get(workspace_id, current_user)
+
+
+@router.patch("/{workspace_id}", response_model=WorkspaceOut)
+async def update_workspace(workspace_id: str, data: WorkspaceUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return await WorkspaceService(db).update(workspace_id, data, current_user)
 
 
 @router.get("/{workspace_id}/join-code", response_model=WorkspaceJoinCode)

@@ -9,6 +9,7 @@ from app.identity.repository import UserRepository
 from app.identity.schemas import TokenResponse, UserLogin, UserOut, UserRegister
 from app.identity.service import create_access_token, get_password_hash, verify_password
 from app.middleware.auth import get_current_user
+from app.core.access import classmate_ids, is_platform_admin
 
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -71,8 +72,13 @@ async def list_users(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    del current_user
-    return [UserOut.model_validate(user) for user in await UserRepository(db).list()]
+    """Seulement les camarades : les personnes qui partagent un espace avec moi.
+    (Avant : tous les comptes et leurs e-mails étaient visibles par n'importe qui.)"""
+    users = await UserRepository(db).list()
+    if is_platform_admin(current_user):
+        return [UserOut.model_validate(user) for user in users]
+    allowed = await classmate_ids(db, current_user)
+    return [UserOut.model_validate(user) for user in users if user.id in allowed]
 
 
 @users_router.get("/{user_id}", response_model=UserOut)
@@ -81,8 +87,9 @@ async def get_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    del current_user
     user = await UserRepository(db).get_by_id_or_username(user_id)
-    if not user:
+    if not user or (
+        not is_platform_admin(current_user) and user.id not in await classmate_ids(db, current_user)
+    ):
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     return UserOut.model_validate(user)

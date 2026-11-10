@@ -1,13 +1,29 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class AcademicInfo(BaseModel):
+    """Programme d'études d'une promo. Seul le cycle ITT de SUP'PTIC est connu pour l'instant."""
+    program: Literal["supptic-itt"] = "supptic-itt"
+    level: int = Field(ge=1, le=3)
+    specialty: Optional[Literal["IR", "RC", "RT"]] = None
 
 
 class WorkspaceCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
+    name: str = Field(min_length=1, max_length=80)
+    description: Optional[str] = Field(default=None, max_length=240)
     icon: Optional[str] = "school"
+    academic: Optional[AcademicInfo] = None
+
+
+class WorkspaceUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
+    description: Optional[str] = Field(default=None, max_length=240)
+    icon: Optional[str] = None
+    academic: Optional[AcademicInfo] = None
+    clear_academic: bool = False
 
 
 class WorkspaceJoin(BaseModel):
@@ -25,6 +41,7 @@ class WorkspaceOut(BaseModel):
     icon: Optional[str] = "school"
     role: Optional[str] = "member"
     members_count: Optional[int] = 1
+    academic: Optional[AcademicInfo] = None
     created_at: Optional[datetime] = None
 
     class Config:

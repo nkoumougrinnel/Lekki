@@ -1,12 +1,13 @@
 /**
- * Reconnaissance automatique des documents étudiants à partir de leur nom,
- * sur le modèle de SUP'DOCS : « TS_Examen_ALT_2024.pdf », « TS_RAT_CL_2022.pdf »,
- * dossiers COURS / TD / CC / SUJETS…
- * Aucune donnée n'est stockée : tout est déduit à l'affichage.
+ * Reconnaissance automatique du TYPE d'un document étudiant à partir de son nom,
+ * sur le modèle de SUP'DOCS : « TS_Examen_ALT_2024.pdf », « Antennes_RAT_CL_2022.pdf »,
+ * « CorrectionCcGenieCivilTelecom_2025.pdf », dossiers COURS / TD / CC / SUJETS…
+ * La MATIÈRE est reconnue à part (voir curriculum.ts). Rien n'est stocké.
  */
 import type { DriveFile } from "@/types/lekki";
+import { normalize } from "@/lib/curriculum";
 
-export type StudentDocKind = "examen" | "rattrapage" | "cc" | "td" | "tp" | "cours" | "fiche" | "autre";
+export type StudentDocKind = "examen" | "rattrapage" | "cc" | "corrige" | "td" | "tp" | "cours" | "fiche" | "autre";
 
 export interface StudentDocInfo {
   kind: StudentDocKind;
@@ -14,13 +15,13 @@ export interface StudentDocInfo {
   isExam: boolean;
   year?: string;
   track?: "ALT" | "CL";
-  subject?: string;
 }
 
 const KIND_LABELS: Record<StudentDocKind, string> = {
   examen: "Examen",
   rattrapage: "Rattrapage",
   cc: "Contrôle continu",
+  corrige: "Corrigé",
   td: "TD",
   tp: "TP",
   cours: "Cours",
@@ -32,6 +33,7 @@ export const KIND_STYLES: Record<StudentDocKind, string> = {
   examen: "bg-rose-500/10 text-rose-300 ring-rose-400/20",
   rattrapage: "bg-orange-500/10 text-orange-300 ring-orange-400/20",
   cc: "bg-amber-500/10 text-amber-300 ring-amber-400/20",
+  corrige: "bg-lime-500/10 text-lime-300 ring-lime-400/20",
   td: "bg-sky-500/10 text-sky-300 ring-sky-400/20",
   tp: "bg-violet-500/10 text-violet-300 ring-violet-400/20",
   cours: "bg-emerald-500/10 text-emerald-300 ring-emerald-400/20",
@@ -40,13 +42,7 @@ export const KIND_STYLES: Record<StudentDocKind, string> = {
 };
 
 function tokens(value: string): string[] {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/\.[a-z0-9]+$/, "")
-    .split(/[\s_\-.()[\]]+/)
-    .filter(Boolean);
+  return normalize(value).split(" ").filter(Boolean);
 }
 
 /** `folderName` : nom du dossier parent, si connu (COURS, TD, SUJETS, CC…). */
@@ -54,30 +50,26 @@ export function classifyDocument(name: string, folderName?: string | null): Stud
   const parts = tokens(name);
   const folder = tokens(folderName || "");
   const has = (...words: string[]) => parts.some((part) => words.includes(part));
+  const hasPattern = (pattern: RegExp) => parts.some((part) => pattern.test(part));
   const inFolder = (...words: string[]) => folder.some((part) => words.includes(part));
 
   let kind: StudentDocKind = "autre";
-  if (has("rat", "rattrapage")) kind = "rattrapage";
-  else if (has("examen", "exam", "partiel")) kind = "examen";
+  if (has("correction", "corrige", "corriges", "solution", "solutions") || inFolder("corriges", "corrections")) kind = "corrige";
+  else if (has("rat", "rattrapage")) kind = "rattrapage";
+  else if (has("examen", "exam", "examens", "partiel")) kind = "examen";
   else if (has("cc", "controle", "ds", "devoir", "interro")) kind = "cc";
-  else if (has("td")) kind = "td";
-  else if (has("tp")) kind = "tp";
-  else if (has("cours", "chapitre", "chap", "lecon", "poly", "polycopie")) kind = "cours";
+  else if (has("td", "tds") || hasPattern(/^td\d/)) kind = "td";
+  else if (has("tp", "tps") || hasPattern(/^tp\d/)) kind = "tp";
+  else if (has("cours", "chapitre", "chap", "lecon", "poly", "polycopie") || hasPattern(/^chap\d/)) kind = "cours";
   else if (has("fiche", "resume", "synthese", "revision")) kind = "fiche";
   else if (has("sujet", "sujets") || inFolder("sujets", "sujet")) kind = "examen";
   else if (inFolder("cc")) kind = "cc";
-  else if (inFolder("td")) kind = "td";
-  else if (inFolder("tp")) kind = "tp";
+  else if (inFolder("td", "tds")) kind = "td";
+  else if (inFolder("tp", "tps")) kind = "tp";
   else if (inFolder("cours")) kind = "cours";
 
   const yearMatch = name.match(/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/);
   const track = has("alt") ? "ALT" : has("cl") ? "CL" : undefined;
-
-  // Le préfixe avant le premier mot-clé sert de matière (« TS_Examen… » → « TS »).
-  const keywordIndex = parts.findIndex((part) =>
-    ["rat", "rattrapage", "examen", "exam", "cc", "td", "tp", "cours", "sujet", "chap", "chapitre"].includes(part)
-  );
-  const rawSubject = keywordIndex > 0 ? name.replace(/\.[a-z0-9]+$/i, "").split(/[_\-\s]+/).slice(0, keywordIndex).join(" ") : undefined;
 
   return {
     kind,
@@ -85,7 +77,6 @@ export function classifyDocument(name: string, folderName?: string | null): Stud
     isExam: kind === "examen" || kind === "rattrapage" || kind === "cc",
     year: yearMatch?.[1],
     track,
-    subject: rawSubject && rawSubject.length <= 40 ? rawSubject : undefined,
   };
 }
 

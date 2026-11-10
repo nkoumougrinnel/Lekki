@@ -37,6 +37,7 @@ async def init_db() -> None:
         await connection.run_sync(Base.metadata.create_all)
         await connection.run_sync(_migrate_drive_file_columns)
         await connection.run_sync(_migrate_workspace_join_codes)
+        await connection.run_sync(_migrate_workspace_academic)
 
 
 def _migrate_drive_file_columns(connection) -> None:
@@ -53,6 +54,13 @@ def _migrate_drive_file_columns(connection) -> None:
     for column, statement in migrations.items():
         if column not in existing_columns:
             connection.exec_driver_sql(statement)
+
+
+def _migrate_workspace_academic(connection) -> None:
+    """Programme d'études d'un espace (promo) : colonne ajoutée sans toucher aux données."""
+    columns = {column["name"] for column in inspect(connection).get_columns("workspaces")}
+    if "academic" not in columns:
+        connection.exec_driver_sql("ALTER TABLE workspaces ADD COLUMN academic TEXT")
 
 
 def _migrate_workspace_join_codes(connection) -> None:

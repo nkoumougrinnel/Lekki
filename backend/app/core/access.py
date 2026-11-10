@@ -42,6 +42,19 @@ async def accessible_workspace_ids(db: AsyncSession, user: User) -> set[str]:
     return {row[0] for row in members.all()} | {row[0] for row in owned.all()}
 
 
+async def classmate_ids(db: AsyncSession, user: User) -> set[str]:
+    """Personnes qui partagent au moins un espace avec l'utilisateur (lui compris)."""
+    spaces = await accessible_workspace_ids(db, user)
+    ids = {user.id}
+    if spaces:
+        members = await db.execute(
+            select(WorkspaceMember.user_id).where(WorkspaceMember.workspace_id.in_(spaces))
+        )
+        owners = await db.execute(select(Workspace.owner_id).where(Workspace.id.in_(spaces)))
+        ids |= {row[0] for row in members.all() if row[0]} | {row[0] for row in owners.all() if row[0]}
+    return ids
+
+
 async def workspace_role(db: AsyncSession, user: User, workspace_id: str) -> str | None:
     workspace = await db.get(Workspace, workspace_id)
     if not workspace:

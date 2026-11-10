@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { AcademicFields } from "./AcademicFields";
+import { AcademicInfo, academicLabel } from "@/lib/curriculum";
 import { toast } from "sonner";
 import {
   X, Building2, Plus, UserRoundPlus, GraduationCap, Users, BookMarked, Folder,
@@ -37,6 +39,8 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
   const [description, setDescription] = useState("");
   const [code, setCode] = useState("");
   const [icon, setIcon] = useState<string>("GraduationCap");
+  const [academic, setAcademic] = useState<AcademicInfo | null>({ program: "supptic-itt", level: 2, specialty: null });
+  const isPromo = icon === "GraduationCap";
   const [creating, setCreating] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +66,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     setDescription("");
     setCode("");
     setIcon("GraduationCap");
+    setAcademic({ program: "supptic-itt", level: 2, specialty: null });
   }, [open]);
 
   if (!open) return null;
@@ -74,7 +79,8 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
       toast.error("Saisissez le code d’invitation.");
       return;
     }
-    if (mode === "create" && !name.trim()) {
+    const finalName = name.trim() || (isPromo && academic ? `${academicLabel(academic)} · SUP’PTIC` : "");
+    if (mode === "create" && !finalName) {
       toast.error("Donnez un nom à votre espace.");
       return;
     }
@@ -85,11 +91,12 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
         const joined = await joinWorkspace(code.trim());
         toast.success(`Vous avez rejoint « ${joined.name} »`);
       } else {
-        const workspaceName = name.trim();
+        const workspaceName = finalName;
         await createWorkspace({
           name: workspaceName,
           description: description.trim() || undefined,
           icon,
+          academic: isPromo ? academic : null,
         });
         toast.success(`Espace « ${workspaceName} » créé.`);
       }
@@ -122,7 +129,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
         role="dialog"
         aria-modal="true"
         aria-labelledby="workspace-dialog-title"
-        className="w-full max-w-[460px] overflow-hidden rounded-2xl border border-white/[0.09] bg-[#14171D] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[92vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#14171D] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
       >
         <header className="flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-6">
           <div className="flex min-w-0 gap-3">
@@ -180,13 +187,13 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-5 px-5 py-5 sm:px-6">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
             {mode === "create" ? (
               <>
                 <div className="space-y-2">
                   <label htmlFor="workspace-name" className="block text-xs font-medium text-zinc-200">
-                    Nom de l’espace <span className="text-emerald-300">*</span>
+                    Nom de l’espace {!(isPromo && academic) && <span className="text-emerald-300">*</span>}
                   </label>
                   <input
                     ref={nameInputRef}
@@ -194,10 +201,14 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    placeholder={workspaceTypes.find((type) => type.value === icon)?.namePlaceholder ?? "Nom de l’espace"}
+                    placeholder={
+                      isPromo && academic
+                        ? `${academicLabel(academic)} · SUP’PTIC`
+                        : workspaceTypes.find((type) => type.value === icon)?.namePlaceholder ?? "Nom de l’espace"
+                    }
                     maxLength={80}
                     autoComplete="off"
-                    required
+                    required={!(isPromo && academic)}
                     className="w-full rounded-xl border border-white/[0.09] bg-[#0D1015] px-3.5 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10"
                   />
                   <div className="flex justify-end">
@@ -252,6 +263,13 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
                     })}
                   </div>
                 </fieldset>
+
+                {isPromo && (
+                  <fieldset className="space-y-2.5">
+                    <legend className="text-xs font-medium text-zinc-200">Programme de la promo</legend>
+                    <AcademicFields value={academic} onChange={setAcademic} />
+                  </fieldset>
+                )}
               </>
             ) : (
               <div className="space-y-2">
@@ -296,7 +314,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
               </button>
               <button
                 type="submit"
-                disabled={creating || (mode === "join" ? !code.trim() : !name.trim())}
+                disabled={creating || (mode === "join" ? !code.trim() : !name.trim() && !(isPromo && academic))}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300/40 focus:ring-offset-2 focus:ring-offset-[#14171D] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {creating ? (

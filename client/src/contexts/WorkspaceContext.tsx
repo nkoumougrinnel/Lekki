@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { workspaces as workspacesApi } from "@/lib/api";
+import { workspaces as workspacesApi, WorkspaceInput } from "@/lib/api";
 import { Workspace } from "@/types/lekki";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -13,7 +13,7 @@ interface WorkspaceContextType {
   error: string | null;
   setActiveWorkspace: (id: string) => void;
   refresh: () => Promise<void>;
-  createWorkspace: (data: { name: string; description?: string; icon?: string }) => Promise<Workspace>;
+  createWorkspace: (data: WorkspaceInput) => Promise<Workspace>;
   joinWorkspace: (code: string) => Promise<Workspace>;
 }
 
@@ -66,7 +66,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setActiveWorkspaceId(id);
   }, []);
 
-  const createWorkspace = async (data: { name: string; description?: string; icon?: string }) => {
+  const createWorkspace = async (data: WorkspaceInput) => {
     const created = await workspacesApi.create(data);
     await refresh();
     setActiveWorkspaceId(created.id);

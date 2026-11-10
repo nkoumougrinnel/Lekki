@@ -20,6 +20,7 @@ import {
   Folder,
   Users,
   BookMarked,
+  LayoutGrid,
   Check,
   ChevronDown,
   LogOut,
@@ -263,6 +264,17 @@ export function Sidebar({
                 {activeWorkspace.name}
               </span>
               <ChevronsUpDown className="h-3.5 w-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors shrink-0" />
+            </button>
+
+            <button
+              id="sidebar-nav-subjects"
+              onClick={() => handleSelect("subjects")}
+              className={navItemClass(currentView === "subjects" || currentView === "subject")}
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid className={`h-4 w-4 ${currentView === "subjects" || currentView === "subject" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Matières</span>
+              </div>
             </button>
 
             <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>

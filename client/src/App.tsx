@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Toaster, toast } from "sonner";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -17,6 +17,9 @@ import { WikiEditorModal } from "./components/WikiEditorModal";
 import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import { RevisionPanel, RevisionMode } from "./components/RevisionPanel";
+import { SubjectsView } from "./components/SubjectsView";
+import { SubjectView } from "./components/SubjectView";
+import { buildLibrary, wikiTopicFor } from "./lib/library";
 import { LoginView } from "./components/LoginView";
 import { RegisterView } from "./components/RegisterView";
 import { UpdateNotifier } from "./components/UpdateNotifier";
@@ -62,6 +65,8 @@ function LekkiMain() {
   const [personalFiles, setPersonalFiles] = useState<DriveFile[]>([]);
   const [trashedFiles, setTrashedFiles] = useState<DriveFile[]>([]);
   const [folders, setFolders] = useState<DriveFolder[]>([]);
+  const [spaceFolders, setSpaceFolders] = useState<DriveFolder[]>([]);
+  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
   const [wikiPages, setWikiPages] = useState<WikiPage[]>([]);
   const [loadedDataKey, setLoadedDataKey] = useState<string | null>(null);
   const [driveLoading, setDriveLoading] = useState(false);
@@ -72,11 +77,11 @@ function LekkiMain() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiInitialQuestion, setAIInitialQuestion] = useState<string | undefined>(undefined);
-  const [revision, setRevision] = useState<{ open: boolean; mode: RevisionMode; fileId?: string | null }>({
-    open: false,
-    mode: "quiz",
-  });
-  const openRevision = (mode: RevisionMode, fileId?: string | null) => setRevision({ open: true, mode, fileId });
+  const [revision, setRevision] = useState<{
+    open: boolean; mode: RevisionMode; fileId?: string | null; subjectId?: string | null;
+  }>({ open: false, mode: "quiz" });
+  const openRevision = (mode: RevisionMode, fileId?: string | null, subjectId?: string | null) =>
+    setRevision({ open: true, mode, fileId, subjectId });
   const askLekki = (question: string) => {
     setAIInitialQuestion(question);
     setIsAIOpen(true);
@@ -124,7 +129,7 @@ function LekkiMain() {
       else if (currentView === "trash") fileScope = "trash";
       else if (currentView === "workspace_files") fileScope = "workspace";
 
-      const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles, loadedPersonalFiles] = await Promise.all([
+      const [loadedFiles, loadedFolders, loadedWiki, loadedAllFiles, loadedTrashFiles, loadedPersonalFiles, loadedSpaceFolders] = await Promise.all([
         currentView === "workspace_files" && !activeWorkspaceId
           ? Promise.resolve([] as DriveFile[])
           : drive.getFiles({
@@ -142,6 +147,9 @@ function LekkiMain() {
         drive.getFiles({ scope: "all" }).catch(() => null),
         drive.getFiles({ scope: "trash" }).catch(() => null),
         drive.getFiles({ scope: "personal" }).catch(() => null),
+        activeWorkspaceId
+          ? drive.getFolders({ workspace_id: activeWorkspaceId }).catch(() => null)
+          : Promise.resolve([] as DriveFolder[]),
       ]);
 
       if (requestId !== refreshSequence.current) return;
@@ -151,6 +159,7 @@ function LekkiMain() {
       if (Array.isArray(loadedTrashFiles)) setTrashedFiles(loadedTrashFiles);
       if (Array.isArray(loadedPersonalFiles)) setPersonalFiles(loadedPersonalFiles);
       if (Array.isArray(loadedFolders)) setFolders(loadedFolders);
+      if (Array.isArray(loadedSpaceFolders)) setSpaceFolders(loadedSpaceFolders);
       if (Array.isArray(loadedWiki)) setWikiPages(loadedWiki);
       setLoadedDataKey(driveDataKey);
     } catch {
@@ -206,6 +215,21 @@ function LekkiMain() {
   }, [activeWorkspaceId, currentView]);
 
   // Sidebar Counts
+  // Bibliothèque de l'espace actif : chaque document rangé sous sa matière.
+  const spaceFiles = useMemo(
+    () => allFiles.filter((file) => (activeWorkspaceId ? file.workspace_id === activeWorkspaceId : !file.workspace_id)),
+    [allFiles, activeWorkspaceId]
+  );
+  const library = useMemo(
+    () => buildLibrary(spaceFiles, spaceFolders, wikiPages, activeWorkspace),
+    [spaceFiles, spaceFolders, wikiPages, activeWorkspace]
+  );
+  const openSubject = (subjectId: string) => {
+    setActiveSubjectId(subjectId);
+    setCurrentView("subject");
+  };
+  const activeShelf = activeSubjectId ? library.shelves.get(activeSubjectId) : undefined;
+
   const counts = {
     myDocs: personalFiles.length,
     starred: allFiles.filter((f) => f.is_starred).length,
@@ -365,8 +389,50 @@ function LekkiMain() {
               onOpenAI={() => setIsAIOpen(true)}
               onAsk={askLekki}
               onOpenRevision={openRevision}
+              library={library}
+              onOpenSubject={openSubject}
             />
           )}
+
+          {currentView === "subjects" && (
+            <SubjectsView
+              library={library}
+              workspace={activeWorkspace}
+              onOpenSubject={openSubject}
+              onOpenFile={(file) => setViewingFile(file)}
+            />
+          )}
+
+          {currentView === "subject" &&
+            (activeShelf ? (
+              <SubjectView
+                shelf={activeShelf}
+                onBack={() => setCurrentView("subjects")}
+                onOpenFile={(file) => setViewingFile(file)}
+                onOpenWiki={(p) => {
+                  setActiveWikiPage(p);
+                  setCurrentView("workspace_wiki");
+                  setWikiFilterTopic(null);
+                }}
+                onAsk={askLekki}
+                onOpenRevision={openRevision}
+                onWriteNote={() => {
+                  setEditingWikiPage(null);
+                  setWikiEditorTopic(wikiTopicFor(activeShelf.subject));
+                  setWikiEditorSection("Fiches de révision");
+                  setWikiEditorKind("page");
+                  setIsWikiEditorOpen(true);
+                }}
+                onAddDocuments={() => setCurrentView("workspace_files")}
+              />
+            ) : (
+              <SubjectsView
+                library={library}
+                workspace={activeWorkspace}
+                onOpenSubject={openSubject}
+                onOpenFile={(file) => setViewingFile(file)}
+              />
+            ))}
 
           {(currentView === "my_docs" ||
             currentView === "starred" ||
@@ -470,12 +536,11 @@ function LekkiMain() {
         <RevisionPanel
           open={revision.open}
           onClose={() => setRevision((current) => ({ ...current, open: false }))}
-          files={(allFiles.length ? allFiles : files).filter((file) =>
-            activeWorkspaceId ? file.workspace_id === activeWorkspaceId : !file.workspace_id
-          )}
+          library={library}
           spaceName={activeWorkspace?.name}
           initialMode={revision.mode}
           initialFileId={revision.fileId}
+          initialSubjectId={revision.subjectId}
           onOpenDoc={(docId) => {
             setRevision((current) => ({ ...current, open: false }));
             void handleOpenDocFromId(docId);

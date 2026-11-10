@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { workspaces as workspacesApi } from "@/lib/api";
-import { WorkspaceMember } from "@/types/lekki";
+import { Workspace, WorkspaceMember } from "@/types/lekki";
 import { toast } from "sonner";
+import { AcademicFields } from "./AcademicFields";
+import { AcademicInfo, parseAcademic } from "@/lib/curriculum";
 import {
   X,
   Settings2,
@@ -321,6 +323,10 @@ export function WorkspaceAdminDialog({
               </p>
             </section>
 
+            {selectedWorkspace && (
+              <ProgrammeSection key={selectedWorkspace.id} workspace={selectedWorkspace} />
+            )}
+
             <section className="overflow-hidden rounded-xl border border-white/[0.07]">
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
                 <div className="flex items-center gap-2.5">
@@ -475,5 +481,49 @@ export function WorkspaceAdminDialog({
         )}
       </section>
     </div>
+  );
+}
+
+
+function ProgrammeSection({ workspace }: { workspace: Workspace }) {
+  const { refresh } = useWorkspace();
+  const saved = parseAcademic(workspace.academic);
+  const [value, setValue] = useState<AcademicInfo | null>(saved);
+  const [saving, setSaving] = useState(false);
+  const dirty = JSON.stringify(value) !== JSON.stringify(saved);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await workspacesApi.update(workspace.id, value ? { academic: value } : { clear_academic: true });
+      await refresh();
+      toast.success(value ? "Programme enregistré." : "Programme retiré.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d’enregistrer le programme.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 sm:p-5">
+      <h3 className="text-sm font-medium text-zinc-100">Programme d’études</h3>
+      <p className="mb-3 mt-1 text-xs leading-relaxed text-zinc-500">
+        Sert à ranger les cours et les anciens sujets par matière.
+      </p>
+      <AcademicFields value={value} onChange={setValue} />
+      {dirty && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => void save()}
+            disabled={saving}
+            className="rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-45"
+          >
+            {saving ? "Enregistrement…" : "Enregistrer le programme"}
+          </button>
+        </div>
+      )}
+    </section>
   );
 }

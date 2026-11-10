@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 
 from app.database import Base
 
@@ -14,6 +14,8 @@ class Workspace(Base):
     icon = Column(String, default="school")
     owner_id = Column(String, ForeignKey("users.id"), nullable=True)
     join_code = Column(String, unique=True, index=True, nullable=True)
+    # Programme d'études (JSON) : {"program": "supptic-itt", "level": 2, "specialty": "IR"}
+    academic = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
