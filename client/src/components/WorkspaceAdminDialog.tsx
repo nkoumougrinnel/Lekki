@@ -272,7 +272,7 @@ export function WorkspaceAdminDialog({
               <div>
                 <p className="text-sm font-medium text-zinc-200">Aucun espace à administrer</p>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                  Vous devez être administrateur ou propriétaire d’un espace pour gérer ses membres et ses invitations.
+                  Il faut être admin ou propriétaire d’un espace pour gérer ses membres et ses invitations.
                 </p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export function WorkspaceAdminDialog({
                 <div className="px-4 py-8 text-center">
                   <Users className="mx-auto h-6 w-6 text-zinc-600" />
                   <p className="mt-2 text-xs font-medium text-zinc-300">Aucun membre pour le moment</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Partagez le code d’invitation pour accueillir des membres.</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">Partage le code d’invitation pour accueillir tes camarades.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-white/[0.05]">
@@ -462,7 +462,7 @@ export function WorkspaceAdminDialog({
                   <div>
                     <h3 className="text-sm font-medium text-red-200">Supprimer cet espace</h3>
                     <p className="mt-1 max-w-md text-xs leading-relaxed text-zinc-500">
-                      Le Drive partagé, le Wiki et les membres associés seront supprimés. Cette action est irréversible.
+                      Les documents, le wiki et la liste des membres seront supprimés. Cette action est irréversible.
                     </p>
                   </div>
                 </div>

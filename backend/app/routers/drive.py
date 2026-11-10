@@ -129,6 +129,11 @@ def _file_out(drive_file: DriveFile) -> FileOut:
         updated_at=drive_file.updated_at,
     )
 
+def _clean_filename(raw: Optional[str]) -> str:
+    """Un dossier importé depuis le navigateur envoie « ITT 2/S1/…/sujet.pdf » : on garde le nom seul."""
+    return os.path.basename((raw or "").replace("\\", "/")).strip()
+
+
 async def _readable_file(db: AsyncSession, user: User, file_id: str) -> DriveFile:
     result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
     drive_file = result.scalar_one_or_none()
@@ -232,6 +237,81 @@ async def create_folder(
         files_count=0,
         created_at=folder.created_at
     )
+
+
+class FolderNode(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    children: List["FolderNode"] = Field(default_factory=list)
+
+
+FolderNode.model_rebuild()
+
+
+class FolderTreeCreate(BaseModel):
+    workspace_id: str
+    parent_id: Optional[str] = None
+    tree: List[FolderNode] = Field(min_length=1)
+
+
+class FolderTreeResult(BaseModel):
+    created: int
+    existing: int
+
+
+MAX_TREE_NODES = 400
+MAX_TREE_DEPTH = 5
+
+
+@router.post("/folders/tree", response_model=FolderTreeResult)
+async def create_folder_tree(
+    data: FolderTreeCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Crée une arborescence de dossiers en une fois (ex. Semestre → Matière → COURS/TD/CC/SUJETS).
+    Un dossier qui existe déjà au même endroit (même nom, sans tenir compte de la casse) est réutilisé :
+    on peut donc relancer l'opération sans créer de doublons."""
+    await require_workspace_member(db, current_user, data.workspace_id)
+    if data.parent_id:
+        parent = await _accessible_folder(db, current_user, data.parent_id)
+        if parent.workspace_id != data.workspace_id:
+            raise HTTPException(status_code=400, detail="Ce dossier n'appartient pas à cet espace.")
+
+    def count(nodes: List[FolderNode], depth: int = 1) -> int:
+        if depth > MAX_TREE_DEPTH:
+            raise HTTPException(status_code=400, detail="Arborescence trop profonde.")
+        return sum(1 + count(node.children, depth + 1) for node in nodes)
+
+    if count(data.tree) > MAX_TREE_NODES:
+        raise HTTPException(status_code=400, detail="Arborescence trop grande.")
+
+    result = await db.execute(select(DriveFolder).where(DriveFolder.workspace_id == data.workspace_id))
+    by_place = {((folder.parent_id or None), folder.name.strip().lower()): folder for folder in result.scalars().all()}
+    stats = {"created": 0, "existing": 0}
+
+    def walk(nodes: List[FolderNode], parent_id: Optional[str]) -> None:
+        for node in nodes:
+            name = " ".join(node.name.split())
+            key = (parent_id, name.lower())
+            folder = by_place.get(key)
+            if folder:
+                stats["existing"] += 1
+            else:
+                folder = DriveFolder(
+                    id=f"folder-{uuid.uuid4().hex[:8]}",
+                    name=name,
+                    workspace_id=data.workspace_id,
+                    parent_id=parent_id,
+                    owner_id=current_user.id,
+                )
+                db.add(folder)
+                by_place[key] = folder
+                stats["created"] += 1
+            walk(node.children, folder.id)
+
+    walk(data.tree, data.parent_id)
+    await db.commit()
+    return FolderTreeResult(**stats)
 
 
 @router.put("/folders/{folder_id}", response_model=FolderOut)
@@ -578,7 +658,7 @@ async def create_file(
 
     # 1. File basics
     file_id = f"file-{uuid.uuid4().hex[:8]}"
-    extension = os.path.splitext(file.filename)[1].lower()
+    extension = os.path.splitext(_clean_filename(file.filename))[1].lower()
     if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
         raise HTTPException(status_code=415, detail="Format accepté : PDF, DOCX, PPTX, TXT ou MD")
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
@@ -598,7 +678,7 @@ async def create_file(
         raise HTTPException(
             status_code=422,
             detail=(
-                "Aucun texte n'a pu être extrait. Vérifiez que le document n'est pas vide, "
+                "Aucun texte n'a pu être extrait. Vérifie que le document n'est pas vide, "
                 "protégé ou scanné sans texte OCR exploitable."
             ),
         )
@@ -617,7 +697,7 @@ async def create_file(
     # 4. DB Record
     f = DriveFile(
         id=file_id,
-        name=file.filename,
+        name=_clean_filename(file.filename) or f"document{extension}",
         extension=extension,
         content=content,
         structured_text=structured_text,
@@ -677,7 +757,7 @@ async def import_files(
     results: List[FileOut] = []
 
     for index, file in enumerate(files):
-        filename = file.filename or f"document-{index}"
+        filename = _clean_filename(file.filename) or f"document-{index}"
         extension = os.path.splitext(filename)[1].lower()
         if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
             print(f"Skipping {filename}: unsupported format {extension}")

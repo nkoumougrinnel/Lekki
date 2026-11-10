@@ -28,7 +28,7 @@ export function LoginView() {
   return (
     <AuthLayout
       title="Connexion"
-      subtitle="Retrouvez votre Drive, votre Wiki et Lekki AI."
+      subtitle="Retrouve les cours, les sujets et les fiches de ta promo."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
@@ -67,7 +67,7 @@ export function LoginView() {
       <p className="mt-6 text-sm text-zinc-500 text-center">
         Pas encore de compte ?{" "}
         <Link href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium">
-          Créer un espace Lekki
+          Créer un compte
         </Link>
       </p>
     </AuthLayout>

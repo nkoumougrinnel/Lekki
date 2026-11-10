@@ -94,14 +94,14 @@ export function ShareDialog({
           <div className="p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs">
             <div className="font-medium text-zinc-200 truncate">{file.name}</div>
             <div className="text-[11px] text-zinc-400 mt-0.5">
-              Propriétaire : {file.owner_name || currentUser?.name || "Vous"}
+              Propriétaire : {file.owner_name || currentUser?.name || "Toi"}
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5 text-zinc-400" />
-              Sélectionnez les personnes avec qui partager :
+              Choisis les camarades avec qui partager :
             </label>
 
             <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
@@ -143,10 +143,8 @@ export function ShareDialog({
           </div>
 
           <div className="text-[11px] text-zinc-400 p-2 rounded bg-zinc-900/40 border border-zinc-800/60">
-            ℹ️ <strong>Règle de provenance</strong> : Le fichier reste rattaché à votre
-            espace personnel. Chez les destinataires, il apparaîtra directement dans
-            leur rubrique <strong>« Partagés avec moi »</strong> et deviendra
-            interrogeable par leur Lekki AI.
+            Le document reste dans ton espace personnel. Tes camarades le verront dans
+            <strong> « Partagés avec moi »</strong> et pourront interroger Lekki AI dessus.
           </div>
         </div>
 

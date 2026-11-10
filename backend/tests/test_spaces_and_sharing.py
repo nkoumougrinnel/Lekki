@@ -101,3 +101,33 @@ def test_correction_files_are_not_exam_subjects():
     assert not revision.is_exam_name("CorrectionCcGenieCivilTelecom_2025.pdf")
     assert not revision.is_exam_name("correction CC genie Civil des Telecoms 2022.pdf")
     assert revision.is_exam_name("Algèbre_I_RAT_2024+CC_2024+CC_2025.pdf")
+
+
+def test_folder_tree_is_idempotent_and_members_only(client, make_user):
+    alice, mallory = make_user("alice"), make_user("mallory")
+    space = client.post("/api/v1/workspaces", headers=alice["headers"], json={"name": "ITT2"}).json()["id"]
+    tree = [{"name": "S3", "children": [
+        {"name": "Traitement du signal", "children": [{"name": n} for n in ["COURS", "TD", "CC", "SUJETS"]]},
+    ]}]
+    payload = {"workspace_id": space, "tree": tree}
+
+    assert client.post("/api/v1/drive/folders/tree", headers=mallory["headers"], json=payload).status_code == 403
+    first = client.post("/api/v1/drive/folders/tree", headers=alice["headers"], json=payload)
+    assert first.status_code == 200, first.text
+    assert first.json() == {"created": 6, "existing": 0}
+    # Relancer ne crée aucun doublon, même avec une casse différente
+    tree[0]["children"][0]["name"] = "TRAITEMENT DU SIGNAL"
+    again = client.post("/api/v1/drive/folders/tree", headers=alice["headers"], json=payload)
+    assert again.json() == {"created": 0, "existing": 6}
+    folders = client.get(f"/api/v1/drive/folders?workspace_id={space}", headers=alice["headers"]).json()
+    assert len(folders) == 6
+
+
+def test_imported_folder_files_keep_only_their_name(client, make_user):
+    alice = make_user("alice")
+    response = client.post(
+        "/api/v1/drive/files/import", headers=alice["headers"],
+        files=[("files", ("ITT 2/S1/TS/SUJETS/TS_Examen_CL_2024.md", b"# Examen\nQuestion 1", "text/markdown"))],
+    )
+    assert response.status_code == 200, response.text
+    assert [item["name"] for item in response.json()] == ["TS_Examen_CL_2024.md"]

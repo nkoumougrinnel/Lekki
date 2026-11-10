@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Le thème suit la classe .dark posée par ThemeProvider, pas le réglage du système :
+   sans cette ligne, le Drive s'affichait en clair sur les appareils en mode clair. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --background: 220 18% 6%;

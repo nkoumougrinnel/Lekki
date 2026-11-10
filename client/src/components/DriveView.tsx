@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   Folder,
   FolderPlus,
+  FolderUp,
   FileText,
   Star,
   Share2,
@@ -45,8 +46,20 @@ interface DriveViewProps {
 
 type SortKey = "name" | "modified" | "size";
 
+const EMPTY_STATES: Record<string, { title: string; text: string }> = {
+  default: { title: "Aucun document ici", text: "Ajoute un cours, un TD ou un ancien sujet pour le retrouver ici." },
+  workspace_files: {
+    title: "Aucun document ici",
+    text: "Ajoute un cours, un TD ou un ancien sujet : il sera rangé sous sa matière et visible par tout l’espace.",
+  },
+  my_docs: { title: "Aucun document personnel", text: "Ce que tu ajoutes ici n’est visible que par toi." },
+  starred: { title: "Aucun favori", text: "Ajoute un document aux favoris depuis son menu « ⋯ » pour le retrouver ici." },
+  shared_with_me: { title: "Rien de partagé pour l’instant", text: "Les documents qu’un camarade partage directement avec toi apparaîtront ici." },
+  trash: { title: "La corbeille est vide", text: "Les documents supprimés apparaîtront ici." },
+};
+
 const VIEW_TITLES: Partial<Record<NavView, string>> = {
-  my_docs: "Mes fichiers",
+  my_docs: "Mes documents",
   workspace_files: "Fichiers de l’espace",
   starred: "Favoris",
   shared_with_me: "Partagés avec moi",
@@ -74,6 +87,7 @@ export function DriveView({
   onOpenFile,
   onOpenShare,
   onNewFileClick,
+  onImportFolderClick,
   onRefresh,
   onFileTrashed,
   onFileRestored,
@@ -193,6 +207,9 @@ export function DriveView({
   const rootLabel =
     currentView === "workspace_files" ? activeWorkspaceName || title : title;
   const canManageFiles = !isTrashView;
+  // On n’ajoute un fichier que là où il sera rangé : pas dans Favoris ni Partagés avec moi.
+  const canAddFiles = currentView === "my_docs" || currentView === "workspace_files";
+  const emptyState = EMPTY_STATES[currentView] ?? EMPTY_STATES.default;
 
   const handleToggleStar = async (file: DriveFile) => {
     setBusyFileId(file.id);
@@ -288,7 +305,7 @@ export function DriveView({
       toast.success("Dossier supprimé");
       await onRefresh();
     } catch {
-      toast.error("Impossible de supprimer ce dossier. Vérifiez qu’il est vide.");
+      toast.error("Impossible de supprimer ce dossier. Vérifie qu’il est vide.");
     }
   };
 
@@ -361,7 +378,18 @@ export function DriveView({
                 <span className="hidden sm:inline">Dossier</span>
               </button>
             )}
-            {canManageFiles && (
+            {canAddFiles && onImportFolderClick && (
+              <button
+                type="button"
+                onClick={() => onImportFolderClick(currentFolderId || undefined)}
+                title="Importer un dossier entier, avec ses sous-dossiers"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+              >
+                <FolderUp className="h-4 w-4" />
+                <span className="hidden md:inline">Importer un dossier</span>
+              </button>
+            )}
+            {canAddFiles && (
               <button
                 type="button"
                 onClick={() => onNewFileClick(currentFolderId || undefined)}
@@ -518,20 +546,18 @@ export function DriveView({
               <LoaderCircle className="h-6 w-6 animate-spin text-emerald-500" />
               Chargement…
             </div>
-          ) : displayedFiles.length === 0 ? (
+          ) : displayedFiles.length === 0 && visibleFolders.length > 0 && !isTrashView ? null : displayedFiles.length === 0 ? (
             <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-[#dadce0] px-5 py-8 text-center dark:border-white/10">
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
                 {isTrashView ? <Trash2 className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
               </div>
               <h3 className="text-sm font-medium">
-                {isTrashView ? "La corbeille est vide" : "Aucun fichier ici"}
+                {emptyState.title}
               </h3>
               <p className="mt-1 max-w-md text-xs text-zinc-500">
-                {isTrashView
-                  ? "Les fichiers supprimés apparaîtront ici."
-                  : "Ajoutez un document pour le retrouver ici et l’ouvrir directement."}
+                {emptyState.text}
               </p>
-              {canManageFiles && (
+              {canAddFiles && (
                 <button
                   type="button"
                   onClick={() => onNewFileClick(currentFolderId || undefined)}
@@ -587,7 +613,7 @@ export function DriveView({
                         setOpenMenuId((id) => (id === file.id ? null : file.id));
                       }}
                       aria-label={`Options pour ${file.name}`}
-                      className="absolute right-2 top-2 z-20 rounded-full bg-white/95 p-1.5 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100"
+                      className="absolute right-2 top-2 z-20 rounded-full bg-white/95 p-1.5 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100 dark:hover:bg-[#2d3139]"
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" />
                     </button>

@@ -40,7 +40,7 @@ export function RegisterView() {
   return (
     <AuthLayout
       title="Créer un compte"
-      subtitle="Rejoignez Lekki et commencez à unifier vos documents, votre wiki et votre IA."
+      subtitle="Rejoins l’espace de ta promo ou crée-le en deux minutes."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
@@ -94,7 +94,7 @@ export function RegisterView() {
           value={confirmPassword}
           onChange={setConfirmPassword}
           autoComplete="new-password"
-          placeholder="Répétez le mot de passe"
+          placeholder="Répète le mot de passe"
         />
 
         <AuthSubmit disabled={submitting}>

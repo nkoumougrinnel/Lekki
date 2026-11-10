@@ -20,9 +20,9 @@ export default defineConfig({
       },
       includeAssets: ["logo.svg"],
       manifest: {
-        name: "Lekki — Espace documentaire intelligent",
+        name: "Lekki — La mémoire collective de ta promo",
         short_name: "Lekki",
-        description: "Espace documentaire intelligent avec Drive, Wiki, recherche et assistant IA.",
+        description: "Cours, TD et anciens sujets de ta promo, rangés par matière, avec une IA qui cite ses sources.",
         lang: "fr",
         start_url: "/",
         scope: "/",

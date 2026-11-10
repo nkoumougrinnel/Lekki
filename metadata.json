@@ -1,6 +1,6 @@
 {
   "name": "Lekki",
-  "description": "Espace documentaire intelligent : le Drive stocke, le partage connecte, le Wiki structure, la recherche retrouve, et l'IA comprend.",
+  "description": "La mémoire collective de ta promo : cours, TD et anciens sujets rangés par matière, et une IA qui répond en citant ses sources.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -27,7 +27,7 @@ const workspaceTypes = [
     icon: BookMarked, namePlaceholder: "Ex. Révisions Traitement du signal",
   },
   {
-    value: "Folder", label: "Autre", description: "Projet, équipe ou association",
+    value: "Folder", label: "Autre", description: "Projet, association, autre",
     icon: Folder, namePlaceholder: "Ex. Projet de fin d’année",
   },
 ] as const;
@@ -76,12 +76,12 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     if (creating) return;
 
     if (mode === "join" && !code.trim()) {
-      toast.error("Saisissez le code d’invitation.");
+      toast.error("Entre le code d’invitation.");
       return;
     }
     const finalName = name.trim() || (isPromo && academic ? `${academicLabel(academic)} · SUP’PTIC` : "");
     if (mode === "create" && !finalName) {
-      toast.error("Donnez un nom à votre espace.");
+      toast.error("Donne un nom à l’espace.");
       return;
     }
 
@@ -89,7 +89,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
     try {
       if (mode === "join") {
         const joined = await joinWorkspace(code.trim());
-        toast.success(`Vous avez rejoint « ${joined.name} »`);
+        toast.success(`Tu as rejoint « ${joined.name} »`);
       } else {
         const workspaceName = finalName;
         await createWorkspace({
@@ -143,7 +143,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
               <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                 {mode === "create"
                   ? "Une promo, un club ou un groupe : tout le savoir au même endroit."
-                  : "Entrez le code partagé par un camarade de l’espace."}
+                  : "Entre le code partagé par un camarade."}
               </p>
             </div>
           </div>
@@ -191,6 +191,39 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
             {mode === "create" ? (
               <>
+                <fieldset className="space-y-2.5">
+                  <legend className="text-xs font-medium text-zinc-200">Quel type d’espace ?</legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    {workspaceTypes.map((type) => {
+                      const Icon = type.icon;
+                      const selected = icon === type.value;
+                      return (
+                        <button
+                          key={type.value}
+                          type="button"
+                          onClick={() => setIcon(type.value)}
+                          aria-pressed={selected}
+                          className={`flex min-h-[76px] items-start gap-2.5 rounded-xl border p-3 text-left transition ${
+                            selected
+                              ? "border-emerald-400/40 bg-emerald-400/[0.07] ring-1 ring-inset ring-emerald-400/10"
+                              : "border-white/[0.07] bg-white/[0.015] hover:border-white/[0.14] hover:bg-white/[0.035]"
+                          }`}
+                        >
+                          <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${selected ? "text-emerald-300" : "text-zinc-500"}`} />
+                          <span className="min-w-0">
+                            <span className={`block text-xs font-medium ${selected ? "text-zinc-100" : "text-zinc-300"}`}>
+                              {type.label}
+                            </span>
+                            <span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">
+                              {type.description}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+
                 <div className="space-y-2">
                   <label htmlFor="workspace-name" className="block text-xs font-medium text-zinc-200">
                     Nom de l’espace {!(isPromo && academic) && <span className="text-emerald-300">*</span>}
@@ -231,38 +264,6 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
                   />
                 </div>
 
-                <fieldset className="space-y-2.5">
-                  <legend className="text-xs font-medium text-zinc-200">Quel type d’espace ?</legend>
-                  <div className="grid grid-cols-2 gap-2">
-                    {workspaceTypes.map((type) => {
-                      const Icon = type.icon;
-                      const selected = icon === type.value;
-                      return (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={() => setIcon(type.value)}
-                          aria-pressed={selected}
-                          className={`flex min-h-[76px] items-start gap-2.5 rounded-xl border p-3 text-left transition ${
-                            selected
-                              ? "border-emerald-400/40 bg-emerald-400/[0.07] ring-1 ring-inset ring-emerald-400/10"
-                              : "border-white/[0.07] bg-white/[0.015] hover:border-white/[0.14] hover:bg-white/[0.035]"
-                          }`}
-                        >
-                          <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${selected ? "text-emerald-300" : "text-zinc-500"}`} />
-                          <span className="min-w-0">
-                            <span className={`block text-xs font-medium ${selected ? "text-zinc-100" : "text-zinc-300"}`}>
-                              {type.label}
-                            </span>
-                            <span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">
-                              {type.description}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </fieldset>
 
                 {isPromo && (
                   <fieldset className="space-y-2.5">
@@ -293,7 +294,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-zinc-500">
-                  Vous pouvez demander ce code à un administrateur de l’espace.
+                  Demande ce code à un admin de l’espace.
                 </p>
               </div>
             )}
@@ -301,7 +302,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: CreateWorkspaceDia
 
           <footer className="flex items-center justify-between gap-3 border-t border-white/[0.06] bg-black/15 px-5 py-4 sm:px-6">
             <p className="hidden text-[10px] text-zinc-600 sm:block">
-              {mode === "create" ? "Vous pourrez inviter vos camarades avec un code." : "Le code donne accès à un espace existant."}
+              {mode === "create" ? "Tu pourras inviter tes camarades avec un code." : "Le code donne accès à un espace existant."}
             </p>
             <div className="ml-auto flex items-center gap-2">
               <button

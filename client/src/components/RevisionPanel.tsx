@@ -74,6 +74,9 @@ export function RevisionPanel({
       initialSubjectId ?? library.entries.find((entry) => entry.file.id === initialFileId)?.subject?.id ?? null
     );
     if (initialFileId && initialMode === "quiz") setSelected([initialFileId]);
+    else if (initialSubjectId && initialMode === "quiz")
+      // Depuis une page Matière : ses cours sont déjà cochés (5 au plus).
+      setSelected((library.shelves.get(initialSubjectId)?.courses || []).slice(0, 5).map((entry) => entry.file.id));
     else setSelected([]);
     if (initialFileId && initialMode === "correction") void runCorrection(initialFileId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,7 +98,7 @@ export function RevisionPanel({
 
   async function startQuiz() {
     if (selected.length === 0) {
-      toast.error("Choisissez au moins un cours ou un TD.");
+      toast.error("Choisis au moins un cours ou un TD.");
       return;
     }
     setQuiz({ step: "loading" });
@@ -222,7 +225,7 @@ export function RevisionPanel({
                         text={
                           subjectTitle
                             ? `Aucun cours ni TD pour ${subjectTitle} pour l’instant.`
-                            : "Aucun cours ni TD dans cet espace pour l’instant. Importe tes cours depuis le Drive."
+                            : "Aucun cours ni TD dans cet espace pour l’instant. Importe tes cours depuis Documents."
                         }
                       />
                     ) : (

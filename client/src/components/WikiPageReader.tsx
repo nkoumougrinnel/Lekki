@@ -124,7 +124,14 @@ export function WikiPageReader({
     ];
   }, [onNavigateTopic, page.title, topicName]);
 
-  const headings = useMemo(() => page.content
+  // Le titre est déjà affiché en tête de page : on retire le « # Titre » répété au début du contenu.
+  const body = useMemo(() => {
+    const match = page.content.match(/^\s*#\s+(.+?)\s*#*\s*(?:\r?\n|$)/);
+    const same = match && match[1].trim().toLowerCase() === page.title.trim().toLowerCase();
+    return same ? page.content.slice(match[0].length).replace(/^\s+/, "") : page.content;
+  }, [page.content, page.title]);
+
+  const headings = useMemo(() => body
     .split("\n")
     .map((line) => {
       const match = /^(#{1,3})\s+(.+)$/.exec(line.trim());
@@ -134,7 +141,7 @@ export function WikiPageReader({
       return { title, level: match[1].length, id };
     })
     .filter((heading): heading is { title: string; level: number; id: string } => Boolean(heading)),
-  [page.content]);
+  [body]);
 
   return (
     <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-hidden">
@@ -216,6 +223,25 @@ export function WikiPageReader({
                   )}
                 </div>
 
+                {/* Sur téléphone, le panneau latéral est masqué : les actions sont ici. */}
+                <div className="flex items-center gap-2 lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(page)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-700/80 bg-zinc-900/40 px-3 text-xs font-medium text-zinc-200"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" /> Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onViewHistory(page)}
+                    aria-label="Historique"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/40 text-zinc-300"
+                  >
+                    <History className="h-4 w-4" />
+                  </button>
+                </div>
+
                 {canManageWiki && (
                   <button
                     type="button"
@@ -245,7 +271,7 @@ export function WikiPageReader({
             </header>
 
             {/* CONTENT */}
-            <MarkdownContent content={page.content} className="max-w-[78ch] text-[15px] leading-relaxed" />
+            <MarkdownContent content={body} className="max-w-[78ch] text-[15px] leading-relaxed" />
 
             <div className="h-32" /> {/* Spacer for the bottom */}
           </div>

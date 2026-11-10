@@ -331,7 +331,7 @@ export function WikiHistoryModal({
                   </p>
 
                   <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
-                    Essayez un autre terme de recherche.
+                    Essaie un autre mot.
                   </p>
                 </div>
               )}
@@ -340,7 +340,7 @@ export function WikiHistoryModal({
             {/* Sidebar footer */}
             <div className="hidden shrink-0 border-t border-white/[0.07] px-5 py-3 lg:block">
               <p className="text-[10px] text-zinc-600">
-                Sélectionnez une révision pour consulter son contenu.
+                Choisis une version pour voir son contenu.
               </p>
             </div>
           </aside>

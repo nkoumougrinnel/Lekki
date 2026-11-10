@@ -25,6 +25,7 @@ import { SubjectCard } from "./SubjectsView";
 import { workspaces as workspacesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RevisionMode } from "./RevisionPanel";
+import { spaceWording } from "@/lib/spaces";
 
 interface HomeOverviewProps {
   files: DriveFile[];
@@ -49,6 +50,7 @@ export function HomeOverview({
   onOpenFile,
   onOpenWiki,
   onAsk,
+  onOpenAI,
   onOpenRevision,
   library,
   onOpenSubject,
@@ -70,8 +72,11 @@ export function HomeOverview({
   const verifiedCount = wikiPages.filter((w) => w.status === "verified").length;
 
   const suggestions = useMemo(() => {
-    const picks = courses.slice(0, 2).map(({ file }) => `Résume « ${prettyName(file.name)} »`);
-    if (exams[0]) picks.push(`Quelles notions tombent dans « ${prettyName(exams[0].file.name)} » ?`);
+    // Les documents rattachés à une matière d'abord : ce sont eux qu'on révise.
+    const bySubject = <T extends { subject: unknown }>(list: T[]) => [...list].sort((a, b) => Number(!a.subject) - Number(!b.subject));
+    const picks = bySubject(courses).slice(0, 2).map(({ file }) => `Résume « ${prettyName(file.name)} »`);
+    const exam = bySubject(exams)[0];
+    if (exam) picks.push(`Quelles notions tombent dans « ${prettyName(exam.file.name)} » ?`);
     return picks.length ? picks : ["Que contiennent les documents de cet espace ?"];
   }, [courses, exams]);
 
@@ -97,7 +102,7 @@ export function HomeOverview({
       const message = `Rejoins « ${activeWorkspace.name} » sur Lekki avec le code ${code} : ${window.location.origin}`;
       try {
         await navigator.clipboard.writeText(message);
-        toast.success(`Code ${code} copié. Colle-le dans le groupe WhatsApp de la promo.`);
+        toast.success(`Code ${code} copié. ${spaceWording(activeWorkspace).inviteToast}`);
       } catch {
         toast.success(`Code d’invitation : ${code}`);
       }
@@ -107,6 +112,7 @@ export function HomeOverview({
   };
 
   const isEmpty = spaceFiles.length === 0 && wikiPages.length === 0;
+  const wording = spaceWording(activeWorkspace);
   const semesterSubjects = library.current ? library.subjectsOfSemester(library.current) : [];
   const canManage = ["owner", "admin"].includes(activeWorkspace?.role || "");
 
@@ -119,10 +125,10 @@ export function HomeOverview({
           <p className="text-xs font-medium text-emerald-300/90">
             {firstName ? `Bonjour ${firstName}` : "Bonjour"}
             {activeWorkspace ? ` · ${activeWorkspace.name}` : " · Mon espace"}
-            {library.academic && library.current ? ` · ${academicLabel(library.academic)}, semestre ${library.current}` : ""}
+            {library.academic && library.current ? ` · semestre ${library.current}` : ""}
           </p>
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 leading-tight">
-            Que révises-tu <span className="text-emerald-400 whitespace-nowrap">aujourd’hui&nbsp;?</span>
+            {wording.headline[0]} <span className="text-emerald-400 whitespace-nowrap">{wording.headline[1].replace(" ?", "\u00a0?")}</span>
           </h1>
 
           <form onSubmit={submit} className="relative">
@@ -130,7 +136,7 @@ export function HomeOverview({
             <input
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Pose une question sur tes cours, TD ou anciens sujets…"
+              placeholder={wording.askPlaceholder}
               aria-label="Question pour Lekki AI"
               className="w-full rounded-xl border border-zinc-700/70 bg-[#0D1015]/90 py-3.5 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10"
             />
@@ -157,23 +163,34 @@ export function HomeOverview({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              onClick={() => onOpenRevision("quiz")}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
-            >
-              <GraduationCap className="h-3.5 w-3.5" /> Réviser avec un quiz
-            </button>
-            <button
-              onClick={() => onOpenRevision("correction")}
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
-            >
-              <FileCheck2 className="h-3.5 w-3.5" /> Corriger un ancien sujet
-            </button>
+            {wording.study ? (
+              <>
+                <button
+                  onClick={() => onOpenRevision("quiz")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+                >
+                  <GraduationCap className="h-3.5 w-3.5" /> Réviser avec un quiz
+                </button>
+                <button
+                  onClick={() => onOpenRevision("correction")}
+                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
+                >
+                  <FileCheck2 className="h-3.5 w-3.5" /> Corriger un ancien sujet
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => onNavigate("workspace_files")}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+              >
+                <FolderOpen className="h-3.5 w-3.5" /> Ouvrir les documents
+              </button>
+            )}
             <button
               onClick={() => void invite()}
               className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
             >
-              <UserPlus className="h-3.5 w-3.5" /> Inviter ma promo
+              <UserPlus className="h-3.5 w-3.5" /> {wording.invite}
             </button>
           </div>
         </div>
@@ -214,12 +231,14 @@ export function HomeOverview({
 
       {isEmpty ? (
         <section className="rounded-2xl border border-dashed border-zinc-800 p-5 sm:p-8">
-          <h2 className="text-sm font-semibold text-zinc-100">Lance l’espace de ta promo en 3 étapes</h2>
+          <h2 className="text-sm font-semibold text-zinc-100">{wording.startTitle}</h2>
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
-              { icon: Upload, title: "Importe un dossier", text: "Cours, TD, anciens sujets : glisse un dossier entier, l’arborescence est conservée.", action: () => onNavigate(activeWorkspace ? "workspace_files" : "my_docs"), cta: "Ouvrir le Drive" },
-              { icon: Users, title: "Invite tes camarades", text: "Partage le code d’invitation dans le groupe WhatsApp de la promo ou du club.", action: () => void invite(), cta: "Copier le code" },
-              { icon: GraduationCap, title: "Révisez ensemble", text: "Questions sourcées, quiz par chapitre, corrections d’anciens sujets.", action: () => onOpenRevision("quiz"), cta: "Essayer" },
+              { icon: Upload, title: "Importe un dossier", text: wording.importText, action: () => onNavigate(activeWorkspace ? "workspace_files" : "my_docs"), cta: "Ouvrir les documents" },
+              { icon: Users, title: wording.kind === "club" ? "Invite les membres" : "Invite tes camarades", text: wording.inviteText, action: () => void invite(), cta: "Copier le code" },
+              wording.study
+                ? { icon: GraduationCap, title: "Révise", text: "Questions sourcées, quiz par chapitre, corrections d’anciens sujets.", action: () => onOpenRevision("quiz"), cta: "Essayer" }
+                : { icon: Sparkles, title: "Retrouve tout", text: "Pose ta question : Lekki AI répond en citant le document d’où vient l’information.", action: () => onOpenAI(), cta: "Poser une question" },
             ].map(({ icon: Icon, title, text, action, cta }, index) => (
               <li key={title} className="rounded-xl bg-[#12151B] p-4 ring-1 ring-inset ring-zinc-800">
                 <div className="flex items-center gap-2 text-emerald-300">
@@ -239,13 +258,16 @@ export function HomeOverview({
         <>
           {/* Chiffres clés de l'espace */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={LibraryIcon} tone="text-emerald-400" value={courses.length} title="Cours & TD" hint="Documents de cours" onClick={() => onNavigate(activeWorkspace ? "workspace_files" : "my_docs")} />
-            <StatCard icon={FileCheck2} tone="text-rose-300" value={exams.length} title="Anciens sujets" hint="Examens, RAT, CC" onClick={() => onOpenRevision("correction")} />
+            <StatCard icon={LibraryIcon} tone="text-emerald-400" value={courses.length} title={wording.study ? "Cours & TD" : "Documents"} hint={wording.study ? "Documents de cours" : "Dans cet espace"} onClick={() => onNavigate(activeWorkspace ? "workspace_files" : "my_docs")} />
+            {wording.study && (
+              <StatCard icon={FileCheck2} tone="text-rose-300" value={exams.length} title="Anciens sujets" hint="Examens, RAT, CC" onClick={() => onOpenRevision("correction")} />
+            )}
             <StatCard icon={BookOpen} tone="text-sky-400" value={wikiPages.length} title="Fiches du wiki" hint={`${verifiedCount} vérifiée${verifiedCount > 1 ? "s" : ""}`} onClick={() => onNavigate(activeWorkspace ? "workspace_wiki" : "my_docs")} />
             <StatCard icon={Users} tone="text-violet-300" value={activeWorkspace?.members_count ?? 1} title="Membres" hint={activeWorkspace ? "Inviter avec un code" : "Espace personnel"} onClick={() => void invite()} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className={`grid grid-cols-1 gap-6 ${wording.study ? "lg:grid-cols-2" : ""}`}>
+            {wording.study && (<>
             {/* Anciens sujets */}
             <section className="space-y-3">
               <SectionTitle icon={FileCheck2} title="Anciens sujets" action={exams.length ? { label: "Tout corriger", onClick: () => onOpenRevision("correction") } : undefined} />
@@ -275,10 +297,11 @@ export function HomeOverview({
                 <EmptyCard text="Aucun ancien sujet détecté. Nomme-les comme « TS_Examen_CL_2024 » ou range-les dans un dossier SUJETS." />
               )}
             </section>
+            </>)}
 
             {/* Cours et TD récents */}
             <section className="space-y-3">
-              <SectionTitle icon={FolderOpen} title="Cours & TD récents" action={{ label: "Ouvrir le Drive", onClick: () => onNavigate(activeWorkspace ? "workspace_files" : "my_docs") }} />
+              <SectionTitle icon={FolderOpen} title={wording.study ? "Cours & TD récents" : "Documents récents"} action={{ label: "Tous les documents", onClick: () => onNavigate(activeWorkspace ? "workspace_files" : "my_docs") }} />
               {courses.length ? (
                 <ul className="space-y-2">
                   {courses.slice(0, 6).map(({ file, info }) => (
@@ -292,17 +315,19 @@ export function HomeOverview({
                           <span className="mt-1 block"><StudentDocBadge info={info} compact /></span>
                         </span>
                       </button>
-                      <button
-                        onClick={() => onOpenRevision("quiz", file.id)}
-                        className="shrink-0 rounded-lg border border-zinc-700/70 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:bg-zinc-800"
-                      >
-                        Quiz
-                      </button>
+                      {wording.study && (
+                        <button
+                          onClick={() => onOpenRevision("quiz", file.id)}
+                          className="shrink-0 rounded-lg border border-zinc-700/70 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:bg-zinc-800"
+                        >
+                          Quiz
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <EmptyCard text="Aucun cours pour l’instant. Importe le dossier de cours de la promo depuis le Drive." />
+                <EmptyCard text="Aucun cours pour l’instant. Importe le dossier de cours de la promo depuis Documents." />
               )}
             </section>
           </div>

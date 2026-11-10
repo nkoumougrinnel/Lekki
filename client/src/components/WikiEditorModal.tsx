@@ -122,11 +122,11 @@ export function WikiEditorModal({
 
       setContent(
         initialKind === "organization"
-          ? "# Présentation\n\nPrésentez ce domaine et expliquez les connaissances qui lui sont liées.\n\n## Notions principales\n\nAjoutez les notions utiles puis reliez-les aux autres pages et documents dans les sources."
-          : "# Vue d'ensemble\n\nPrésentez le sujet et expliquez les notions essentielles.\n\n## Points essentiels\n\n- Premier principe\n- Deuxième principe\n\n## Exemple concret\n\nAjoutez un exemple, une configuration ou une commande utile."
+          ? "# Présentation\n\nPrésente cette matière et ce qu’il faut en retenir.\n\n## Notions principales\n\nAjoute les notions utiles puis reliez-les aux autres pages et documents dans les sources."
+          : "# L'essentiel\n\nRésume la notion en quelques phrases, avec tes mots.\n\n## Définitions et formules\n\n- Première définition ou formule\n- Deuxième définition ou formule\n\n## Méthode\n\nLes étapes pour traiter ce type de question à l'examen.\n\n## Exemple corrigé\n\nUn exercice court, tiré d'un TD ou d'un ancien sujet, avec sa solution.\n\n## Pièges à éviter\n\n- Erreur fréquente à l'examen"
       );
 
-      setComment("Création initiale de la page");
+      setComment("Création de la fiche");
       setSelectedDocIds([]);
       setSelectedWikiIds([]);
     }
@@ -196,7 +196,7 @@ export function WikiEditorModal({
     event.preventDefault();
 
     if (!title.trim()) {
-      toast.error("Veuillez saisir un titre pour la page");
+      toast.error("Donne un titre à la page");
       return;
     }
 
@@ -276,14 +276,14 @@ export function WikiEditorModal({
             required
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Titre de votre page..."
+            placeholder="Titre de la fiche…"
             className="w-full min-w-0 bg-transparent text-base font-semibold text-zinc-100 outline-none placeholder:text-zinc-600 sm:text-base"
           />
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
           <span className="text-[11px] text-zinc-600">
-            {page ? "Modification" : "Nouvelle page"}
+            {page ? "Modification" : "Nouvelle fiche"}
           </span>
         </div>
 
@@ -357,11 +357,11 @@ export function WikiEditorModal({
 
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-zinc-200">
-                    Organisation
+                    Rangement
                   </p>
 
                   <p className={`mt-1 truncate text-[11px] ${finalTopic && section ? "text-zinc-500" : "text-amber-400/80"}`}>
-                    {finalTopic || "Pôle à choisir"} · {section || "Section à choisir"}
+                    {finalTopic || "Matière ou thème à choisir"} · {section || "Chapitre à choisir"}
                   </p>
                 </div>
 
@@ -375,14 +375,14 @@ export function WikiEditorModal({
               {showOrganization && (
                 <div className="mt-3 grid gap-4 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 sm:grid-cols-2 sm:p-4">
                   <div>
-                    <label className={labelClass}>Pôle thématique</label>
+                    <label className={labelClass}>Matière ou thème</label>
 
                     <select
                       value={topic}
                       onChange={(event) => setTopic(event.target.value)}
                       className={inputClass}
                     >
-                      <option value="">Choisir un pôle</option>
+                      <option value="">Choisir une matière</option>
                       {COMMON_TOPICS.map((item) => (
                         <option key={item} value={item}>
                           {item}
@@ -397,19 +397,19 @@ export function WikiEditorModal({
                         onChange={(event) =>
                           setCustomTopic(event.target.value)
                         }
-                        placeholder="Nom du pôle"
+                        placeholder="Ex. : Traitement du signal"
                         className={`${inputClass} mt-2`}
                       />
                     )}
                   </div>
 
                   <div>
-                    <label className={labelClass}>Section</label>
+                    <label className={labelClass}>Chapitre ou rubrique</label>
 
                     <input
                       value={section}
                       onChange={(event) => setSection(event.target.value)}
-                      placeholder="Ex. : Routage, Fondamentaux..."
+                      placeholder="Ex. : Chapitre 3, Méthodes, Annales…"
                       className={inputClass}
                     />
                   </div>
@@ -424,7 +424,7 @@ export function WikiEditorModal({
                   Contenu
                 </h2>
                 <p className="mt-1 text-[11px] text-zinc-600">
-                  Rédigez et structurez vos connaissances.
+                  Écris ce que la promo doit retenir.
                 </p>
               </div>
 
@@ -481,7 +481,7 @@ export function WikiEditorModal({
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
                 placeholder={
-                  "# Vue d'ensemble\n\nPrésentez le sujet...\n\n## 1. Principes fondamentaux\n\nExpliquez les concepts essentiels.\n\n## 2. Exemple pratique\n\nAjoutez une configuration, une commande ou un cas concret."
+                  "# L'essentiel\n\nRésume la notion…\n\n## Définitions et formules\n\n## Méthode\n\n## Exemple corrigé"
                 }
                 spellCheck
                 className="min-h-[45dvh] w-full resize-y rounded-2xl border border-white/[0.07] bg-[#101319] p-4 font-mono text-[13px] leading-7 text-zinc-300 outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10 sm:min-h-[55vh] sm:rounded-xl sm:p-7"
@@ -501,7 +501,7 @@ export function WikiEditorModal({
                 <input
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}
-                  placeholder="Qu'avez-vous modifié ?"
+                  placeholder="Qu’as-tu modifié ?"
                   className={inputClass}
                 />
               </section>
@@ -561,7 +561,7 @@ export function WikiEditorModal({
               </div>
 
               <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-                Reliez cette page aux documents et connaissances utiles.
+                Relie cette fiche aux cours et aux sujets qui s’y rapportent.
               </p>
             </div>
 
@@ -579,7 +579,7 @@ export function WikiEditorModal({
                     Aucune relation pour le moment
                   </p>
                   <p className="mt-1 text-[10px] text-zinc-600">
-                    Ajoutez des sources ci-dessous.
+                    Ajoute des sources ci-dessous.
                   </p>
                 </div>
               ) : (
@@ -784,8 +784,8 @@ export function WikiEditorModal({
             {/* SIDEBAR FOOTER */}
             <div className="shrink-0 border-t border-white/[0.07] px-5 py-3">
               <p className="text-[10px] leading-relaxed text-zinc-600">
-                Les relations facilitent la navigation entre les
-                connaissances et leurs sources.
+                Les liens permettent de passer d’une fiche
+                à ses cours et à ses sujets.
               </p>
             </div>
             </aside>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, BookOpen, FileCheck2, GraduationCap, HelpCircle, Library as LibraryIcon } from "lucide-react";
+import { ArrowRight, BookOpen, FileCheck2, FolderTree, GraduationCap, HelpCircle, Library as LibraryIcon, LoaderCircle } from "lucide-react";
 import type { DriveFile, Workspace } from "@/types/lekki";
 import type { Library, SubjectShelf } from "@/lib/library";
 import { AcademicInfo, PROGRAMS, Subject, academicLabel, subjectsOf } from "@/lib/curriculum";
 import { prettyName } from "@/lib/studentDocs";
-import { workspaces as workspacesApi } from "@/lib/api";
+import { drive, workspaces as workspacesApi } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { AcademicFields } from "./AcademicFields";
 import { StudentDocBadge } from "./StudentDocBadge";
@@ -21,11 +21,14 @@ interface SubjectsViewProps {
   workspace: Workspace | null;
   onOpenSubject: (subjectId: string) => void;
   onOpenFile: (file: DriveFile) => void;
+  /** Appelé après la création des dossiers, pour recharger l'arborescence. */
+  onFoldersCreated?: () => void;
 }
 
 /** Le programme de la promo : semestres → UE → matières, avec ce que l'espace contient pour chacune. */
-export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile }: SubjectsViewProps) {
+export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, onFoldersCreated }: SubjectsViewProps) {
   const [semester, setSemester] = useState<number>(library.current ?? 1);
+  const [creatingFolders, setCreatingFolders] = useState(false);
   useEffect(() => {
     if (library.current) setSemester(library.current);
   }, [library.current, workspace?.id]);
@@ -43,6 +46,33 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile }: 
   const plan = subjectsOf(semester, library.academic.specialty, false);
   const ues = Array.from(new Map(plan.map((subject) => [subject.ue.code, subject.ue])).values());
 
+  // Même rangement que SUP'DOCS : Semestre → Matière → COURS / TD / CC / SUJETS.
+  const createFolders = async () => {
+    setCreatingFolders(true);
+    try {
+      const result = await drive.createFolderTree({
+        workspace_id: workspace.id,
+        tree: [{
+          name: `Semestre ${semester}`,
+          children: plan.map((subject) => ({
+            name: subject.title,
+            children: ["COURS", "TD", "CC", "SUJETS"].map((name) => ({ name })),
+          })),
+        }],
+      });
+      toast.success(
+        result.created
+          ? `${result.created} dossiers créés dans Documents › Semestre ${semester}.`
+          : `Les dossiers du semestre ${semester} existent déjà.`
+      );
+      onFoldersCreated?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de créer les dossiers.");
+    } finally {
+      setCreatingFolders(false);
+    }
+  };
+
   return (
     <Shell>
       <header className="space-y-1">
@@ -55,6 +85,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile }: 
         </p>
       </header>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <nav className="flex gap-1.5 overflow-x-auto pb-1" aria-label="Semestres">
         {[1, 2, 3, 4, 5, 6].map((value) => {
           const ofPromo = library.semesters.includes(value);
@@ -77,6 +108,17 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile }: 
           );
         })}
       </nav>
+        <button
+          type="button"
+          onClick={() => void createFolders()}
+          disabled={creatingFolders}
+          title={`Crée « Semestre ${semester} » avec un dossier par matière (COURS, TD, CC, SUJETS)`}
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50"
+        >
+          {creatingFolders ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <FolderTree className="h-3.5 w-3.5 text-emerald-400" />}
+          Créer les dossiers du S{semester}
+        </button>
+      </div>
 
       <div className="space-y-6">
         {ues.map((ue) => (
@@ -126,7 +168,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile }: 
             ))}
           </ul>
           {library.unmatched.length > 10 && (
-            <p className="text-[11px] text-zinc-600">… et {library.unmatched.length - 10} autres, visibles dans le Drive.</p>
+            <p className="text-[11px] text-zinc-600">… et {library.unmatched.length - 10} autres, visibles dans Documents.</p>
           )}
         </section>
       )}
@@ -169,10 +211,11 @@ export function SubjectCard({ subject, shelf, onOpen }: { subject: Subject; shel
 }
 
 function Count({ icon: Icon, value, label, tone }: { icon: React.ElementType; value: number; label: string; tone: string }) {
+  if (!value) return null;
   return (
     <span className="inline-flex items-center gap-1">
-      <Icon className={`h-3 w-3 ${value ? tone : "text-zinc-700"}`} />
-      <span className={value ? "text-zinc-300" : ""}>{value}</span> {label}
+      <Icon className={`h-3 w-3 ${tone}`} />
+      <span className="text-zinc-300">{value}</span> {label}
     </span>
   );
 }

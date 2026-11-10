@@ -267,6 +267,15 @@ export const drive = {
     return jsonRequest<DriveFolder>("/drive/folders", "POST", data);
   },
 
+  /** Crée une arborescence en une fois ; les dossiers déjà présents sont réutilisés. */
+  createFolderTree(data: {
+    workspace_id: string;
+    parent_id?: string | null;
+    tree: FolderTreeNode[];
+  }): Promise<{ created: number; existing: number }> {
+    return jsonRequest<{ created: number; existing: number }>("/drive/folders/tree", "POST", data);
+  },
+
   updateFolder(id: string, data: { name?: string; parent_id?: string | null }): Promise<DriveFolder> {
     return jsonRequest<DriveFolder>(`/drive/folders/${id}`, "PUT", data);
   },
@@ -480,6 +489,11 @@ export interface CorrectionResponse {
   sources: LekkiAISource[];
   provider?: string | null;
   degraded: boolean;
+}
+
+export interface FolderTreeNode {
+  name: string;
+  children?: FolderTreeNode[];
 }
 
 export const revisionApi = {

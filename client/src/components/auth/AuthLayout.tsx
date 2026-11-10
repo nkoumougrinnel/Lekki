@@ -5,18 +5,18 @@ import { BookOpen, Files, Sparkles } from "lucide-react";
 const highlights = [
   {
     icon: Files,
-    title: "Drive académique",
-    text: "Cours, TD et comptes-rendus centralisés, classés, partageables.",
+    title: "Rangé par matière",
+    text: "Cours, TD et anciens sujets classés tout seuls, semestre par semestre.",
   },
   {
     icon: BookOpen,
-    title: "Wiki collaboratif",
-    text: "Un savoir de promotion versionné, structuré et vérifié.",
+    title: "Fiches de la promo",
+    text: "Un wiki de révision écrit à plusieurs et vérifié par les référents.",
   },
   {
     icon: Sparkles,
     title: "Lekki AI",
-    text: "Interrogez vos documents et obtenez des réponses sourcées.",
+    text: "Des réponses qui citent le cours, des quiz et des corrections de sujets.",
   },
 ];
 
@@ -67,15 +67,14 @@ export function AuthLayout({
           <div className="relative z-10 max-w-md space-y-8">
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-400">
-                Espace documentaire intelligent
+                Pour les promos, les clubs et les groupes d’étude
               </p>
               <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
-                Tout votre savoir,{" "}
-                <span className="text-emerald-400">unifié et exploitable.</span>
+                La <span className="text-emerald-400">mémoire collective</span> de ta promo.
               </h1>
               <p className="text-zinc-400 leading-relaxed">
-                Drive, Wiki et IA dans un même espace de travail — pensé pour les
-                promotions, les équipes et les laboratoires de savoir.
+                Les cours, les TD et les anciens sujets au même endroit, et une IA qui
+                répond en citant ses sources.
               </p>
             </div>
 
@@ -98,7 +97,7 @@ export function AuthLayout({
           </div>
 
           <p className="relative z-10 text-xs text-zinc-600">
-            © {new Date().getFullYear()} Lekki — la mémoire vive de votre promotion.
+            © {new Date().getFullYear()} Lekki · Né à SUP’PTIC, Yaoundé.
           </p>
         </aside>
 

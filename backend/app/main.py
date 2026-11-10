@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Backend académique et documentaire avec RAG pour Lekki Wiki",
+    description="API de Lekki : la mémoire collective des promos, clubs et groupes d'étude",
     lifespan=lifespan
 )
 

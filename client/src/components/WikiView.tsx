@@ -166,7 +166,7 @@ export function WikiView({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors shadow-sm shrink-0"
             >
               <Plus className="h-4 w-4 stroke-[2.5]" />
-              <span>Nouvelle page</span>
+              <span>Nouvelle fiche</span>
             </button>
             {createMenuOpen && (
               <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-2 z-30 overflow-hidden">
@@ -179,8 +179,8 @@ export function WikiView({
                 >
                   <FileText className="h-4 w-4 text-emerald-400 mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium text-zinc-200">Page</div>
-                    <div className="text-[10px] text-zinc-500">Documenter une connaissance</div>
+                    <div className="text-sm font-medium text-zinc-200">Fiche</div>
+                    <div className="text-[10px] text-zinc-500">Résumer un cours, une notion, une méthode</div>
                   </div>
                 </button>
                 <button
@@ -192,8 +192,8 @@ export function WikiView({
                 >
                   <LayoutGrid className="h-4 w-4 text-emerald-400 mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium text-zinc-200">Page d'organisation</div>
-                    <div className="text-[10px] text-zinc-500">Regrouper plusieurs pages</div>
+                    <div className="text-sm font-medium text-zinc-200">Sommaire</div>
+                    <div className="text-[10px] text-zinc-500">Regrouper plusieurs fiches</div>
                   </div>
                 </button>
               </div>
@@ -251,9 +251,9 @@ export function WikiView({
               <BookOpen className="h-10 w-10" />
             </div>
             <div className="max-w-md space-y-2">
-              <h2 className="text-xl font-bold text-zinc-100">Construisez les connaissances de votre équipe.</h2>
+              <h2 className="text-xl font-bold text-zinc-100">Le wiki de révision de la promo</h2>
               <p className="text-sm text-zinc-400">
-                Créez votre première page pour partager une notion, documenter une procédure ou conserver une connaissance utile à toute l'équipe.
+                Écris la première fiche : une notion expliquée simplement, une méthode, un corrigé rédigé à plusieurs. Toute la promo en profite.
               </p>
             </div>
             <div className="flex gap-3">
@@ -275,7 +275,7 @@ export function WikiView({
                 <div className="flex items-start gap-3">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                   <p className="text-xs leading-relaxed text-zinc-400">
-                    Les fichiers conservent les ressources de l’équipe. Le wiki sert à en tirer des connaissances durables : classez chaque page par pôle et section, puis reliez-la aux autres pages et documents utiles.
+                    Documents garde les fichiers d’origine. Le wiki sert à en tirer des fiches : range chaque fiche sous sa matière, puis relie-la aux cours et aux sujets utiles.
                   </p>
                 </div>
               </div>
@@ -285,15 +285,15 @@ export function WikiView({
           <>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-400">Base de connaissances</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-400">Wiki de révision</p>
                 <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-100">{filterTopic}</h1>
-                <p className="mt-1 text-sm text-zinc-500">Parcourez les pages de cette catégorie ou ajoutez une nouvelle connaissance.</p>
+                <p className="mt-1 text-sm text-zinc-500">Parcours les fiches de cette catégorie ou ajoutes-en une.</p>
               </div>
               <button
                 onClick={() => onNewPageClick(filterTopic)}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition-colors hover:border-emerald-500/40 hover:bg-zinc-800"
               >
-                <Plus className="h-3.5 w-3.5 text-emerald-400" /> Nouvelle page
+                <Plus className="h-3.5 w-3.5 text-emerald-400" /> Nouvelle fiche
               </button>
             </div>
             {Array.from(tree.get(filterTopic)?.entries() || []).length === 0 ? (

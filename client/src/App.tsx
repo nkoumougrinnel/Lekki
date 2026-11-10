@@ -17,6 +17,7 @@ import { WikiEditorModal } from "./components/WikiEditorModal";
 import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import { RevisionPanel, RevisionMode } from "./components/RevisionPanel";
+import { ImportFolderDialog } from "./components/ImportFolderDialog";
 import { SubjectsView } from "./components/SubjectsView";
 import { SubjectView } from "./components/SubjectView";
 import { buildLibrary, wikiTopicFor } from "./lib/library";
@@ -77,6 +78,7 @@ function LekkiMain() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiInitialQuestion, setAIInitialQuestion] = useState<string | undefined>(undefined);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [revision, setRevision] = useState<{
     open: boolean; mode: RevisionMode; fileId?: string | null; subjectId?: string | null;
   }>({ open: false, mode: "quiz" });
@@ -178,7 +180,7 @@ function LekkiMain() {
       toast.success(`La page « ${page.title} » a été supprimée`);
       await refreshData();
     } catch {
-      toast.error("Impossible de supprimer cette page. Vérifiez vos droits d’administration.");
+      toast.error("Impossible de supprimer cette page : il faut être admin de l’espace.");
     }
   };
 
@@ -198,7 +200,7 @@ function LekkiMain() {
       toast.success(`Section supprimée · ${result.deleted_pages} page${result.deleted_pages === 1 ? "" : "s"} supprimée${result.deleted_pages === 1 ? "" : "s"}`);
       await refreshData();
     } catch {
-      toast.error("Impossible de supprimer cette section. Vérifiez vos droits d’administration.");
+      toast.error("Impossible de supprimer cette section : il faut être admin de l’espace.");
     }
   };
 
@@ -400,6 +402,7 @@ function LekkiMain() {
               workspace={activeWorkspace}
               onOpenSubject={openSubject}
               onOpenFile={(file) => setViewingFile(file)}
+              onFoldersCreated={() => void refreshData()}
             />
           )}
 
@@ -448,7 +451,7 @@ function LekkiMain() {
               activeWorkspaceId={activeWorkspaceId}
               activeWorkspaceName={activeWorkspace?.name}
               currentUser={user}
-              onOpenFile={handleOpenFileInBrowser}
+              onOpenFile={(file) => setViewingFile(file)}
               onOpenShare={(f) => setSharingFile(f)}
               onNewFileClick={(folderId) => {
                 setNewFileFolderId(folderId || null);
@@ -456,6 +459,7 @@ function LekkiMain() {
               }}
               onImportFolderClick={(folderId) => {
                 setNewFileFolderId(folderId || null);
+                setIsImportOpen(true);
               }}
               onRefresh={refreshData}
               onFileTrashed={handleFileTrashed}
@@ -560,6 +564,24 @@ function LekkiMain() {
         wikiPages={wikiPages}
         activeWorkspaceId={activeWorkspaceId}
         onSwitchWorkspace={setActiveWorkspace}
+        subjectTitle={library.entries.find((entry) => entry.file.id === viewingFile?.id)?.subject?.title}
+        onRevise={(file) => {
+          const entry = library.entries.find((item) => item.file.id === file.id);
+          setViewingFile(null);
+          openRevision(entry?.info.isExam ? "correction" : "quiz", file.id, entry?.subject?.id);
+        }}
+      />
+
+      {/* Import d'un dossier entier (cours, TD, sujets), arborescence conservée */}
+      <ImportFolderDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        folders={folders}
+        defaultWorkspaceId={currentView === "workspace_files" ? activeWorkspaceId : null}
+        defaultFolderId={newFileFolderId}
+        onImportCompleted={async () => {
+          await refreshData();
+        }}
       />
 
       {/* Share Document Dialog */}

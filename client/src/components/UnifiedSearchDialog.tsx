@@ -150,14 +150,14 @@ export function UnifiedSearchDialog({
         <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4">
           {loading && (
             <div className="py-8 text-center text-xs text-zinc-500">
-              Recherche unifiée dans votre périmètre accessible...
+              Recherche dans tes documents et tes fiches…
             </div>
           )}
 
           {!loading && !query && (
             <div className="py-8 text-center space-y-2">
               <p className="text-xs text-zinc-400">
-                Tapez un mot-clé pour explorer simultanément vos documents originaux et vos fiches Wiki.
+                Tape un mot-clé : Lekki cherche à la fois dans les documents et dans les fiches du wiki.
               </p>
               <div className="flex flex-wrap justify-center gap-1.5 pt-2">
                 {["OSPF", "TCP", "UDP", "Routage", "Fibre", "Examens"].map((chip) => (
@@ -177,7 +177,7 @@ export function UnifiedSearchDialog({
             <div className="py-8 text-center text-xs text-zinc-400 space-y-1">
               <p>Aucun document ou page Wiki trouvé pour « {query} ».</p>
               <p className="text-[11px] text-zinc-500">
-                Vérifiez que le contenu appartient à votre espace personnel ou à votre espace actif.
+                La recherche couvre ton espace personnel et l’espace actif.
               </p>
             </div>
           )}
@@ -187,7 +187,7 @@ export function UnifiedSearchDialog({
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
                 <FileText className="h-3 w-3 text-emerald-400" />
-                <span>Documents originaux ({results.documents.length})</span>
+                <span>Documents ({results.documents.length})</span>
               </div>
               <div className="space-y-1">
                 {results.documents.map((doc) => (
@@ -224,7 +224,7 @@ export function UnifiedSearchDialog({
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
                 <BookOpen className="h-3 w-3 text-emerald-400" />
-                <span>Mémoire collective — Wiki ({results.wiki.length})</span>
+                <span>Fiches du wiki ({results.wiki.length})</span>
               </div>
               <div className="space-y-1">
                 {results.wiki.map((page) => (
@@ -294,8 +294,8 @@ export function UnifiedSearchDialog({
 
         {/* Footer info */}
         <div className="px-4 py-2 bg-zinc-950/60 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
-          <span>Navigation unifiée sans barrière entre Drive & Wiki</span>
-          <span className="font-mono text-[10px]">Lekki Search Engine</span>
+          <span>Documents et fiches de ton espace</span>
+          <span className="font-mono text-[10px]">Échap pour fermer</span>
         </div>
       </div>
     </div>

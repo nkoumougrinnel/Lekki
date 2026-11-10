@@ -296,24 +296,6 @@ export function Header({
                   </div>
                 </div>
 
-                <div className="p-1">
-                  <button
-                    className="w-full px-4 py-2 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <UserCircle className="h-4 w-4 text-zinc-500" />
-                    Mon Profil
-                  </button>
-                  <button
-                    className="w-full px-4 py-2 text-left flex items-center gap-3 text-sm text-zinc-300 hover:bg-zinc-800/60 rounded-lg transition-colors"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <Settings className="h-4 w-4 text-zinc-500" />
-                    Paramètres du compte
-                  </button>
-                </div>
-
-
                 <div className="p-1 border-t border-zinc-800/80 mt-1">
                   <button
                     onClick={() => {

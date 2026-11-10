@@ -66,6 +66,7 @@ export function ImportFolderDialog({
   const [progress, setProgress] = useState(0);
   const [importedFiles, setImportedFiles] = useState<DriveFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -74,6 +75,7 @@ export function ImportFolderDialog({
     setTree([]);
     setImportedFiles([]);
     setErrors([]);
+    setDone(false);
     setProgress(0);
     setUploading(false);
     setDestinationMode("root");
@@ -161,8 +163,8 @@ export function ImportFolderDialog({
     if (files.length === 0) return;
     const unsupported = files.filter((f) => !getExtension(f.name));
     if (unsupported.length > 0) {
-      toast.error(
-        `${unsupported.length} fichier(s) ignoré(s) (format non pris en charge : PDF, DOCX, PPTX, TXT, MD).`
+      toast.info(
+        `${unsupported.length} fichier${unsupported.length > 1 ? "s" : ""} laissé${unsupported.length > 1 ? "s" : ""} de côté (images et autres formats non lus).`
       );
     }
     const supported = files.filter((f) => getExtension(f.name));
@@ -207,34 +209,50 @@ export function ImportFolderDialog({
     setErrors([]);
     setProgress(0);
 
+    const failures: string[] = [];
+    const imported: DriveFile[] = [];
     try {
       const foldersInOrder = collectFolders(tree);
       const pathToServerFolderId = new Map<string, string>();
+      // Dossiers déjà présents : on les réutilise, pour qu'un second import complète le premier.
+      const existing = new Map<string, string>();
+      for (const folder of folders) {
+        if ((folder.workspace_id || null) !== (defaultWorkspaceId || null)) continue;
+        existing.set(`${folder.parent_id || ""}/${folder.name.trim().toLowerCase()}`, folder.id);
+      }
+      const rootParent = destinationMode === "folder" ? destinationFolderId || null : null;
+      const totalSteps = foldersInOrder.length + totalFiles;
+      let done = 0;
+      const tick = () => setProgress(Math.round((++done / Math.max(totalSteps, 1)) * 100));
 
-      // 1. Create the folder hierarchy under the destination.
-      for (let i = 0; i < foldersInOrder.length; i++) {
-        const folder = foldersInOrder[i];
-        const parentServerId = folder.parentPath ? pathToServerFolderId.get(folder.parentPath) : destinationFolderId || null;
-
-        await drive.createFolder({
-          name: folder.name,
-          ...(folder.parentPath
-            ? { parent_id: pathToServerFolderId.get(folder.parentPath)! }
-            : { workspace_id: defaultWorkspaceId || null, parent_id: destinationFolderId || undefined }),
-        });
-        pathToServerFolderId.set(folder.relativePath, folder.serverFolderId || "");
-        setProgress(Math.round(((i + 1) / Math.max(foldersInOrder.length, 1)) * 50));
+      // 1. L'arborescence, des dossiers parents vers les enfants.
+      for (const folder of foldersInOrder) {
+        const parentId = folder.parentPath ? pathToServerFolderId.get(folder.parentPath) ?? null : rootParent;
+        const key = `${parentId || ""}/${folder.name.trim().toLowerCase()}`;
+        let serverId = existing.get(key);
+        if (!serverId) {
+          const created = await drive.createFolder({
+            name: folder.name,
+            workspace_id: defaultWorkspaceId || null,
+            parent_id: parentId,
+          });
+          serverId = created.id;
+          existing.set(key, serverId);
+        }
+        pathToServerFolderId.set(folder.relativePath, serverId);
+        tick();
       }
 
-      // 2. Upload every file into its resolved folder.
-      const fileEntries: { file: File; folder_id: string | null }[] = [];
+      // 2. Les fichiers, un par un : un document illisible n'arrête pas les autres.
+      const entries: { file: File; folderId: string | null; path: string }[] = [];
       const collectFiles = (list: ImportNode[]) => {
         for (const node of list) {
           if (node.type === "file") {
-            const folder_id = node.parentPath
-              ? (pathToServerFolderId.get(node.parentPath) ?? null)
-              : destinationFolderId ?? null;
-            fileEntries.push({ file: node.file!, folder_id });
+            entries.push({
+              file: node.file!,
+              folderId: node.parentPath ? pathToServerFolderId.get(node.parentPath) ?? null : rootParent,
+              path: node.relativePath,
+            });
           } else {
             collectFiles(node.children);
           }
@@ -242,21 +260,41 @@ export function ImportFolderDialog({
       };
       collectFiles(tree);
 
-      const imported = await drive.importFiles({
-        files: fileEntries.map((e) => e.file),
-        folder_ids: fileEntries.map((e) => e.folder_id),
-        workspace_id: defaultWorkspaceId || null,
-      });
+      for (const entry of entries) {
+        try {
+          const result = await drive.importFiles({
+            files: [entry.file],
+            folder_ids: [entry.folderId],
+            workspace_id: defaultWorkspaceId || null,
+          });
+          if (result.length) imported.push(...result);
+          else failures.push(`${entry.path} : aucun texte lisible (scan sans OCR ?)`);
+        } catch (error) {
+          failures.push(`${entry.path} : ${error instanceof ApiError ? error.message : "envoi impossible"}`);
+        }
+        tick();
+        setImportedFiles([...imported]);
+      }
 
       setProgress(100);
-      setImportedFiles(imported);
+      setErrors(failures);
+      setDone(true);
       await onImportCompleted(imported);
-      toast.success(`${imported.length} élément(s) importé(s) dans le Drive.`);
+      if (imported.length) {
+        toast.success(
+          `${imported.length} document${imported.length > 1 ? "s" : ""} importé${imported.length > 1 ? "s" : ""}` +
+            (failures.length ? `, ${failures.length} ignoré${failures.length > 1 ? "s" : ""}.` : ".")
+        );
+      } else {
+        toast.error("Aucun document n’a pu être importé.");
+      }
     } catch (error) {
       setErrors([
-        error instanceof ApiError ? error.message : "Erreur lors de l'importation du dossier.",
+        error instanceof ApiError ? error.message : "L’import s’est arrêté : vérifie ta connexion et relance-le.",
+        ...failures,
       ]);
-      toast.error("Échec de l'importation.");
+      if (imported.length) await onImportCompleted(imported);
+      toast.error("L’import s’est arrêté avant la fin.");
     } finally {
       setUploading(false);
     }
@@ -265,7 +303,8 @@ export function ImportFolderDialog({
   const renderTree = (nodes: ImportNode[], depth = 0): React.ReactNode => (
     <>
       {nodes.map((node) => (
-        <div key={node.id} className="flex items-center gap-2 ml-4 text-xs">
+        <React.Fragment key={node.id}>
+        <div className="flex items-center gap-2 py-0.5 text-xs" style={{ paddingLeft: depth * 16 }}>
           {node.type === "folder" ? (
             <>
               <ChevronRight className="h-3 w-3 shrink-0 text-zinc-500" />
@@ -282,6 +321,8 @@ export function ImportFolderDialog({
             </>
           )}
         </div>
+        {node.type === "folder" && renderTree(node.children, depth + 1)}
+        </React.Fragment>
       ))}
     </>
   );
@@ -311,7 +352,7 @@ export function ImportFolderDialog({
               }}
               className="shrink-0 text-emerald-400"
             />
-            <div className={`flex items-center gap-1 ml-${depth * 2} shrink-0`}>
+            <div className="flex shrink-0 items-center gap-1" style={{ paddingLeft: depth * 12 }}>
               <Folder className="h-3 w-3 text-zinc-500" />
               <span className={`truncate min-w-0 ${isSelected ? "text-emerald-300 font-medium" : "text-zinc-300"}`}>
                 {folder.name}
@@ -350,8 +391,7 @@ export function ImportFolderDialog({
                 Importer un dossier
               </h2>
               <p className="mt-0.5 text-[11px] text-zinc-500">
-                Sélectionnez un dossier : son arborescence et ses fichiers sont
-                importés dans votre Drive.
+                Ses sous-dossiers sont conservés, et chaque document est rangé sous sa matière.
               </p>
             </div>
           </div>
@@ -368,8 +408,38 @@ export function ImportFolderDialog({
 
         <form className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+            {done && (
+              <div className="space-y-4 py-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-100">
+                      {importedFiles.length} document{importedFiles.length > 1 ? "s" : ""} importé{importedFiles.length > 1 ? "s" : ""}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      Ils sont rangés sous leur matière et Lekki AI peut déjà les lire.
+                    </p>
+                  </div>
+                </div>
+                {errors.length > 0 && (
+                  <div className="rounded-xl border border-amber-300/15 bg-amber-400/[0.05] p-3">
+                    <p className="text-xs font-medium text-amber-200">
+                      {errors.length} fichier{errors.length > 1 ? "s" : ""} ignoré{errors.length > 1 ? "s" : ""}
+                    </p>
+                    <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-[11px] leading-relaxed text-zinc-400">
+                      {errors.map((err, i) => (
+                        <li key={i} className="break-words">{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Sélecteur de dossier */}
-            {!selectedFiles.length && (
+            {!done && !selectedFiles.length && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
                 <div className="relative inline-block">
@@ -398,13 +468,13 @@ export function ImportFolderDialog({
             )}
 
             {/* Aperçu de l'arborescence */}
-            {selectedFiles.length > 0 && (
+            {!done && selectedFiles.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Folder className="h-4 w-4 text-zinc-400 shrink-0" />
                     <span className="text-sm font-medium text-zinc-200">
-                      Arborescence à importer ({totalFiles} fichier(s))
+                      {totalFiles} document{totalFiles > 1 ? "s" : ""} à importer
                     </span>
                   </div>
                   <button
@@ -432,7 +502,7 @@ export function ImportFolderDialog({
             )}
 
             {/* Destination */}
-            {selectedFiles.length > 0 && (
+            {!done && selectedFiles.length > 0 && (
               <div className="space-y-3">
                 <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Destination</div>
                 <div className="space-y-2">
@@ -454,7 +524,7 @@ export function ImportFolderDialog({
                       className="shrink-0 text-emerald-400"
                     />
                     <span className={`text-sm ${destinationMode === "root" ? "text-emerald-300 font-medium" : "text-zinc-200"}`}>
-                      À la racine du Drive
+                      À la racine des documents
                     </span>
                   </label>
                   {folders.length > 0 && (
@@ -494,10 +564,18 @@ export function ImportFolderDialog({
 
           {/* Actions / Progress */}
           <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-white/[0.015] px-5 py-3.5">
-            {uploading ? (
-              <div className="flex flex-col gap-2">
+            {done ? (
+              <button
+                type="button"
+                onClick={handleClose}
+                className="ml-auto rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors hover:bg-emerald-400"
+              >
+                Terminer
+              </button>
+            ) : uploading ? (
+              <div className="flex w-full flex-col gap-2">
                 <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                  <span>Importation en cours…</span>
+                  <span>Import en cours : {importedFiles.length} document{importedFiles.length > 1 ? "s" : ""} lu{importedFiles.length > 1 ? "s" : ""}. Garde cette fenêtre ouverte.</span>
                   <span>{progress}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-zinc-800 rounded overflow-hidden">
@@ -513,9 +591,7 @@ export function ImportFolderDialog({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400">
-                  {totalFiles} fichier(s) à importer
-                </span>
+                <span className="text-xs text-zinc-500">PDF, DOCX, PPTX, TXT et MD</span>
                 <button
                   type="button"
                   disabled={!selectedFiles.length}
@@ -530,7 +606,7 @@ export function ImportFolderDialog({
           </footer>
         </form>
 
-        {errors.length > 0 && (
+        {errors.length > 0 && !done && (
           <div className="p-4 border-t border-zinc-800 bg-zinc-900/40">
             {errors.map((err, i) => (
               <p key={i} className="text-xs text-rose-400">{err}</p>

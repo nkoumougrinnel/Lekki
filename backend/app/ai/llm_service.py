@@ -1,3 +1,4 @@
+import re
 import os
 import httpx
 from typing import Dict, List, Optional, Callable, Awaitable
@@ -173,8 +174,8 @@ async def generate_rag_answer_with_provider(
     # 0. Aucun document : inutile d'appeler un LLM, il inventerait une réponse
     if not context_chunks:
         return (
-            "Je ne trouve aucun document de votre espace qui permette de répondre à cette question. "
-            "Vérifiez que le cours ou le TD concerné a bien été importé.",
+            "Je ne trouve aucun document de ton espace qui permette de répondre à cette question. "
+            "Vérifie que le cours ou le TD concerné a bien été importé.",
             "Mode dégradé (aucun document disponible)",
         )
 
@@ -211,7 +212,7 @@ dans le contexte.
 8. Pour un exercice ou un calcul, explique la démarche avant le résultat.
 9. Termine, si c'est utile, par une phrase de révision ou une question de vérification. \
 Pas de formule de politesse finale.
-10. Réponds toujours en français.
+10. Réponds toujours en français et tutoie l'étudiant.
 
 DOCUMENTS SOURCES DE L'ESPACE :
 {context_text}
@@ -246,19 +247,27 @@ DOCUMENTS SOURCES DE L'ESPACE :
         if answer:
             return answer, provider_names.get(provider, provider.__name__)
 
-    # 4. Repli sans LLM : extrait du premier document, présenté comme tel
-    source = context_chunks[0]
-    title = source.get("title", "Sans titre")
-    excerpt = source.get("content", "").strip()[:700]
+    # 4. Repli sans LLM : les passages des documents les plus proches de la question
+    from app.ai.revision import best_passage  # import tardif : évite un import circulaire
+
+    lines = []
+    for chunk in context_chunks[:3]:
+        content = re.sub(r"\[(Page|Diapositive)\s+\d+\]", " ", chunk.get("content", ""), flags=re.I)
+        passage = best_passage(question, content, 360)
+        if passage:
+            lines.append(f"- **{chunk.get('title', 'Sans titre')}** : {passage}")
+    if not lines:
+        first = context_chunks[0]
+        excerpt = " ".join(first.get("content", "").split())[:360]
+        lines.append(f"- **{first.get('title', 'Sans titre')}** : {excerpt}")
+    passages = "\n".join(lines)
     return (
-        f"""## Réponse en mode dégradé
+        f"""Lekki AI ne peut pas rédiger de réponse pour le moment. Voici les passages de tes \
+documents les plus proches de ta question :
 
-Aucun modèle n'est disponible pour le moment. Voici un extrait du document **{title}** \
-qui peut vous aider :
+{passages}
 
-> {excerpt}
-
-Reformulez votre question plus tard pour obtenir une réponse complète.
+Ouvre la source pour lire la suite, ou repose ta question dans quelques minutes.
 """,
         "Mode dégradé (aucun fournisseur LLM disponible)",
     )

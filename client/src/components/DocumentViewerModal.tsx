@@ -3,11 +3,15 @@ import { DriveFile, WikiPage } from "@/types/lekki";
 import { fileUrl } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
+import { StudentDocBadge } from "./StudentDocBadge";
+import { classifyFile } from "@/lib/studentDocs";
 import {
   X,
   Download,
   BookPlus,
   BookOpen,
+  BookOpenText,
+  GraduationCap,
   ArrowRight,
   Compass,
   ExternalLink,
@@ -27,6 +31,10 @@ interface DocumentViewerModalProps {
   wikiPages?: WikiPage[];
   activeWorkspaceId?: string | null;
   onSwitchWorkspace: (workspaceId: string) => void;
+  /** Lance un quiz (cours, TD) ou une correction (ancien sujet) sur ce document. */
+  onRevise?: (file: DriveFile) => void;
+  /** Matière du programme à laquelle le document est rattaché. */
+  subjectTitle?: string;
 }
 
 const THUMBNAIL_ROUTE = (fileId: string) =>
@@ -41,6 +49,8 @@ export function DocumentViewerModal({
   wikiPages = [],
   activeWorkspaceId,
   onSwitchWorkspace,
+  onRevise,
+  subjectTitle,
 }: DocumentViewerModalProps) {
   const { workspaces } = useWorkspace();
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
@@ -77,6 +87,7 @@ export function DocumentViewerModal({
   if (!open || !file) return null;
 
   const extension = (file.extension || "").toLowerCase().replace(/^\./, "");
+  const docInfo = classifyFile(file);
   const isPdf = extension === "pdf";
   const isOfficeDocument = extension === "docx" || extension === "pptx";
   const totalPages = file.page_count;
@@ -125,7 +136,7 @@ export function DocumentViewerModal({
         {/* En-tête fixe */}
         <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 py-3.5 sm:px-6">
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-            Fiche documentaire
+            Document
           </div>
           <button
             type="button"
@@ -185,7 +196,36 @@ export function DocumentViewerModal({
                 {fileSize && <span>{fileSize}</span>}
                 {file.owner_name && <span>Par {file.owner_name}</span>}
               </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <StudentDocBadge info={docInfo} />
+                {subjectTitle && (
+                  <span className="truncate rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300 ring-1 ring-inset ring-emerald-300/15">
+                    {subjectTitle}
+                  </span>
+                )}
+              </div>
             </div>
+            {onRevise && (
+              <button
+                type="button"
+                onClick={() => onRevise(file)}
+                className="hidden shrink-0 items-center gap-2 rounded-lg border border-emerald-400/30 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 sm:flex"
+                title={docInfo.isExam ? "Proposer une correction de ce sujet" : "Lancer un quiz sur ce document"}
+              >
+                <GraduationCap className="h-4 w-4" />
+                <span>{docInfo.isExam ? "Corriger" : "Quiz"}</span>
+              </button>
+            )}
+            <a
+              href={fileUrl(`/drive/files/${file.id}/preview`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+              title="Lire le document en entier dans un nouvel onglet"
+            >
+              <BookOpenText className="h-4 w-4" />
+              <span>Lire</span>
+            </a>
             <button
               type="button"
               onClick={handleDownload}
@@ -222,7 +262,7 @@ export function DocumentViewerModal({
                   </div>
                   <p className="text-sm font-medium text-zinc-300">Aperçu indisponible</p>
                   <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                    La vignette de ce document n'a pas pu être chargée. Vous pouvez tout de même télécharger le fichier original.
+                    La vignette de ce document n'a pas pu être chargée. Tu peux quand même télécharger le fichier.
                   </p>
                   <button
                     type="button"
@@ -318,7 +358,7 @@ export function DocumentViewerModal({
                   type="button"
                   onClick={handleCreateWiki}
                   disabled={!canUseWiki}
-                  title={isDifferentWorkspace ? "Basculez d'abord vers l’espace du document" : undefined}
+                  title={isDifferentWorkspace ? "Passe d’abord dans l’espace du document" : undefined}
                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <BookPlus className="h-3.5 w-3.5" />

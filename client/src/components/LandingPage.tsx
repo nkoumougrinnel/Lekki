@@ -15,12 +15,12 @@ const steps = [
   {
     icon: FolderUp,
     title: "Importe le dossier",
-    text: "Cours, TD, anciens sujets : glisse le dossier entier, l’arborescence par UE est conservée.",
+    text: "Cours, TD, anciens sujets : importe le dossier entier, ses sous-dossiers sont conservés.",
   },
   {
     icon: MessageSquareText,
     title: "Révise et pose tes questions",
-    text: "Lekki répond à partir de vos documents, cite le cours et la page, et t’interroge.",
+    text: "Lekki répond à partir des documents de la promo, cite le cours et la page, et t’interroge.",
   },
 ];
 

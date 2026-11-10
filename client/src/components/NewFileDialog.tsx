@@ -102,7 +102,7 @@ export function NewFileDialog({
 
     if (!ext) {
       toast.error(
-        "Format non pris en charge. Utilisez PDF, DOCX, PPTX, TXT ou MD."
+        "Format non pris en charge. Utilise un PDF, DOCX, PPTX, TXT ou MD."
       );
       return;
     }
@@ -163,7 +163,7 @@ export function NewFileDialog({
       setCreatedFile(newFile);
       await onFileCreated(newFile);
 
-      toast.success(`Document « ${newFile.name} » ajouté au Drive.`);
+      toast.success(`Document « ${newFile.name} » ajouté aux documents.`);
     } catch (error) {
       toast.error(
         error instanceof ApiError
@@ -197,7 +197,7 @@ export function NewFileDialog({
   const destination = defaultFolderId
     ? folders.find((folder) => folder.id === defaultFolderId)?.name ||
       "Dossier courant"
-    : "Racine du Drive";
+    : "Racine des documents";
 
   return (
     <div
@@ -238,8 +238,8 @@ export function NewFileDialog({
 
               <p className="mt-0.5 text-[11px] text-zinc-500">
                 {createdFile
-                  ? "Le document a été déposé dans votre Drive."
-                  : "Ajoutez une ressource à votre espace de travail."}
+                  ? "Le document est ajouté."
+                  : "Ajoute un cours, un TD ou un ancien sujet."}
               </p>
             </div>
           </div>
@@ -296,12 +296,12 @@ export function NewFileDialog({
 
                 <p className="text-sm font-medium text-zinc-200">
                   {isDragOver
-                    ? "Déposez votre fichier ici"
-                    : "Glissez votre document ici"}
+                    ? "Dépose le fichier ici"
+                    : "Glisse le document ici"}
                 </p>
 
                 <p className="mt-1.5 text-xs text-zinc-500">
-                  ou sélectionnez-le depuis votre ordinateur
+                  ou choisis-le sur ton appareil
                 </p>
 
                 <button
@@ -384,9 +384,8 @@ export function NewFileDialog({
                 </div>
 
                 <p className="text-[11px] leading-relaxed text-zinc-500">
-                  Votre document sera ajouté au Drive. Les informations
-                  disponibles sur sa structure seront présentées après le
-                  dépôt.
+                  Astuce : nomme-le comme « TS_Examen_CL_2024 » ou « Antennes_TD_1 »,
+                  Lekki le rangera sous la bonne matière.
                 </p>
               </div>
             )}

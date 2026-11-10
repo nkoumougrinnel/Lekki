@@ -285,13 +285,23 @@ export function LekkiAIPanel({
   const safeMessages = Array.isArray(messages) ? messages : [];
 
   const suggestedQuestions = [
-    "Résume les documents disponibles dans cet espace",
-    "Quels sont les points clés de mes documents récents ?",
-    "Retrouve les documents qui parlent de…",
-    "Compare les informations de ces documents",
+    "Quelles matières sont couvertes dans cet espace ?",
+    "Quels sont les points clés du dernier cours ajouté ?",
+    "Retrouve les sujets qui parlent de…",
+    "Explique-moi une notion du cours avec un exemple",
   ];
 
   /* Charger l'historique à l'ouverture */
+
+  // Échap ferme le panneau, comme les autres fenêtres de l'app.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -446,7 +456,7 @@ export function LekkiAIPanel({
               Lekki AI
             </h2>
             <p className="mt-0.5 text-[11px] text-zinc-500">
-              Votre assistant documentaire
+              Répond à partir de tes documents
             </p>
           </div>
         </div>
@@ -519,12 +529,12 @@ export function LekkiAIPanel({
                 </div>
 
                 <h3 className="text-xl font-medium tracking-tight text-zinc-100">
-                  Que souhaitez-vous comprendre ?
+                  Que veux-tu comprendre ?
                 </h3>
 
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">
-                  Interrogez vos documents et vos pages Wiki. Lekki AI vous
-                  répond en s'appuyant sur les connaissances accessibles.
+                  Pose ta question : Lekki AI répond à partir des cours, des sujets
+                  et des fiches de ton espace, en citant ses sources.
                 </p>
               </div>
 
@@ -602,7 +612,7 @@ export function LekkiAIPanel({
                       isUser ? "text-zinc-400" : "text-zinc-200"
                     }`}
                   >
-                    {isUser ? "Vous" : "Lekki AI"}
+                    {isUser ? "Toi" : "Lekki AI"}
                   </span>
                 </div>
 
@@ -708,7 +718,7 @@ export function LekkiAIPanel({
               />
 
               <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span>Lekki AI consulte vos connaissances</span>
+                <span>Lekki AI lit tes documents</span>
 
                 <span className="flex gap-1">
                   <span className="h-1 w-1 animate-bounce rounded-full bg-sky-400 [animation-delay:-0.3s]" />
@@ -745,7 +755,7 @@ export function LekkiAIPanel({
                   void handleAsk(input);
                 }
               }}
-              placeholder="Posez une question sur vos connaissances..."
+              placeholder="Pose une question sur tes cours…"
               disabled={loading}
               className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[13px] text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-50"
             />
@@ -761,7 +771,7 @@ export function LekkiAIPanel({
           </div>
 
           <p className="mt-2 text-center text-[10px] text-zinc-600">
-            Les réponses s'appuient sur les connaissances accessibles à Lekki.
+            Les réponses s'appuient sur les documents de ton espace.
           </p>
         </form>
       </footer>

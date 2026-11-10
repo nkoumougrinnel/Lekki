@@ -1,3 +1,4 @@
+import { spaceWording } from "@/lib/spaces";
 import React, { useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -146,7 +147,7 @@ export function Sidebar({
           {!loading && !error && workspaces.length === 0 && (
             <div className="px-5 py-7 text-center">
               <p className="text-sm font-medium text-zinc-200">Aucun espace disponible</p>
-              <p className="mt-1 text-xs text-zinc-500">Rejoignez un espace avec son code ou créez-en un.</p>
+              <p className="mt-1 text-xs text-zinc-500">Rejoins un espace avec son code ou crée-en un.</p>
               <button
                 onClick={() => {
                   setWsSwitcherOpen(false);
@@ -208,10 +209,102 @@ export function Sidebar({
         </div>
       </button>
 
-      {/* MON ESPACE */}
+      {/* WORKSPACE — aucun espace fictif : créer/rejoindre avant d’afficher le Drive partagé et le Wiki */}
+      <div className="space-y-1">
+        {activeWorkspace ? (
+          <>
+            <button
+              id="sidebar-workspace-switcher"
+              onClick={() => setWsSwitcherOpen(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/80 hover:border-emerald-500/30 bg-zinc-900/30 hover:bg-emerald-500/5 text-sm transition-all group mb-1"
+              title="Changer d’espace"
+            >
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                {getWorkspaceIcon(activeWorkspace.icon)}
+              </div>
+              <span className="flex-1 text-left truncate font-semibold text-zinc-200 text-sm">
+                {activeWorkspace.name}
+              </span>
+              <ChevronsUpDown className="h-3.5 w-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors shrink-0" />
+            </button>
+
+            {spaceWording(activeWorkspace).kind === "promo" && (
+            <button
+              id="sidebar-nav-subjects"
+              onClick={() => handleSelect("subjects")}
+              className={navItemClass(currentView === "subjects" || currentView === "subject")}
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid className={`h-4 w-4 ${currentView === "subjects" || currentView === "subject" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Matières</span>
+              </div>
+            </button>
+            )}
+
+            <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>
+              <div className="flex items-center gap-3">
+                <Files className={`h-4 w-4 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>Documents</span>
+              </div>
+              {counts.workspaceFiles !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceFiles}</span>}
+            </button>
+
+            <button id="sidebar-nav-workspace-wiki" onClick={() => handleSelect("workspace_wiki")} className={navItemClass(currentView === "workspace_wiki")}>
+              <div className="flex items-center gap-3">
+                <BookOpen className={`h-4 w-4 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                <span>{spaceWording(activeWorkspace).wiki}</span>
+              </div>
+              {counts.workspaceWiki !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceWiki}</span>}
+            </button>
+
+            {onOpenRevision && spaceWording(activeWorkspace).study && (
+              <button
+                id="sidebar-nav-revision"
+                onClick={() => { onOpenRevision(); onMobileClose?.(); }}
+                className={navItemClass(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <GraduationCap className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
+                  <span>Réviser</span>
+                </div>
+                <span className="rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">Nouveau</span>
+              </button>
+            )}
+
+            {(activeWorkspace.role === "admin" || activeWorkspace.role === "owner") && onOpenWorkspaceSettings && (
+              <button
+                onClick={() => { onOpenWorkspaceSettings(); onMobileClose?.(); }}
+                className={navItemClass(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <Settings2 className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
+                  <span>Administration</span>
+                </div>
+              </button>
+            )}
+          </>
+        ) : (
+          <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3">
+            <div className="text-sm font-medium text-zinc-200">Aucun espace rejoint</div>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              Rejoins l’espace de ta promo avec son code, ou crée-le.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCreateWorkspaceOpen(true)}
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Rejoindre ou créer
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* PERSONNEL : après l’espace de la promo, qui est le cœur de l’app */}
       <div className="space-y-1">
         <div className="px-3 mb-1 text-[11px] font-mono tracking-wider text-zinc-600 uppercase font-bold">
-          Mon Espace
+          Personnel
         </div>
 
         <button id="sidebar-nav-my-docs" onClick={() => handleSelect("my_docs")} className={navItemClass(currentView === "my_docs")}>
@@ -245,96 +338,6 @@ export function Sidebar({
           </div>
           {counts.trash !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.trash}</span>}
         </button>
-      </div>
-
-      {/* WORKSPACE — aucun espace fictif : créer/rejoindre avant d’afficher le Drive partagé et le Wiki */}
-      <div className="space-y-1">
-        {activeWorkspace ? (
-          <>
-            <button
-              id="sidebar-workspace-switcher"
-              onClick={() => setWsSwitcherOpen(true)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/80 hover:border-emerald-500/30 bg-zinc-900/30 hover:bg-emerald-500/5 text-sm transition-all group mb-1"
-              title="Changer d’espace"
-            >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                {getWorkspaceIcon(activeWorkspace.icon)}
-              </div>
-              <span className="flex-1 text-left truncate font-semibold text-zinc-200 text-sm">
-                {activeWorkspace.name}
-              </span>
-              <ChevronsUpDown className="h-3.5 w-3.5 text-zinc-600 group-hover:text-emerald-400 transition-colors shrink-0" />
-            </button>
-
-            <button
-              id="sidebar-nav-subjects"
-              onClick={() => handleSelect("subjects")}
-              className={navItemClass(currentView === "subjects" || currentView === "subject")}
-            >
-              <div className="flex items-center gap-3">
-                <LayoutGrid className={`h-4 w-4 ${currentView === "subjects" || currentView === "subject" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                <span>Matières</span>
-              </div>
-            </button>
-
-            <button id="sidebar-nav-workspace-files" onClick={() => handleSelect("workspace_files")} className={navItemClass(currentView === "workspace_files")}>
-              <div className="flex items-center gap-3">
-                <Files className={`h-4 w-4 ${currentView === "workspace_files" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                <span>Documents de l’espace</span>
-              </div>
-              {counts.workspaceFiles !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceFiles}</span>}
-            </button>
-
-            <button id="sidebar-nav-workspace-wiki" onClick={() => handleSelect("workspace_wiki")} className={navItemClass(currentView === "workspace_wiki")}>
-              <div className="flex items-center gap-3">
-                <BookOpen className={`h-4 w-4 ${currentView === "workspace_wiki" ? "text-emerald-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                <span>Wiki de révision</span>
-              </div>
-              {counts.workspaceWiki !== undefined && <span className="text-[11px] font-mono text-zinc-500">{counts.workspaceWiki}</span>}
-            </button>
-
-            {onOpenRevision && (
-              <button
-                id="sidebar-nav-revision"
-                onClick={() => { onOpenRevision(); onMobileClose?.(); }}
-                className={navItemClass(false)}
-              >
-                <div className="flex items-center gap-3">
-                  <GraduationCap className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
-                  <span>Réviser</span>
-                </div>
-                <span className="rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">Nouveau</span>
-              </button>
-            )}
-
-            {(activeWorkspace.role === "admin" || activeWorkspace.role === "owner") && onOpenWorkspaceSettings && (
-              <button
-                onClick={() => { onOpenWorkspaceSettings(); onMobileClose?.(); }}
-                className={navItemClass(false)}
-              >
-                <div className="flex items-center gap-3">
-                  <Settings2 className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300" />
-                  <span>Administration</span>
-                </div>
-              </button>
-            )}
-          </>
-        ) : (
-          <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3">
-            <div className="text-sm font-medium text-zinc-200">Aucun espace rejoint</div>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              Rejoignez un espace avec son code ou créez-en un pour accéder au Drive partagé et au Wiki.
-            </p>
-            <button
-              type="button"
-              onClick={() => setCreateWorkspaceOpen(true)}
-              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Rejoindre ou créer
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
