@@ -3,7 +3,7 @@ import { WikiHeaderBar } from "./WikiHeaderBar";
 import { WikiBreadcrumbs, WikiBreadcrumbItem } from "./WikiBreadcrumbs";
 import { MarkdownContent, markdownHeadingId } from "./MarkdownContent";
 import { WikiPage, WikiStatus, DriveFile } from "@/types/lekki";
-import { apiUrl, wiki } from "@/lib/api";
+import { fileUrl, wiki } from "@/lib/api";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -354,7 +354,7 @@ export function WikiPageReader({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const downloadUrl = apiUrl(`/drive/files/${file.id}/download`);
+                        const downloadUrl = fileUrl(`/drive/files/${file.id}/download`);
                         const link = document.createElement("a");
                         link.href = downloadUrl;
                         link.setAttribute("download", file.name);

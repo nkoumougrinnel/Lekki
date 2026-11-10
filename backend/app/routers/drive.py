@@ -18,7 +18,19 @@ from app.knowledge.drive.schemas import FolderOut, FolderCreate, FolderUpdate, F
 from app.knowledge.drive.service import build_index_meta, detect_chapters, infer_structural_counts
 from app.knowledge.drive.parser import DocumentParserService
 from app.knowledge.drive.preview import PreviewService
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_current_user_for_file
+from app.core.access import (
+    accessible_workspace_ids,
+    can_access_folder,
+    can_destroy_file,
+    can_edit_file,
+    can_read_file,
+    deny,
+    file_visibility_clause,
+    filter_visible_files,
+    is_platform_admin,
+    require_workspace_member,
+)
 
 router = APIRouter(prefix="/drive", tags=["Drive"])
 
@@ -115,8 +127,30 @@ def _file_out(drive_file: DriveFile) -> FileOut:
         updated_at=drive_file.updated_at,
     )
 
-# ── Folders ──────────────────────────────────────────────────────────────────
-# ... (list_folders, create_folder, update_folder, delete_folder stay the same)
+async def _readable_file(db: AsyncSession, user: User, file_id: str) -> DriveFile:
+    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
+    drive_file = result.scalar_one_or_none()
+    if not drive_file or not await can_read_file(db, user, drive_file):
+        raise deny("Document introuvable")
+    return drive_file
+
+
+async def _accessible_folder(db: AsyncSession, user: User, folder_id: str) -> DriveFolder:
+    folder = await db.get(DriveFolder, folder_id)
+    if not folder or not await can_access_folder(db, user, folder):
+        raise deny("Dossier introuvable")
+    return folder
+
+
+async def _check_destination(
+    db: AsyncSession, user: User, workspace_id: Optional[str], folder_id: Optional[str]
+) -> None:
+    """Vérifie qu'on a le droit d'écrire dans l'espace et le dossier cibles."""
+    await require_workspace_member(db, user, workspace_id)
+    if folder_id:
+        folder = await _accessible_folder(db, user, folder_id)
+        if (folder.workspace_id or None) != (workspace_id or None):
+            raise HTTPException(status_code=400, detail="Ce dossier n'appartient pas à cet espace.")
 
 
 # ── Folders ──────────────────────────────────────────────────────────────────
@@ -130,7 +164,11 @@ async def list_folders(
 ):
     query = select(DriveFolder)
     if workspace_id:
+        await require_workspace_member(db, current_user, workspace_id)
         query = query.where(DriveFolder.workspace_id == workspace_id)
+    elif not is_platform_admin(current_user):
+        # Dossiers personnels uniquement
+        query = query.where(DriveFolder.workspace_id == None, DriveFolder.owner_id == current_user.id)
     if parent_id is not None:
         if parent_id == "":
             query = query.where(DriveFolder.parent_id == None)
@@ -165,13 +203,10 @@ async def create_folder(
 ):
     parent_workspace_id = None
     if data.parent_id:
-        parent_result = await db.execute(
-            select(DriveFolder).where(DriveFolder.id == data.parent_id)
-        )
-        parent = parent_result.scalar_one_or_none()
-        if not parent:
-            raise HTTPException(status_code=404, detail="Dossier parent introuvable")
+        parent = await _accessible_folder(db, current_user, data.parent_id)
         parent_workspace_id = parent.workspace_id
+    else:
+        await require_workspace_member(db, current_user, data.workspace_id)
 
     folder = DriveFolder(
         id=f"folder-{uuid.uuid4().hex[:8]}",
@@ -197,15 +232,19 @@ async def create_folder(
 async def update_folder(
     folder_id: str,
     data: FolderUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(DriveFolder).where(DriveFolder.id == folder_id))
-    folder = result.scalar_one_or_none()
-    if not folder:
-        raise HTTPException(status_code=404, detail="Dossier introuvable")
+    folder = await _accessible_folder(db, current_user, folder_id)
     if data.name:
         folder.name = data.name
     if data.parent_id is not None:
+        if data.parent_id:
+            if data.parent_id == folder.id:
+                raise HTTPException(status_code=400, detail="Un dossier ne peut pas être son propre parent.")
+            parent = await _accessible_folder(db, current_user, data.parent_id)
+            if (parent.workspace_id or None) != (folder.workspace_id or None):
+                raise HTTPException(status_code=400, detail="Déplacement entre espaces non autorisé.")
         folder.parent_id = data.parent_id or None
     await db.commit()
     await db.refresh(folder)
@@ -220,11 +259,12 @@ async def update_folder(
 
 
 @router.delete("/folders/{folder_id}")
-async def delete_folder(folder_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DriveFolder).where(DriveFolder.id == folder_id))
-    folder = result.scalar_one_or_none()
-    if not folder:
-        raise HTTPException(status_code=404, detail="Dossier introuvable")
+async def delete_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await _accessible_folder(db, current_user, folder_id)
 
     folder_ids = [folder_id]
     pending_folder_ids = [folder_id]
@@ -264,7 +304,12 @@ async def list_files(
     current_user: User = Depends(get_current_user)
 ):
     query = select(DriveFile)
-    
+    workspace_ids = await accessible_workspace_ids(db, current_user)
+    if workspace_id:
+        await require_workspace_member(db, current_user, workspace_id)
+    if not is_platform_admin(current_user):
+        query = query.where(file_visibility_clause(current_user, workspace_ids))
+
     if scope == "trash":
         query = query.where(DriveFile.is_deleted == True)
     else:
@@ -275,7 +320,7 @@ async def list_files(
     elif scope == "personal":
         query = query.where(DriveFile.owner_id == current_user.id, DriveFile.scope == "personal")
     elif scope == "shared_with_me":
-        query = query.where(DriveFile.shared_with.like(f"%{current_user.id}%"))
+        query = query.where(DriveFile.shared_with.like(f'%"{current_user.id}"%'))
     elif workspace_id:
         query = query.where(DriveFile.workspace_id == workspace_id)
 
@@ -296,17 +341,18 @@ async def list_files(
         )
 
     result = await db.execute(query)
-    files = result.scalars().all()
+    files = filter_visible_files(current_user, workspace_ids, result.scalars().all())
 
     return [_file_out(drive_file) for drive_file in files]
 
 
 @router.get("/files/{file_id}/download")
-async def download_file(file_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    drive_file = result.scalar_one_or_none()
-    if not drive_file:
-        raise HTTPException(status_code=404, detail="Document introuvable")
+async def download_file(
+    file_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_for_file),
+):
+    drive_file = await _readable_file(db, current_user, file_id)
 
     extension = _normalized_extension(drive_file.extension)
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
@@ -452,11 +498,12 @@ def _build_presentation_preview(filename: str, text: str) -> str:
 
 
 @router.get("/files/{file_id}/preview")
-async def preview_file(file_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    drive_file = result.scalar_one_or_none()
-    if not drive_file:
-        raise HTTPException(status_code=404, detail="Document introuvable")
+async def preview_file(
+    file_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_for_file),
+):
+    drive_file = await _readable_file(db, current_user, file_id)
 
     extension = _normalized_extension(drive_file.extension).lower()
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
@@ -481,11 +528,12 @@ async def preview_file(file_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/files/{file_id}/thumbnail")
-async def file_thumbnail(file_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    drive_file = result.scalar_one_or_none()
-    if not drive_file:
-        raise HTTPException(status_code=404, detail="Document introuvable")
+async def file_thumbnail(
+    file_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_for_file),
+):
+    drive_file = await _readable_file(db, current_user, file_id)
     extension = _normalized_extension(drive_file.extension).lower()
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
     thumbnail_path = drive_file.thumbnail_path
@@ -503,12 +551,12 @@ async def file_thumbnail(file_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/files/{file_id}", response_model=FileOut)
-async def get_file(file_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    f = result.scalar_one_or_none()
-    if not f:
-        raise HTTPException(status_code=404, detail="Document introuvable")
-    return _file_out(f)
+async def get_file(
+    file_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _file_out(await _readable_file(db, current_user, file_id))
 
 
 @router.post("/files", response_model=FileOut)
@@ -520,6 +568,8 @@ async def create_file(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    await _check_destination(db, current_user, workspace_id, folder_id)
+
     # 1. File basics
     file_id = f"file-{uuid.uuid4().hex[:8]}"
     extension = os.path.splitext(file.filename)[1].lower()
@@ -614,6 +664,10 @@ async def import_files(
     except (TypeError, ValueError):
         tags_list = []
 
+    await require_workspace_member(db, current_user, workspace_id)
+    for target_folder_id in {fid for fid in folder_ids_list if fid}:
+        await _check_destination(db, current_user, workspace_id, target_folder_id)
+
     results: List[FileOut] = []
 
     for index, file in enumerate(files):
@@ -687,12 +741,18 @@ async def import_files(
 async def update_file(
     file_id: str,
     data: FileUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    f = result.scalar_one_or_none()
-    if not f:
-        raise HTTPException(status_code=404, detail="Document introuvable")
+    f = await _readable_file(db, current_user, file_id)
+    if not await can_edit_file(db, current_user, f):
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas modifier ce document.")
+    if data.folder_id:
+        folder = await _accessible_folder(db, current_user, data.folder_id)
+        if (folder.workspace_id or None) != (f.workspace_id or None):
+            raise HTTPException(status_code=400, detail="Ce dossier n'appartient pas au même espace.")
+    if data.scope and data.scope != f.scope and f.owner_id != current_user.id and not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Seul l'auteur peut changer la visibilité.")
 
     if data.name:
         f.name = data.name
@@ -718,14 +778,20 @@ async def update_file(
 async def delete_file(
     file_id: str,
     permanent: bool = Query(False),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(DriveFile).where(DriveFile.id == file_id))
-    f = result.scalar_one_or_none()
-    if f:
-        if permanent:
-            await db.delete(f)
-        else:
-            f.is_deleted = True
-        await db.commit()
+    f = await _readable_file(db, current_user, file_id)
+    if permanent:
+        if not await can_destroy_file(db, current_user, f):
+            raise HTTPException(
+                status_code=403,
+                detail="Seul l'auteur ou un admin de l'espace peut supprimer définitivement.",
+            )
+        await db.delete(f)
+    else:
+        if not await can_edit_file(db, current_user, f):
+            raise HTTPException(status_code=403, detail="Vous ne pouvez pas supprimer ce document.")
+        f.is_deleted = True
+    await db.commit()
     return None

@@ -11,6 +11,14 @@ from app.models.user import User
 from app.knowledge.wiki.models import WikiPage, WikiHistory
 from app.knowledge.wiki.schemas import WikiPageOut, WikiPageCreate, WikiPageUpdate, WikiStatusUpdate, WikiHistoryOut
 from app.middleware.auth import get_current_user
+from app.core.access import (
+    accessible_workspace_ids,
+    can_read_wiki,
+    deny,
+    is_platform_admin,
+    require_workspace_member,
+    wiki_visibility_clause,
+)
 from app.workspaces.models import Workspace, WorkspaceMember
 
 router = APIRouter(prefix="/wiki", tags=["Wiki"])
@@ -83,11 +91,16 @@ async def list_wiki_pages(
     topic: Optional[str] = None,
     section: Optional[str] = None,
     status: Optional[str] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     query = select(WikiPage).order_by(desc(WikiPage.updated_at))
     if workspace_id:
+        await require_workspace_member(db, current_user, workspace_id)
         query = query.where(WikiPage.workspace_id == workspace_id)
+    elif not is_platform_admin(current_user):
+        workspace_ids = await accessible_workspace_ids(db, current_user)
+        query = query.where(wiki_visibility_clause(current_user, workspace_ids))
     if category:
         query = query.where(WikiPage.category == category)
     if topic:
@@ -163,8 +176,25 @@ async def list_wiki_pages(
     return out
 
 
+async def _readable_page(db: AsyncSession, user: User, page_id: str) -> WikiPage:
+    result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
+    page = result.scalar_one_or_none()
+    if not page or not await can_read_wiki(db, user, page):
+        raise deny("Page Wiki introuvable")
+    return page
+
+
 @router.get("/pages/{page_id}", response_model=WikiPageOut)
-async def get_wiki_page(page_id: str, db: AsyncSession = Depends(get_db)):
+async def get_wiki_page(
+    page_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await _readable_page(db, current_user, page_id)
+    return await _page_out(page_id, db)
+
+
+async def _page_out(page_id: str, db: AsyncSession) -> WikiPageOut:
     result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
     p = result.scalar_one_or_none()
     if not p:
@@ -236,6 +266,7 @@ async def create_wiki_page(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    await require_workspace_member(db, current_user, data.workspace_id)
     page_id = f"wiki-{uuid.uuid4().hex[:8]}"
     content = data.content or f"# {data.title}\n\nContenu en cours de rédaction..."
     
@@ -313,10 +344,7 @@ async def update_wiki_page(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
-    page = result.scalar_one_or_none()
-    if not page:
-        raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+    page = await _readable_page(db, current_user, page_id)
 
     # Wiki pages are peers; other pages are linked as sources, not nested.
     page.parent_page_id = None
@@ -366,7 +394,7 @@ async def update_wiki_page(
     await db.commit()
     await db.refresh(page)
 
-    return await get_wiki_page(page_id, db)
+    return await _page_out(page_id, db)
 
 
 @router.post("/pages/{page_id}/status", response_model=WikiPageOut)
@@ -376,10 +404,7 @@ async def update_page_status(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
-    page = result.scalar_one_or_none()
-    if not page:
-        raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+    page = await _readable_page(db, current_user, page_id)
 
     if data.status not in {"draft", "community", "verified"}:
         raise HTTPException(status_code=400, detail="Statut Wiki invalide")
@@ -419,7 +444,7 @@ async def update_page_status(
         page.status_verified_at = None
 
     await db.commit()
-    return await get_wiki_page(page_id, db)
+    return await _page_out(page_id, db)
 
 
 @router.post("/pages/{page_id}/restore/{version}", response_model=WikiPageOut)
@@ -429,10 +454,7 @@ async def restore_page_version(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
-    page = result.scalar_one_or_none()
-    if not page:
-        raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+    page = await _readable_page(db, current_user, page_id)
 
     h_res = await db.execute(
         select(WikiHistory).where(WikiHistory.page_id == page_id, WikiHistory.version == version)
@@ -458,7 +480,7 @@ async def restore_page_version(
     db.add(restored_h)
     await db.commit()
 
-    return await get_wiki_page(page_id, db)
+    return await _page_out(page_id, db)
 
 
 @router.delete("/pages/section")
@@ -490,10 +512,7 @@ async def delete_wiki_page(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(WikiPage).where(WikiPage.id == page_id))
-    page = result.scalar_one_or_none()
-    if not page:
-        raise HTTPException(status_code=404, detail="Page Wiki introuvable")
+    page = await _readable_page(db, current_user, page_id)
     await require_wiki_manager(page.workspace_id, current_user, db)
     await delete_wiki_pages([page], db)
     return None

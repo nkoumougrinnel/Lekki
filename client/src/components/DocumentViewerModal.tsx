@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DriveFile, WikiPage } from "@/types/lekki";
-import { apiUrl } from "@/lib/api";
+import { fileUrl } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import {
@@ -30,7 +30,7 @@ interface DocumentViewerModalProps {
 }
 
 const THUMBNAIL_ROUTE = (fileId: string) =>
-  apiUrl(`/drive/files/${fileId}/thumbnail`);
+  fileUrl(`/drive/files/${fileId}/thumbnail`);
 
 export function DocumentViewerModal({
   file,
@@ -93,7 +93,7 @@ export function DocumentViewerModal({
 
   const handleDownload = () => {
     const link = document.createElement("a");
-    link.href = apiUrl(`/drive/files/${file.id}/download`);
+    link.href = fileUrl(`/drive/files/${file.id}/download`);
     link.setAttribute("download", file.name);
     link.rel = "noopener";
     document.body.appendChild(link);

@@ -35,6 +35,15 @@ export function apiUrl(path: string): string {
 
 const TOKEN_KEY = "lekki_token";
 
+/** URL d'un fichier protégé, utilisable dans <img src> ou un lien de téléchargement
+ *  (ces requêtes ne peuvent pas envoyer l'en-tête Authorization). */
+export function fileUrl(path: string): string {
+  const url = apiUrl(path);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }

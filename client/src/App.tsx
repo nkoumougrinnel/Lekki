@@ -27,7 +27,7 @@ import {
   WikiPage,
   NavView,
 } from "./types/lekki";
-import { apiUrl, drive, wiki } from "./lib/api";
+import { fileUrl, drive, wiki } from "./lib/api";
 
 function PublicRoutes() {
   return (
@@ -261,7 +261,7 @@ function LekkiMain() {
   };
 
   const handleOpenFileInBrowser = (file: DriveFile) => {
-    window.location.assign(apiUrl(`/drive/files/${file.id}/download`));
+    window.location.assign(fileUrl(`/drive/files/${file.id}/download`));
   };
 
   const handleAskAIAboutFile = (file: DriveFile) => {

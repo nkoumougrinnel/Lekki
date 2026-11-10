@@ -2,7 +2,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List, Tuple
 
-from sqlalchemy import or_, select
+from sqlalchemy import false, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm_service import generate_rag_answer_with_provider
@@ -90,25 +90,32 @@ async def execute_rag_pipeline(
             select(Workspace.id).where(Workspace.owner_id == user_id)
         )
         accessible_workspace_ids.update(row[0] for row in owner_result.all())
-    if workspace_id:
-        accessible_workspace_ids.add(workspace_id)
+    # Sécurité : un workspace_id passé par le client ne donne JAMAIS d'accès en plus.
+    # Il sert seulement à restreindre la recherche à l'espace courant.
+    if workspace_id and workspace_id in accessible_workspace_ids:
+        accessible_workspace_ids = {workspace_id}
 
     drive_query = select(DriveFile).where(DriveFile.is_deleted == False)
     wiki_query = select(WikiPage)
     workspace_access = list(accessible_workspace_ids)
-    if user_id:
+    if not user_id:
+        # Sans utilisateur identifié, aucune source privée n'est consultée.
+        drive_query = drive_query.where(false())
+        wiki_query = wiki_query.where(false())
+    else:
         drive_query = drive_query.where(
             or_(
-                DriveFile.workspace_id.in_(workspace_access) if workspace_access else False,
+                DriveFile.workspace_id.in_(workspace_access) if workspace_access else false(),
                 (DriveFile.workspace_id == None) & (DriveFile.owner_id == user_id),
-                DriveFile.shared_with.like(f"%{user_id}%"),
+                DriveFile.shared_with.like(f'%"{user_id}"%'),
             )
         )
-    elif workspace_access:
-        drive_query = drive_query.where(DriveFile.workspace_id.in_(workspace_access))
-
-    if workspace_access:
-        wiki_query = wiki_query.where(WikiPage.workspace_id.in_(workspace_access))
+        wiki_query = wiki_query.where(
+            or_(
+                WikiPage.workspace_id.in_(workspace_access) if workspace_access else false(),
+                (WikiPage.workspace_id == None) & (WikiPage.creator_id == user_id),
+            )
+        )
 
     drive_files = (await db.execute(drive_query)).scalars().all()
     wiki_pages = (await db.execute(wiki_query)).scalars().all()

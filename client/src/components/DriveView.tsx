@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { DriveFile, DriveFolder, User, NavView } from "@/types/lekki";
-import { apiUrl, drive } from "@/lib/api";
+import { fileUrl, drive } from "@/lib/api";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import { toast } from "sonner";
 import {
@@ -244,7 +244,7 @@ export function DriveView({
 
   const handleDownload = (file: DriveFile) => {
     const link = document.createElement("a");
-    link.href = apiUrl(`/drive/files/${file.id}/download`);
+    link.href = fileUrl(`/drive/files/${file.id}/download`);
     link.setAttribute("download", file.name);
     link.rel = "noopener";
     document.body.appendChild(link);
@@ -564,7 +564,7 @@ export function DriveView({
                   <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#f8fafd] dark:bg-[#17191e]">
                     {file.thumbnail_path || getExtension(file) === "pdf" ? (
                       <img
-                        src={apiUrl(`/drive/files/${file.id}/thumbnail`)}
+                        src={fileUrl(`/drive/files/${file.id}/thumbnail`)}
                         alt={`Aperçu de ${file.name}`}
                         loading="lazy"
                         className="h-full w-full rounded-t-xl object-cover"
