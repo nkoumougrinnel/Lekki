@@ -27,6 +27,7 @@ import { workspaces as workspacesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RevisionMode } from "./RevisionPanel";
 import { spaceWording } from "@/lib/spaces";
+import { SpaceNews } from "./SpaceNews";
 import { shareText } from "@/lib/share";
 import { inviteLink } from "@/lib/pendingLinks";
 
@@ -118,6 +119,8 @@ export function HomeOverview({
   const wording = spaceWording(activeWorkspace);
   const semesterSubjects = library.current ? library.subjectsOfSemester(library.current) : [];
   const canManage = ["owner", "admin"].includes(activeWorkspace?.role || "");
+  // Lecteur : membre simple d'un espace. Il consulte, révise et ajoute ; il n'administre pas.
+  const isReader = Boolean(activeWorkspace) && !canManage;
 
   return (
     <div id="home-overview-container" className="flex-1 overflow-y-auto bg-[#0E1116] p-4 sm:p-8 space-y-6 sm:space-y-8">
@@ -197,15 +200,28 @@ export function HomeOverview({
                 <Camera className="h-3.5 w-3.5" /> Photographier un sujet
               </button>
             )}
-            <button
-              onClick={() => void invite()}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
-            >
-              <UserPlus className="h-3.5 w-3.5" /> {wording.invite}
-            </button>
+            {!isReader && (
+              <button
+                onClick={() => void invite()}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                <UserPlus className="h-3.5 w-3.5" /> {wording.invite}
+              </button>
+            )}
           </div>
         </div>
       </section>
+
+      {activeWorkspace && (
+        <SpaceNews
+          spaceId={activeWorkspace.id}
+          userId={user?.id}
+          files={files}
+          wikiPages={wikiPages}
+          onOpenFile={onOpenFile}
+          onOpenWiki={onOpenWiki}
+        />
+      )}
 
       {library.academic && semesterSubjects.length > 0 && (
         <section className="space-y-3">
@@ -246,7 +262,9 @@ export function HomeOverview({
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               { icon: Upload, title: "Importe un dossier", text: wording.importText, action: () => onNavigate(activeWorkspace ? "workspace_files" : "my_docs"), cta: "Ouvrir les documents" },
-              { icon: Users, title: wording.kind === "club" ? "Invite les membres" : "Invite tes camarades", text: wording.inviteText, action: () => void invite(), cta: "Copier le code" },
+              isReader
+                ? { icon: Camera, title: "Photographie un sujet", text: "Un ancien sujet sur papier ? Une photo par page, Lekki le lit et le range.", action: () => onScan?.(), cta: "Prendre une photo" }
+                : { icon: Users, title: wording.kind === "club" ? "Invite les membres" : "Invite tes camarades", text: wording.inviteText, action: () => void invite(), cta: "Copier le code" },
               wording.study
                 ? { icon: GraduationCap, title: "Révise", text: "Questions sourcées, quiz par chapitre, corrections d’anciens sujets.", action: () => onOpenRevision("quiz"), cta: "Essayer" }
                 : { icon: Sparkles, title: "Retrouve tout", text: "Pose ta question : Lekki AI répond en citant le document d’où vient l’information.", action: () => onOpenAI(), cta: "Poser une question" },
@@ -274,7 +292,14 @@ export function HomeOverview({
               <StatCard icon={FileCheck2} tone="text-rose-300" value={exams.length} title="Anciens sujets" hint="Examens, RAT, CC" onClick={() => onOpenRevision("correction")} />
             )}
             <StatCard icon={BookOpen} tone="text-sky-400" value={wikiPages.length} title="Fiches du wiki" hint={`${verifiedCount} vérifiée${verifiedCount > 1 ? "s" : ""}`} onClick={() => onNavigate(activeWorkspace ? "workspace_wiki" : "my_docs")} />
-            <StatCard icon={Users} tone="text-violet-300" value={activeWorkspace?.members_count ?? 1} title="Membres" hint={activeWorkspace ? "Inviter avec un code" : "Espace personnel"} onClick={() => void invite()} />
+            <StatCard
+              icon={Users}
+              tone="text-violet-300"
+              value={activeWorkspace?.members_count ?? 1}
+              title="Membres"
+              hint={!activeWorkspace ? "Espace personnel" : isReader ? "Dans cet espace" : "Inviter avec un code"}
+              onClick={isReader ? undefined : () => void invite()}
+            />
           </div>
 
           <div className={`grid grid-cols-1 gap-6 ${wording.study ? "lg:grid-cols-2" : ""}`}>
@@ -379,16 +404,20 @@ export function HomeOverview({
 
 function StatCard({
   icon: Icon, tone, value, title, hint, onClick,
-}: { icon: React.ElementType; tone: string; value: number; title: string; hint: string; onClick: () => void }) {
+}: { icon: React.ElementType; tone: string; value: number; title: string; hint: string; onClick?: () => void }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <button onClick={onClick} className="rounded-xl border border-zinc-800 bg-[#12151B] p-4 text-left transition hover:border-zinc-700 hover:bg-zinc-900/80">
+    <Tag
+      onClick={onClick}
+      className={`rounded-xl border border-zinc-800 bg-[#12151B] p-4 text-left ${onClick ? "transition hover:border-zinc-700 hover:bg-zinc-900/80" : ""}`}
+    >
       <div className="mb-2 flex items-center justify-between">
         <Icon className={`h-5 w-5 ${tone}`} />
         <span className="font-mono text-sm font-semibold text-zinc-200">{value}</span>
       </div>
       <div className="text-xs font-semibold text-zinc-200">{title}</div>
       <p className="mt-0.5 line-clamp-1 text-[11px] text-zinc-500">{hint}</p>
-    </button>
+    </Tag>
   );
 }
 

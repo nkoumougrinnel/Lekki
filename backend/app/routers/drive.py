@@ -66,7 +66,7 @@ def _fallback_thumbnail(drive_file: DriveFile) -> str:
     return thumbnail_path
 
 
-def _file_out(drive_file: DriveFile) -> FileOut:
+def _file_out(drive_file: DriveFile, owner_name: Optional[str] = None) -> FileOut:
     extension = _normalized_extension(drive_file.extension).lower()
     try:
         tags = json.loads(drive_file.tags or "[]")
@@ -121,6 +121,8 @@ def _file_out(drive_file: DriveFile) -> FileOut:
         thumbnail_path=thumbnail_path,
         workspace_id=drive_file.workspace_id,
         folder_id=drive_file.folder_id,
+        owner_id=drive_file.owner_id,
+        owner_name=owner_name,
         scope=drive_file.scope,
         shared_with=shared_with,
         is_starred=drive_file.is_starred,
@@ -431,7 +433,13 @@ async def list_files(
     result = await db.execute(query)
     files = filter_visible_files(current_user, workspace_ids, result.scalars().all())
 
-    return [_file_out(drive_file) for drive_file in files]
+    # Nom de qui a ajouté chaque document (fil « Nouveautés », visionneuse) : une seule requête.
+    owner_ids = {f.owner_id for f in files if f.owner_id}
+    names: dict[str, str] = {}
+    if owner_ids:
+        rows = await db.execute(select(User.id, User.name).where(User.id.in_(owner_ids)))
+        names = {row[0]: row[1] for row in rows.all()}
+    return [_file_out(drive_file, names.get(drive_file.owner_id)) for drive_file in files]
 
 
 @router.get("/files/{file_id}/download")

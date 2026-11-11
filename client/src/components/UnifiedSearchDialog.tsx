@@ -130,22 +130,25 @@ export function UnifiedSearchDialog({
         } overflow-hidden`}
       >
         {/* Ask Lekki AI prompt banner if query present */}
-        {query.trim().length > 2 && (
-          <div className="px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-emerald-300">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Interroger Lekki AI sur « {query} »</span>
-            </div>
-            <button
-              onClick={() => {
-                onOpenChange(false);
-                onAskAI(query);
-              }}
-              className="-my-2 flex min-h-10 items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
-            >
-              Poser la question <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
+        {/* « Demander à Lekki » : c'est par ici que l'étudiant ouvre l'IA sur téléphone */}
+        {query.trim().length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              onOpenChange(false);
+              onAskAI(query.trim());
+            }}
+            className="flex w-full items-center gap-3 border-b border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-left transition hover:bg-emerald-500/15 active:bg-emerald-500/20"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+              <Sparkles className="h-4 w-4 text-emerald-400" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-emerald-200">Demander à Lekki</span>
+              <span className="block truncate text-xs text-emerald-300/70">« {query.trim()} »</span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-emerald-400" />
+          </button>
         )}
 
         {/* Results Container */}

@@ -16,7 +16,6 @@ import {
   Settings,
   UserCircle,
   X,
-  Menu,
 } from "lucide-react";
 import { CreateWorkspaceDialog } from "./CreateWorkspaceDialog";
 import { WorkspaceAdminDialog } from "./WorkspaceAdminDialog";
@@ -86,7 +85,16 @@ export function Header({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un cours, un sujet, une notion…"
+                onKeyDown={(e) => {
+                  // Entrée = demander à Lekki : la recherche s'affiche déjà en tapant.
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    onAskAI(searchQuery.trim());
+                    setIsSearchOpen(false);
+                    setSearchQuery("");
+                  }
+                }}
+                enterKeyHint="send"
+                placeholder="Rechercher ou demander à Lekki…"
                 className="w-full pl-10 pr-8 py-2 bg-transparent border-none text-base text-zinc-100 placeholder-zinc-500 focus:outline-none min-w-0"
               />
               {searchQuery && (
@@ -122,15 +130,7 @@ export function Header({
 
         {/* Left: Hamburger + Logo + Workspace Selector */}
         <div className={`flex items-center gap-2 sm:gap-4 min-w-0 shrink-0 ${isSearchOpen ? "hidden" : ""}`}>
-          {/* Hamburger — mobile only */}
-          <button
-            id="header-mobile-menu-btn"
-            onClick={onOpenMobileMenu}
-            className="lg:hidden p-2 -ml-1 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors"
-            aria-label="Ouvrir le menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+          {/* Téléphone : pas de ☰, le menu s'ouvre par l'onglet « Plus » de la barre du bas */}
 
           {/* Logo */}
           <div className="hidden lg:flex h-16 w-64 shrink-0 border-r border-zinc-800/80 -ml-6 pl-6 items-center gap-3">
@@ -241,7 +241,7 @@ export function Header({
             aria-label="Ouvrir la recherche"
           >
             <Search className="h-4 w-4 text-zinc-500 shrink-0" />
-            <span className="text-sm text-zinc-500">Rechercher...</span>
+            <span className="truncate text-sm text-zinc-500">Rechercher ou demander à Lekki…</span>
           </button>
         </div>
 
@@ -252,7 +252,7 @@ export function Header({
             id="header-lekki-ai-toggle"
             aria-label="Lekki AI"
             onClick={onToggleAI}
-            className={`flex h-10 min-w-10 items-center justify-center gap-1.5 sm:h-auto sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`hidden lg:flex h-10 min-w-10 items-center justify-center gap-1.5 sm:h-auto sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
               isAIOpen
                 ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 border border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                 : "bg-zinc-900/50 hover:bg-zinc-800 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 shadow-sm"

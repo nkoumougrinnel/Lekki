@@ -80,6 +80,18 @@ function extractDetail(data: unknown, fallback: string): string {
   return fallback;
 }
 
+// Le serveur enregistre les dates en UTC mais les renvoie sans fuseau (« 2026-11-11T09:11:37 ») :
+// un navigateur les lirait comme une heure locale, soit une heure de décalage à Yaoundé.
+// On leur ajoute « Z » à la lecture, pour tous les écrans à la fois.
+const NAIVE_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/;
+
+function parseServerJson(text: string): unknown {
+  if (!text) return null;
+  return JSON.parse(text, (_key, value) =>
+    typeof value === "string" && NAIVE_DATETIME.test(value) ? `${value}Z` : value
+  );
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   const token = getToken();
@@ -94,7 +106,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 204) return null as T;
 
-  const data = await res.json().catch(() => null);
+  const data = await res.text().then(parseServerJson).catch(() => null);
 
   if (res.ok && data === null && res.headers.get("content-type")?.includes("text/html")) {
     throw new ApiError(

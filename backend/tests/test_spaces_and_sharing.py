@@ -131,3 +131,14 @@ def test_imported_folder_files_keep_only_their_name(client, make_user):
     )
     assert response.status_code == 200, response.text
     assert [item["name"] for item in response.json()] == ["TS_Examen_CL_2024.md"]
+
+
+def test_file_list_tells_who_added_each_document(client, make_user):
+    alice, bob = make_user("alice"), make_user("bob")
+    space = client.post("/api/v1/workspaces", headers=alice["headers"], json={"name": "ITT2"}).json()["id"]
+    code = client.get(f"/api/v1/workspaces/{space}/join-code", headers=alice["headers"]).json()["code"]
+    client.post("/api/v1/workspaces/join", headers=bob["headers"], json={"code": code})
+    client.post("/api/v1/drive/files", headers=bob["headers"], data={"workspace_id": space},
+                files={"file": ("TD1.md", b"# TD1", "text/markdown")})
+    listed = client.get(f"/api/v1/drive/files?workspace_id={space}", headers=alice["headers"]).json()
+    assert [(f["owner_id"], f["owner_name"]) for f in listed] == [(bob["id"], bob["name"])]

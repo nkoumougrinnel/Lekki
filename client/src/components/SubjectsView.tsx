@@ -108,6 +108,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
           );
         })}
       </nav>
+        {["owner", "admin"].includes(workspace.role || "") && (
         <button
           type="button"
           onClick={() => void createFolders()}
@@ -118,6 +119,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
           {creatingFolders ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <FolderTree className="h-3.5 w-3.5 text-emerald-400" />}
           Créer les dossiers du S{semester}
         </button>
+        )}
       </div>
 
       <div className="space-y-6">

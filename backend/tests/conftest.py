@@ -48,6 +48,7 @@ def make_user(client):
         data = response.json()
         return {
             "id": data["user"]["id"],
+            "name": data["user"]["name"],
             "token": data["access_token"],
             "headers": {"Authorization": f"Bearer {data['access_token']}"},
         }

@@ -78,6 +78,8 @@ class FileOut(BaseModel):
     thumbnail_path: Optional[str] = None
     workspace_id: Optional[str] = None
     folder_id: Optional[str] = None
+    owner_id: Optional[str] = None
+    owner_name: Optional[str] = None
     scope: str
     shared_with: List[str] = []
     is_starred: bool = False
