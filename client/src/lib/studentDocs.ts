@@ -1,7 +1,8 @@
 /**
  * Reconnaissance automatique du TYPE d'un document étudiant à partir de son nom,
  * sur le modèle de SUP'DOCS : « TS_Examen_ALT_2024.pdf », « Antennes_RAT_CL_2022.pdf »,
- * « CorrectionCcGenieCivilTelecom_2025.pdf », dossiers COURS / TD / CC / SUJETS…
+ * « Génie_civil_Corrigé_CC_2025.pdf », dossiers COURS / TD-TP / SUJETS / CORRIGÉS / FICHES
+ * (convention décrite dans le LISEZ-MOI à la racine de SUP'DOCS).
  * La MATIÈRE est reconnue à part (voir curriculum.ts). Rien n'est stocké.
  */
 import type { DriveFile } from "@/types/lekki";
@@ -61,8 +62,8 @@ export function classifyDocument(name: string, folderName?: string | null): Stud
   else if (has("td", "tds") || hasPattern(/^td\d/)) kind = "td";
   else if (has("tp", "tps") || hasPattern(/^tp\d/)) kind = "tp";
   else if (has("cours", "chapitre", "chap", "lecon", "poly", "polycopie") || hasPattern(/^chap\d/)) kind = "cours";
-  else if (has("fiche", "resume", "synthese", "revision")) kind = "fiche";
-  else if (has("sujet", "sujets") || inFolder("sujets", "sujet")) kind = "examen";
+  else if (has("fiche", "fiches", "resume", "synthese", "revision") || inFolder("fiches")) kind = "fiche";
+  else if (has("sujet", "sujets", "recueil", "annales", "epreuves") || inFolder("sujets", "sujet", "recueils")) kind = "examen";
   else if (inFolder("cc")) kind = "cc";
   else if (inFolder("td", "tds")) kind = "td";
   else if (inFolder("tp", "tps")) kind = "tp";
