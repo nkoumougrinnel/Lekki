@@ -518,6 +518,59 @@ export interface FolderTreeNode {
   children?: FolderTreeNode[];
 }
 
+// ── Google Drive (SUP'DOCS et Drive personnel) ──────────────────────────────
+export interface GoogleDriveConfig {
+  supdocs: boolean;
+  picker: boolean;
+  client_id: string | null;
+  api_key: string | null;
+  app_id: string | null;
+}
+
+export interface GoogleDriveItem {
+  id: string;
+  name: string;
+  kind: "folder" | "file";
+  mime_type: string;
+  size: number | null;
+  importable: boolean;
+}
+
+export interface GoogleDriveImportJob {
+  id: string;
+  state: "preparing" | "importing" | "done" | "failed";
+  total: number;
+  processed: number;
+  imported: number;
+  folders_created: number;
+  current: string | null;
+  skipped: { name: string; reason: string }[];
+  skipped_count: number;
+  error: string | null;
+}
+
+export const googleDriveApi = {
+  config(): Promise<GoogleDriveConfig> {
+    return request<GoogleDriveConfig>("/integrations/google-drive/config");
+  },
+  browseSupdocs(folderId?: string | null): Promise<{ path: { id: string; name: string }[]; items: GoogleDriveItem[] }> {
+    const qs = folderId ? `?folder_id=${encodeURIComponent(folderId)}` : "";
+    return request(`/integrations/google-drive/supdocs${qs}`);
+  },
+  startImport(body: {
+    source: "supdocs" | "google";
+    item_ids: string[];
+    workspace_id?: string | null;
+    folder_id?: string | null;
+    access_token?: string;
+  }): Promise<GoogleDriveImportJob> {
+    return jsonRequest<GoogleDriveImportJob>("/integrations/google-drive/import", "POST", body);
+  },
+  job(id: string): Promise<GoogleDriveImportJob> {
+    return request<GoogleDriveImportJob>(`/integrations/google-drive/jobs/${id}`);
+  },
+};
+
 export const revisionApi = {
   quiz(params: { file_ids?: string[]; wiki_ids?: string[]; count?: number; focus?: string }): Promise<QuizResponse> {
     return jsonRequest<QuizResponse>("/revision/quiz", "POST", params);

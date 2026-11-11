@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "qwen2.5-coder:7b"
     OLLAMA_TIMEOUT_SECONDS: float = 180.0
 
+    # Google Drive : import depuis SUP'DOCS (clé serveur) et depuis le Drive de l'étudiant (Picker)
+    GOOGLE_API_KEY: str = ""            # clé serveur, API Drive uniquement (lecture de SUP'DOCS)
+    GOOGLE_PICKER_API_KEY: str = ""     # clé navigateur, limitée au domaine Vercel (Google Picker)
+    GOOGLE_CLIENT_ID: str = ""          # ID client OAuth « Application Web »
+    GOOGLE_APP_ID: str = ""             # numéro du projet Google Cloud
+    SUPDOCS_FOLDER_ID: str = "1Blpfw0_vxToVi_jx9_zeWz6ODqyfeIms"
+
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,https://lekki-three.vercel.app"
 

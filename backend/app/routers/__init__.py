@@ -6,6 +6,7 @@ from app.routers.search import router as search_router
 from app.ai.router import router as rag_router
 from app.conversations.router import router as conversations_router
 from app.ai.revision import router as revision_router
+from app.routers.integrations import router as integrations_router
 
 __all__ = [
     "auth_router",
@@ -17,4 +18,5 @@ __all__ = [
     "rag_router",
     "conversations_router",
     "revision_router",
+    "integrations_router",
 ]

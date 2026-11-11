@@ -18,6 +18,7 @@ import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import { RevisionPanel, RevisionMode } from "./components/RevisionPanel";
 import { ImportFolderDialog } from "./components/ImportFolderDialog";
+import { DriveImportDialog } from "./components/DriveImportDialog";
 import { MobileTabBar } from "./components/MobileTabBar";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { ScanSubjectDialog } from "./components/ScanSubjectDialog";
@@ -83,6 +84,7 @@ function LekkiMain() {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiInitialQuestion, setAIInitialQuestion] = useState<string | undefined>(undefined);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [driveImport, setDriveImport] = useState<{ open: boolean; folderId: string | null }>({ open: false, folderId: null });
   const [scan, setScan] = useState<{ open: boolean; subjectId: string | null; folderId: string | null }>({
     open: false,
     subjectId: null,
@@ -499,6 +501,7 @@ function LekkiMain() {
                 setNewFileFolderId(folderId || null);
                 setIsImportOpen(true);
               }}
+              onDriveImportClick={(folderId) => setDriveImport({ open: true, folderId: folderId || null })}
               onRefresh={refreshData}
               onFileTrashed={handleFileTrashed}
               onFileRestored={handleFileRestored}
@@ -638,6 +641,16 @@ function LekkiMain() {
         onImportCompleted={async () => {
           await refreshData();
         }}
+      />
+
+      {/* Import depuis Google Drive : SUP'DOCS (promo) ou Drive personnel */}
+      <DriveImportDialog
+        open={driveImport.open}
+        onClose={() => setDriveImport((current) => ({ ...current, open: false }))}
+        workspace={currentView === "workspace_files" ? activeWorkspace ?? null : null}
+        folderId={driveImport.folderId}
+        folderName={folders.find((folder) => folder.id === driveImport.folderId)?.name ?? null}
+        onImported={refreshData}
       />
 
       {/* Photo d'un sujet papier → PDF lu par OCR */}

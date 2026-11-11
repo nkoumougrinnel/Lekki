@@ -26,6 +26,7 @@ import {
   FolderOpen,
   Eye,
   X,
+  HardDrive,
 } from "lucide-react";
 
 interface DriveViewProps {
@@ -40,6 +41,8 @@ interface DriveViewProps {
   onOpenShare: (file: DriveFile) => void;
   onNewFileClick: (folderId?: string) => void;
   onImportFolderClick?: (folderId?: string) => void;
+  /** Import depuis Google Drive (SUP'DOCS ou Drive personnel). */
+  onDriveImportClick?: (folderId?: string) => void;
   onRefresh: () => void;
   onFileTrashed: (file: DriveFile, permanentlyDeleted?: boolean) => void;
   onFileRestored: (file: DriveFile) => void;
@@ -92,6 +95,7 @@ export function DriveView({
   onOpenShare,
   onNewFileClick,
   onImportFolderClick,
+  onDriveImportClick,
   onScanClick,
   onRefresh,
   onFileTrashed,
@@ -404,6 +408,17 @@ export function DriveView({
                 <span className="hidden md:inline">Importer un dossier</span>
               </button>
             )}
+            {canAddFiles && onDriveImportClick && (
+              <button
+                type="button"
+                onClick={() => onDriveImportClick(currentFolderId || undefined)}
+                title="Importer depuis Google Drive ou SUP'DOCS"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+              >
+                <HardDrive className="h-4 w-4" />
+                <span className="hidden md:inline">Google Drive</span>
+              </button>
+            )}
             {canAddFiles && (
               <button
                 type="button"
@@ -435,6 +450,7 @@ export function DriveView({
               { icon: Upload, label: "Envoyer un fichier", hint: "PDF, Word, PowerPoint ou photo", action: () => onNewFileClick(currentFolderId || undefined) },
               canCreateFolder && { icon: FolderPlus, label: "Nouveau dossier", hint: "", action: () => { setNewFolderName(""); setShowNewFolderInput(true); } },
               onImportFolderClick && { icon: FolderUp, label: "Importer un dossier", hint: "Garde les sous-dossiers", action: () => onImportFolderClick(currentFolderId || undefined) },
+              onDriveImportClick && { icon: HardDrive, label: "Depuis Google Drive", hint: "SUP'DOCS ou ton propre Drive", action: () => onDriveImportClick(currentFolderId || undefined) },
             ]
               .filter(Boolean)
               .map((item) => {
