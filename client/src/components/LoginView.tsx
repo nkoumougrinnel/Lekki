@@ -1,3 +1,4 @@
+import { hasPendingJoin } from "@/lib/pendingLinks";
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { Eye, EyeOff } from "lucide-react";
@@ -28,7 +29,7 @@ export function LoginView() {
   return (
     <AuthLayout
       title="Connexion"
-      subtitle="Retrouve les cours, les sujets et les fiches de ta promo."
+      subtitle={hasPendingJoin() ? "Tu as été invité dans un espace. Connecte-toi : tu le rejoindras directement." : "Retrouve les cours, les sujets et les fiches de ta promo."}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthField
@@ -51,7 +52,7 @@ export function LoginView() {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300"
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

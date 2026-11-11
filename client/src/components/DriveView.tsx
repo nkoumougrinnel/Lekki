@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import {
   Folder,
   FolderPlus,
+  Plus,
+  Camera,
   FolderUp,
   FileText,
   Star,
@@ -42,6 +44,8 @@ interface DriveViewProps {
   onFileTrashed: (file: DriveFile, permanentlyDeleted?: boolean) => void;
   onFileRestored: (file: DriveFile) => void;
   onAskAIAboutFile?: (file: DriveFile) => void;
+  /** Photographier un sujet papier (téléphone). */
+  onScanClick?: (folderId?: string) => void;
 }
 
 type SortKey = "name" | "modified" | "size";
@@ -88,6 +92,7 @@ export function DriveView({
   onOpenShare,
   onNewFileClick,
   onImportFolderClick,
+  onScanClick,
   onRefresh,
   onFileTrashed,
   onFileRestored,
@@ -209,6 +214,7 @@ export function DriveView({
   const canManageFiles = !isTrashView;
   // On n’ajoute un fichier que là où il sera rangé : pas dans Favoris ni Partagés avec moi.
   const canAddFiles = currentView === "my_docs" || currentView === "workspace_files";
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
   const emptyState = EMPTY_STATES[currentView] ?? EMPTY_STATES.default;
 
   const handleToggleStar = async (file: DriveFile) => {
@@ -301,7 +307,7 @@ export function DriveView({
     if (!window.confirm(`Supprimer le dossier « ${folder.name} » ?`)) return;
     try {
       await drive.deleteFolder(folder.id);
-      if (currentFolderId === folder.id) setCurrentFolderId(null);
+      if (currentFolderId === folder.id) setCurrentFolderId(folder.parent_id || null);
       toast.success("Dossier supprimé");
       await onRefresh();
     } catch {
@@ -364,7 +370,16 @@ export function DriveView({
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
+          {canAddFiles && (
+            <button
+              type="button"
+              onClick={() => setAddSheetOpen(true)}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-4 text-sm font-semibold text-zinc-950 shadow-sm active:bg-emerald-400 sm:hidden"
+            >
+              <Plus className="h-4 w-4" /> Ajouter
+            </button>
+          )}
+          <div className="hidden items-center gap-2 sm:flex">
             {canCreateFolder && (
               <button
                 type="button"
@@ -402,6 +417,57 @@ export function DriveView({
           </div>
         </div>
       </header>
+
+      {addSheetOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm sm:hidden" onClick={() => setAddSheetOpen(false)}>
+          <div
+            role="menu"
+            aria-label="Ajouter"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full rounded-t-2xl border-t border-white/[0.08] bg-[#1b1e24] px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+          >
+            <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/15" />
+            <p className="px-3 pb-2 text-xs text-zinc-500">
+              Ajouter dans « {currentFolder ? currentFolder.name : rootLabel} »
+            </p>
+            {[
+              onScanClick && { icon: Camera, label: "Photographier un sujet", hint: "Sujet papier : une photo par page", action: () => onScanClick(currentFolderId || undefined) },
+              { icon: Upload, label: "Envoyer un fichier", hint: "PDF, Word, PowerPoint ou photo", action: () => onNewFileClick(currentFolderId || undefined) },
+              canCreateFolder && { icon: FolderPlus, label: "Nouveau dossier", hint: "", action: () => { setNewFolderName(""); setShowNewFolderInput(true); } },
+              onImportFolderClick && { icon: FolderUp, label: "Importer un dossier", hint: "Garde les sous-dossiers", action: () => onImportFolderClick(currentFolderId || undefined) },
+            ]
+              .filter(Boolean)
+              .map((item) => {
+                const { icon: Icon, label, hint, action } = item as { icon: React.ElementType; label: string; hint: string; action: () => void };
+                return (
+                  <button
+                    key={label}
+                    role="menuitem"
+                    type="button"
+                    onClick={() => { setAddSheetOpen(false); action(); }}
+                    className="flex min-h-14 w-full items-center gap-3.5 rounded-xl px-3 text-left active:bg-white/[0.06]"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400"><Icon className="h-5 w-5" /></span>
+                    <span>
+                      <span className="block text-[15px] text-zinc-100">{label}</span>
+                      {hint && <span className="block text-xs text-zinc-500">{hint}</span>}
+                    </span>
+                  </button>
+                );
+              })}
+            {currentFolder && canCreateFolder && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(event) => { setAddSheetOpen(false); void handleDeleteFolder(currentFolder, event); }}
+                className="mt-1 flex min-h-12 w-full items-center gap-3.5 rounded-xl border-t border-white/[0.06] px-3 text-left text-sm text-rose-300 active:bg-rose-500/10"
+              >
+                <Trash2 className="h-4 w-4" /> Supprimer le dossier « {currentFolder.name} »
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {showNewFolderInput && canCreateFolder && (
         <div
@@ -508,7 +574,7 @@ export function DriveView({
                     onClick={(event) => handleDeleteFolder(folder, event)}
                     title="Supprimer le dossier"
                     aria-label={`Supprimer le dossier ${folder.name}`}
-                    className="rounded-full p-1.5 text-zinc-500 opacity-100 transition hover:bg-black/5 hover:text-rose-600 sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-white/10"
+                    className="hidden rounded-full p-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-rose-600 sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-white/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -613,7 +679,7 @@ export function DriveView({
                         setOpenMenuId((id) => (id === file.id ? null : file.id));
                       }}
                       aria-label={`Options pour ${file.name}`}
-                      className="absolute right-2 top-2 z-20 rounded-full bg-white/95 p-1.5 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+                      className="absolute right-1 top-1 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100 dark:hover:bg-[#2d3139]"
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" />
                     </button>

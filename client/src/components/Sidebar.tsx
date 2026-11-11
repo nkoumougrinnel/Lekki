@@ -1,5 +1,5 @@
 import { spaceWording } from "@/lib/spaces";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavView } from "@/types/lekki";
@@ -79,6 +79,16 @@ export function Sidebar({
         ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
         : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 border border-transparent"
     }`;
+
+  // Échap ferme le menu du téléphone (clavier Bluetooth, tablette).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onMobileClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen, onMobileClose]);
 
   const handleSelect = (view: NavView) => {
     onSelectView(view);

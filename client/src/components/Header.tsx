@@ -70,7 +70,7 @@ export function Header({
   return (
     <>
       {isSearchOpen && (
-        <div className="fixed top-0 left-0 w-full z-[70] bg-[#0E1116]/98 backdrop-blur-md border-b border-zinc-800/80">
+        <div className="fixed inset-0 z-[70] bg-[#0E1116] pt-[env(safe-area-inset-top)] sm:inset-auto sm:left-0 sm:top-0 sm:w-full sm:bg-[#0E1116]/98 sm:backdrop-blur-md sm:border-b sm:border-zinc-800/80">
           <div className="px-4 sm:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/60">
             <button
               onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }}
@@ -92,7 +92,7 @@ export function Header({
               {searchQuery && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 shrink-0"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 shrink-0"
                   aria-label="Effacer la recherche"
                 >
                   <X className="h-4 w-4" />
@@ -250,8 +250,9 @@ export function Header({
           {/* Lekki AI Trigger */}
           <button
             id="header-lekki-ai-toggle"
+            aria-label="Lekki AI"
             onClick={onToggleAI}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex h-10 min-w-10 items-center justify-center gap-1.5 sm:h-auto sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
               isAIOpen
                 ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 border border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
                 : "bg-zinc-900/50 hover:bg-zinc-800 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 shadow-sm"

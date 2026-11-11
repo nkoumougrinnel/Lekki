@@ -17,6 +17,35 @@ export default defineConfig({
       workbox: {
         skipWaiting: false,
         clientsClaim: true,
+        runtimeCaching: [
+          {
+            // Documents ouverts (lecture, miniatures) : gardés sur le téléphone pour économiser
+            // les données et les relire sans réseau. Le jeton ?token= change à chaque session,
+            // d'où ignoreSearch. Le cache est vidé à la déconnexion (lib/offline.ts).
+            urlPattern: ({ url }) => /\/api\/v1\/drive\/files\/[^/]+\/(preview|thumbnail)$/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "lekki-documents",
+              matchOptions: { ignoreSearch: true },
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 90, purgeOnQuotaError: true },
+            },
+          },
+          {
+            // Listes (documents, wiki, espaces, compte) : réseau d'abord, dernière copie si hors ligne.
+            urlPattern: ({ url, request }) =>
+              request.method === "GET" &&
+              /\/api\/v1\/(auth\/me|workspaces|drive\/files|drive\/folders|wiki\/pages)(\/|$)/.test(url.pathname) &&
+              !/\/(download|preview|thumbnail)$/.test(url.pathname),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "lekki-api",
+              networkTimeoutSeconds: 8,
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30, purgeOnQuotaError: true },
+            },
+          },
+        ],
       },
       includeAssets: ["logo.svg"],
       manifest: {

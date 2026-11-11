@@ -4,10 +4,17 @@ import { fileUrl } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import { StudentDocBadge } from "./StudentDocBadge";
-import { classifyFile } from "@/lib/studentDocs";
+import { classifyFile, prettyName } from "@/lib/studentDocs";
+import { shareDocument } from "@/lib/share";
+import { isAvailableOffline, keepOffline } from "@/lib/offline";
+import { toast } from "sonner";
 import {
   X,
   Download,
+  Share2,
+  CheckCircle2 as CloudCheck,
+  CloudDownload,
+  LoaderCircle,
   BookPlus,
   BookOpen,
   BookOpenText,
@@ -56,10 +63,29 @@ export function DocumentViewerModal({
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [showAllChapters, setShowAllChapters] = useState(false);
 
+  const [offline, setOffline] = useState<"unknown" | "no" | "saving" | "yes">("unknown");
+
   useEffect(() => {
     setThumbnailFailed(false);
     setShowAllChapters(false);
+    setOffline("unknown");
+    if (open && file?.id) {
+      void isAvailableOffline(file.id).then((available) => setOffline(available ? "yes" : "no"));
+    }
   }, [file?.id, open]);
+
+  const saveOffline = async () => {
+    if (!file) return;
+    setOffline("saving");
+    try {
+      await keepOffline(file.id);
+      setOffline("yes");
+      toast.success("Gardé sur ton téléphone : tu pourras le lire sans réseau.");
+    } catch (error) {
+      setOffline("no");
+      toast.error(error instanceof Error ? error.message : "Impossible de garder ce document hors ligne.");
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -121,7 +147,7 @@ export function DocumentViewerModal({
   return (
     <div
       id="doc-viewer-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 backdrop-blur-sm sm:p-5"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm sm:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onOpenChange(false);
       }}
@@ -131,10 +157,10 @@ export function DocumentViewerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="document-viewer-title"
-        className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#11141a] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-[#11141a] shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl sm:border sm:border-white/[0.09]"
       >
         {/* En-tête fixe */}
-        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 py-3.5 sm:px-6">
+        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-3.5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
             Document
           </div>
@@ -142,9 +168,9 @@ export function DocumentViewerModal({
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Fermer la fiche documentaire"
-            className="rounded-lg p-2 text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </header>
 
@@ -170,7 +196,8 @@ export function DocumentViewerModal({
           )}
 
           {/* Identité du document : volontairement compacte */}
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/[0.045] ring-1 ring-white/[0.07] sm:h-14 sm:w-14">
               <DocumentTypeIcon extension={file.extension} className="h-7 w-7" />
             </div>
@@ -180,7 +207,7 @@ export function DocumentViewerModal({
                 title={file.name}
                 className="break-words text-base font-semibold leading-snug text-zinc-100 sm:text-lg"
               >
-                {file.name}
+                {prettyName(file.name)}
               </h2>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
                 <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 font-semibold uppercase tracking-wide text-zinc-300">
@@ -205,11 +232,13 @@ export function DocumentViewerModal({
                 )}
               </div>
             </div>
+          </div>
+          <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 sm:flex sm:shrink-0">
             {onRevise && (
               <button
                 type="button"
                 onClick={() => onRevise(file)}
-                className="hidden shrink-0 items-center gap-2 rounded-lg border border-emerald-400/30 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 sm:flex"
+                className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-emerald-400/30 px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/10 sm:min-h-0 sm:text-xs"
                 title={docInfo.isExam ? "Proposer une correction de ce sujet" : "Lancer un quiz sur ce document"}
               >
                 <GraduationCap className="h-4 w-4" />
@@ -220,7 +249,7 @@ export function DocumentViewerModal({
               href={fileUrl(`/drive/files/${file.id}/preview`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+              className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 sm:order-first sm:min-h-0 sm:text-xs ${onRevise ? "" : "col-span-2"}`}
               title="Lire le document en entier dans un nouvel onglet"
             >
               <BookOpenText className="h-4 w-4" />
@@ -228,14 +257,50 @@ export function DocumentViewerModal({
             </a>
             <button
               type="button"
+              onClick={() => void shareDocument(file)}
+              aria-label="Partager"
+              title="Partager le lien (WhatsApp, Telegram…)"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white sm:min-h-0"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Partager</span>
+            </button>
+            <button
+              type="button"
               onClick={handleDownload}
-              className="flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white"
+              aria-label="Télécharger"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white sm:min-h-0"
               title="Télécharger le document original"
             >
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Télécharger</span>
             </button>
           </div>
+          </div>
+
+          {/* Hors ligne : utile avant un examen, quand le réseau ou les données manquent */}
+          {offline !== "unknown" && (
+            <div className="-mt-2 flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
+              <span className="flex min-w-0 items-center gap-2 text-xs text-zinc-400">
+                {offline === "yes" ? (
+                  <><CloudCheck className="h-4 w-4 shrink-0 text-emerald-400" /> Disponible hors ligne sur cet appareil</>
+                ) : (
+                  <><CloudDownload className="h-4 w-4 shrink-0 text-zinc-500" /> Lisible sans réseau une fois gardé</>
+                )}
+              </span>
+              {offline !== "yes" && (
+                <button
+                  type="button"
+                  onClick={() => void saveOffline()}
+                  disabled={offline === "saving"}
+                  className="-my-1 flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/10 disabled:opacity-50"
+                >
+                  {offline === "saving" ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : null}
+                  {offline === "saving" ? "Téléchargement…" : "Garder hors ligne"}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* L'aperçu agrandit la même vignette que celle de la liste */}
           <section aria-labelledby="document-preview-heading">

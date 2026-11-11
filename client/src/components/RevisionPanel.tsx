@@ -570,7 +570,7 @@ function SubjectChip({ selected, onClick, children }: { selected: boolean; onCli
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+      className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition sm:min-h-0 sm:text-[11px] ${
         selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.08] text-zinc-400 hover:text-zinc-200"
       }`}
     >

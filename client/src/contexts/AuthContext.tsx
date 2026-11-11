@@ -1,3 +1,4 @@
+import { clearOfflineData } from "@/lib/offline";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, getToken, setToken, usersApi } from "@/lib/api";
 import { User } from "@/types/lekki";
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     auth.logout();
+    void clearOfflineData();
     setUser(null);
   };
 

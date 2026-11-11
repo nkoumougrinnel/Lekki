@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm_service import generate_text
+from app.ai.llm_service import _md, generate_text
 from app.ai.rag_service import _query_terms, calculate_similarity, document_text, extract_relevant_snippet
 from app.ai.schemas import AskSource
 from app.core.access import (
@@ -350,7 +350,7 @@ async def correct_exam(
     blocks = ["## Pistes de correction (IA indisponible)", "",
               "Pour chaque question, voici le passage de cours le plus proche :", ""]
     for question in questions[:8]:
-        blocks.append(f"**{question[:220]}**")
+        blocks.append(f"**{_md(question[:220])}**")
         found = None
         for _, item, text in references:
             passage = best_passage(question, text)
@@ -358,8 +358,8 @@ async def correct_exam(
                 found = (passage, item.name if isinstance(item, DriveFile) else item.title)
                 break
         if found:
-            blocks.append(f"> {found[0]}")
-            blocks.append(f"> — *{found[1]}*")
+            blocks.append(f"> {_md(found[0])}")
+            blocks.append(f"> — *{_md(found[1])}*")
         else:
             blocks.append("> Aucun passage de cours correspondant dans cet espace.")
         blocks.append("")

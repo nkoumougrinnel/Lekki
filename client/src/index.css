@@ -238,3 +238,27 @@ body {
   max-width: 100%;
   border-radius: 0.75rem;
 }
+
+/* ── Téléphone ────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Safari iOS zoome sur tout champ dont le texte fait moins de 16 px : on l'évite. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Pas de surbrillance grise au toucher ; le retour visuel vient des états :active. */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Le rebond de défilement ne doit pas faire « tirer » toute la page dans l'app installée. */
+html,
+body {
+  overscroll-behavior-y: none;
+}

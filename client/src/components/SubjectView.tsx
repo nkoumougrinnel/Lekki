@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
-  ArrowLeft, ArrowUp, BookOpen, FileCheck2, GraduationCap, Library as LibraryIcon, PenLine, Sparkles, CheckCircle2,
+  ArrowLeft, ArrowUp, BookOpen, FileCheck2, GraduationCap, Library as LibraryIcon, PenLine, Camera, Sparkles, CheckCircle2,
   Clock, FileText,
 } from "lucide-react";
 import type { DriveFile, WikiPage } from "@/types/lekki";
@@ -25,11 +25,13 @@ interface SubjectViewProps {
   onOpenRevision: (mode: RevisionMode, fileId?: string, subjectId?: string) => void;
   onWriteNote: () => void;
   onAddDocuments: () => void;
+  /** Photographier un sujet papier de cette matière. */
+  onScan?: () => void;
 }
 
 /** Une matière : ses cours, ses anciens sujets, ses fiches, et la révision ciblée. */
 export function SubjectView({
-  shelf, onBack, onOpenFile, onOpenWiki, onAsk, onOpenRevision, onWriteNote, onAddDocuments,
+  shelf, onBack, onOpenFile, onOpenWiki, onAsk, onOpenRevision, onWriteNote, onAddDocuments, onScan,
 }: SubjectViewProps) {
   const { subject, courses, exams, corriges, wiki } = shelf;
   const [question, setQuestion] = useState("");
@@ -54,7 +56,7 @@ export function SubjectView({
 
   return (
     <div className="flex-1 space-y-6 overflow-y-auto bg-[#0E1116] p-4 sm:p-8">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200">
+      <button onClick={onBack} className="-my-2 inline-flex min-h-10 items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200 sm:text-xs">
         <ArrowLeft className="h-3.5 w-3.5" /> Matières
       </button>
 
@@ -94,6 +96,11 @@ export function SubjectView({
           <ActionButton icon={FileCheck2} disabled={exams.length === 0} onClick={() => onOpenRevision("correction", undefined, subject.id)}>
             Corriger un sujet
           </ActionButton>
+          {onScan && (
+            <ActionButton icon={Camera} onClick={onScan}>
+              Photographier un sujet
+            </ActionButton>
+          )}
           <ActionButton icon={PenLine} onClick={onWriteNote}>
             Écrire une fiche
           </ActionButton>
@@ -200,7 +207,7 @@ function Row({
       {action && (
         <button
           onClick={action.onClick}
-          className="shrink-0 rounded-lg border border-zinc-700/70 px-2.5 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:border-emerald-400/30 hover:text-emerald-200"
+          className="min-h-10 shrink-0 rounded-lg border border-zinc-700/70 px-3 py-1.5 text-xs sm:min-h-0 sm:px-2.5 sm:text-[11px] font-medium text-zinc-300 transition hover:border-emerald-400/30 hover:text-emerald-200"
         >
           {action.label}
         </button>

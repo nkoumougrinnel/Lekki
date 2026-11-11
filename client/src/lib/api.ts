@@ -344,6 +344,16 @@ export const drive = {
     }).then((items) => items.map(normalizeDriveFile));
   },
 
+  /** Photos d'un sujet papier (une par page) → un PDF lu par OCR côté serveur. */
+  scanSubject(data: { photos: File[]; name: string; workspace_id?: string | null; folder_id?: string | null }): Promise<DriveFile> {
+    const formData = new FormData();
+    data.photos.forEach((photo) => formData.append("photos", photo));
+    formData.append("name", data.name);
+    if (data.workspace_id) formData.append("workspace_id", data.workspace_id);
+    if (data.folder_id) formData.append("folder_id", data.folder_id);
+    return request<DriveFile & { size?: number }>("/drive/files/scan", { method: "POST", body: formData }).then(normalizeDriveFile);
+  },
+
   updateFile(id: string, data: Partial<DriveFile>): Promise<DriveFile> {
     return jsonRequest<DriveFile>(`/drive/files/${id}`, "PUT", data);
   },

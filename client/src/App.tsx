@@ -18,6 +18,10 @@ import { WikiHistoryModal } from "./components/WikiHistoryModal";
 import { LekkiAIPanel } from "./components/LekkiAIPanel";
 import { RevisionPanel, RevisionMode } from "./components/RevisionPanel";
 import { ImportFolderDialog } from "./components/ImportFolderDialog";
+import { MobileTabBar } from "./components/MobileTabBar";
+import { OfflineBanner } from "./components/OfflineBanner";
+import { ScanSubjectDialog } from "./components/ScanSubjectDialog";
+import { takePendingDoc, takePendingJoin } from "./lib/pendingLinks";
 import { SubjectsView } from "./components/SubjectsView";
 import { SubjectView } from "./components/SubjectView";
 import { buildLibrary, wikiTopicFor } from "./lib/library";
@@ -49,7 +53,7 @@ function PublicRoutes() {
 
 function LekkiMain() {
   const { user, allUsers } = useAuth();
-  const { activeWorkspace, activeWorkspaceId, setActiveWorkspace } = useWorkspace();
+  const { activeWorkspace, activeWorkspaceId, setActiveWorkspace, joinWorkspace } = useWorkspace();
   const canManageWiki = Boolean(
     user?.role === "admin" ||
     activeWorkspace?.owner_id === user?.id ||
@@ -79,6 +83,11 @@ function LekkiMain() {
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiInitialQuestion, setAIInitialQuestion] = useState<string | undefined>(undefined);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [scan, setScan] = useState<{ open: boolean; subjectId: string | null; folderId: string | null }>({
+    open: false,
+    subjectId: null,
+    folderId: null,
+  });
   const [revision, setRevision] = useState<{
     open: boolean; mode: RevisionMode; fileId?: string | null; subjectId?: string | null;
   }>({ open: false, mode: "quiz" });
@@ -276,6 +285,30 @@ function LekkiMain() {
     }
   };
 
+  // Liens reçus sur WhatsApp (voir lib/pendingLinks) : traités une fois connecté.
+  useEffect(() => {
+    const code = takePendingJoin();
+    if (code) {
+      void joinWorkspace(code)
+        .then((space) => {
+          setCurrentView("home");
+          toast.success(`Bienvenue dans « ${space.name} » !`);
+        })
+        .catch((error) => toast.error(error instanceof Error ? error.message : "Ce code d’invitation n’est plus valable."));
+    }
+    const docId = takePendingDoc();
+    if (docId) {
+      void drive
+        .getFile(docId)
+        .then((doc) => {
+          if (doc.workspace_id) setActiveWorkspace(doc.workspace_id);
+          setViewingFile(doc);
+        })
+        .catch(() => toast.error("Ce document n’existe plus, ou il appartient à un espace dont tu n’es pas membre."));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOpenWikiFromId = async (wikiId: string) => {
     try {
       const page = await wiki.getPage(wikiId);
@@ -339,7 +372,7 @@ function LekkiMain() {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0D0F12] font-sans text-zinc-100">
+    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0D0F12] font-sans text-zinc-100">
       {/* Top Application Header */}
       <Header
         onSelectDocument={handleOpenDocFromId}
@@ -352,6 +385,7 @@ function LekkiMain() {
         isAIOpen={isAIOpen}
         onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
       />
+      <OfflineBanner />
 
       {/* Main Split Layout: Sidebar + Active View */}
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -391,6 +425,7 @@ function LekkiMain() {
               onOpenAI={() => setIsAIOpen(true)}
               onAsk={askLekki}
               onOpenRevision={openRevision}
+              onScan={() => setScan({ open: true, subjectId: null, folderId: null })}
               library={library}
               onOpenSubject={openSubject}
             />
@@ -427,6 +462,7 @@ function LekkiMain() {
                   setIsWikiEditorOpen(true);
                 }}
                 onAddDocuments={() => setCurrentView("workspace_files")}
+                onScan={() => setScan({ open: true, subjectId: activeShelf.subject.id, folderId: null })}
               />
             ) : (
               <SubjectsView
@@ -434,6 +470,7 @@ function LekkiMain() {
                 workspace={activeWorkspace}
                 onOpenSubject={openSubject}
                 onOpenFile={(file) => setViewingFile(file)}
+                onFoldersCreated={() => void refreshData()}
               />
             ))}
 
@@ -457,6 +494,7 @@ function LekkiMain() {
                 setNewFileFolderId(folderId || null);
                 setIsNewFileOpen(true);
               }}
+              onScanClick={(folderId) => setScan({ open: true, subjectId: null, folderId: folderId || null })}
               onImportFolderClick={(folderId) => {
                 setNewFileFolderId(folderId || null);
                 setIsImportOpen(true);
@@ -552,6 +590,24 @@ function LekkiMain() {
         />
       </div>
 
+      {/* Téléphone : onglets à portée du pouce */}
+      <MobileTabBar
+        currentView={currentView}
+        activeWorkspace={activeWorkspace}
+        revisionOpen={revision.open}
+        aiOpen={isAIOpen}
+        onNavigate={(view) => {
+          setRevision((current) => ({ ...current, open: false }));
+          setIsAIOpen(false);
+          setCurrentView(view);
+          setActiveWikiPage(null);
+          setWikiFilterTopic(null);
+        }}
+        onOpenRevision={() => { setIsAIOpen(false); openRevision("quiz"); }}
+        onOpenAI={() => { setRevision((current) => ({ ...current, open: false })); setIsAIOpen(true); }}
+        onOpenMenu={() => setIsMobileSidebarOpen(true)}
+      />
+
       {/* Document Viewer Modal (Fiche documentaire Lekki) */}
       <DocumentViewerModal
         file={viewingFile}
@@ -582,6 +638,17 @@ function LekkiMain() {
         onImportCompleted={async () => {
           await refreshData();
         }}
+      />
+
+      {/* Photo d'un sujet papier → PDF lu par OCR */}
+      <ScanSubjectDialog
+        open={scan.open}
+        onClose={() => setScan((current) => ({ ...current, open: false }))}
+        library={library}
+        workspaceId={currentView === "my_docs" ? null : activeWorkspaceId}
+        folderId={scan.folderId}
+        defaultSubjectId={scan.subjectId}
+        onDone={() => void refreshData()}
       />
 
       {/* Share Document Dialog */}

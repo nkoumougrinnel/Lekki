@@ -379,7 +379,7 @@ export function WikiView({
                       <FolderTree className="h-5 w-5" />
                     </div>
                     <span className="text-xs font-mono text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded">
-                      {t.count} page{t.count > 1 ? "s" : ""}
+                      {t.count} fiche{t.count > 1 ? "s" : ""}
                     </span>
                   </div>
                   <h3 className="text-base font-bold text-zinc-100 group-hover:text-emerald-400 transition-colors">
@@ -399,11 +399,11 @@ export function WikiView({
                     </div>
                     <div>
                       <h2 className="text-sm font-semibold text-zinc-100">Dernières modifications</h2>
-                      <p className="mt-0.5 text-[11px] text-zinc-500">Les pages récemment mises à jour</p>
+                      <p className="mt-0.5 text-[11px] text-zinc-500">Les fiches récemment mises à jour</p>
                     </div>
                   </div>
                   <span className="shrink-0 rounded-lg border border-zinc-800 bg-zinc-900/70 px-2 py-1 text-[10px] font-medium text-zinc-400">
-                    {recentPages.length} {recentPages.length === 1 ? "page" : "pages"}
+                    {recentPages.length} {recentPages.length === 1 ? "fiche" : "fiches"}
                   </span>
                 </div>
                 <div className="divide-y divide-zinc-800/60">
@@ -421,22 +421,20 @@ export function WikiView({
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate text-sm font-medium text-zinc-200 transition-colors group-hover:text-emerald-300">{p.title}</span>
+                            <span className="line-clamp-2 text-sm font-medium text-zinc-200 transition-colors group-hover:text-emerald-300 sm:truncate">{p.title}</span>
                             {renderStatusBadge(p)}
                           </div>
                           <p className="mt-1 truncate text-[11px] text-zinc-500">
                             {p.topic || "Général"}<span className="mx-1.5 text-zinc-700">·</span>{p.section || "Autres"}
                           </p>
-                          <p className="mt-1 text-[10px] text-zinc-500">
-                            Modifiée par <span className="text-zinc-400">{editorName}</span>
+                          <p className="mt-1 truncate text-[11px] text-zinc-500">
+                            <span className="text-zinc-400">{editorName}</span>
+                            <span className="sm:hidden"><span className="mx-1.5 text-zinc-700">·</span>{formatUpdatedAt(p.updated_at)}</span>
                           </p>
                         </div>
                         <div className="hidden shrink-0 text-right sm:block">
                           <p className="text-[11px] font-medium text-zinc-400">{formatUpdatedAt(p.updated_at)}</p>
                           {p.current_version && <p className="mt-1 font-mono text-[10px] text-zinc-600">v{p.current_version}</p>}
-                        </div>
-                        <div className="shrink-0 text-right sm:hidden">
-                          <p className="text-[10px] text-zinc-400">{formatUpdatedAt(p.updated_at)}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-400" />
                       </button>

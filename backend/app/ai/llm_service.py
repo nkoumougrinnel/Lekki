@@ -140,6 +140,11 @@ async def call_cerebras(system_prompt: str, user_prompt: str, max_tokens: int = 
         print(f"[LLM] Cerebras Provider failed: {exc}")
     return None
 
+def _md(text: str) -> str:
+    """Échappe ce que le Markdown prendrait pour de la mise en forme (« TS_Examen_CL_2024 »)."""
+    return re.sub(r"([_*`\[\]])", r"\\\1", text or "")
+
+
 # --- FALLOVER CHAIN ---
 
 PROVIDER_NAMES = {
@@ -255,11 +260,11 @@ DOCUMENTS SOURCES DE L'ESPACE :
         content = re.sub(r"\[(Page|Diapositive)\s+\d+\]", " ", chunk.get("content", ""), flags=re.I)
         passage = best_passage(question, content, 360)
         if passage:
-            lines.append(f"- **{chunk.get('title', 'Sans titre')}** : {passage}")
+            lines.append(f"- **{_md(chunk.get('title', 'Sans titre'))}** : {_md(passage)}")
     if not lines:
         first = context_chunks[0]
         excerpt = " ".join(first.get("content", "").split())[:360]
-        lines.append(f"- **{first.get('title', 'Sans titre')}** : {excerpt}")
+        lines.append(f"- **{_md(first.get('title', 'Sans titre'))}** : {_md(excerpt)}")
     passages = "\n".join(lines)
     return (
         f"""Lekki AI ne peut pas rédiger de réponse pour le moment. Voici les passages de tes \

@@ -15,6 +15,7 @@ import {
   Clock,
   Upload,
   FolderOpen,
+  Camera,
 } from "lucide-react";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import { StudentDocBadge } from "./StudentDocBadge";
@@ -26,6 +27,8 @@ import { workspaces as workspacesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RevisionMode } from "./RevisionPanel";
 import { spaceWording } from "@/lib/spaces";
+import { shareText } from "@/lib/share";
+import { inviteLink } from "@/lib/pendingLinks";
 
 interface HomeOverviewProps {
   files: DriveFile[];
@@ -38,6 +41,7 @@ interface HomeOverviewProps {
   onOpenAI: () => void;
   onAsk: (question: string) => void;
   onOpenRevision: (mode: RevisionMode, fileId?: string) => void;
+  onScan?: () => void;
   library: Library;
   onOpenSubject: (subjectId: string) => void;
 }
@@ -52,6 +56,7 @@ export function HomeOverview({
   onAsk,
   onOpenAI,
   onOpenRevision,
+  onScan,
   library,
   onOpenSubject,
 }: HomeOverviewProps) {
@@ -99,13 +104,11 @@ export function HomeOverview({
     }
     try {
       const { code } = await workspacesApi.getJoinCode(activeWorkspace.id);
-      const message = `Rejoins « ${activeWorkspace.name} » sur Lekki avec le code ${code} : ${window.location.origin}`;
-      try {
-        await navigator.clipboard.writeText(message);
-        toast.success(`Code ${code} copié. ${spaceWording(activeWorkspace).inviteToast}`);
-      } catch {
-        toast.success(`Code d’invitation : ${code}`);
-      }
+      await shareText(
+        `Rejoindre ${activeWorkspace.name}`,
+        `Rejoins « ${activeWorkspace.name} » sur Lekki (code ${code}) :`,
+        inviteLink(code)
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Impossible de récupérer le code.");
     }
@@ -155,7 +158,7 @@ export function HomeOverview({
               <button
                 key={suggestion}
                 onClick={() => onAsk(suggestion)}
-                className="max-w-full truncate rounded-full border border-zinc-700/60 bg-zinc-900/60 px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-emerald-400/40 hover:text-emerald-200"
+                className="min-h-9 max-w-full truncate rounded-full border border-zinc-700/60 bg-zinc-900/60 px-3 py-1.5 text-xs sm:min-h-0 sm:text-[11px] text-zinc-300 transition hover:border-emerald-400/40 hover:text-emerald-200"
               >
                 {suggestion}
               </button>
@@ -167,13 +170,13 @@ export function HomeOverview({
               <>
                 <button
                   onClick={() => onOpenRevision("quiz")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
                 >
                   <GraduationCap className="h-3.5 w-3.5" /> Réviser avec un quiz
                 </button>
                 <button
                   onClick={() => onOpenRevision("correction")}
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
                 >
                   <FileCheck2 className="h-3.5 w-3.5" /> Corriger un ancien sujet
                 </button>
@@ -181,14 +184,22 @@ export function HomeOverview({
             ) : (
               <button
                 onClick={() => onNavigate("workspace_files")}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
               >
                 <FolderOpen className="h-3.5 w-3.5" /> Ouvrir les documents
               </button>
             )}
+            {wording.study && onScan && activeWorkspace && (
+              <button
+                onClick={onScan}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
+              >
+                <Camera className="h-3.5 w-3.5" /> Photographier un sujet
+              </button>
+            )}
             <button
               onClick={() => void invite()}
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
             >
               <UserPlus className="h-3.5 w-3.5" /> {wording.invite}
             </button>
@@ -390,7 +401,7 @@ function SectionTitle({
         <Icon className="h-4 w-4 text-emerald-400" /> {title}
       </h2>
       {action && (
-        <button onClick={action.onClick} className="flex items-center gap-1 text-xs text-emerald-400 hover:underline">
+        <button onClick={action.onClick} className="-my-2 flex min-h-10 items-center gap-1 px-1 text-xs text-emerald-400 hover:underline">
           {action.label} <ArrowRight className="h-3 w-3" />
         </button>
       )}

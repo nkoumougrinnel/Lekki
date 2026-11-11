@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { searchApi } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { UnifiedSearchResults, WikiStatus } from "@/types/lekki";
+import { StudentDocBadge } from "./StudentDocBadge";
+import { classifyDocument, prettyName } from "@/lib/studentDocs";
 import { DocumentTypeIcon } from "./DocumentTypeIcon";
 import {
   Search,
@@ -113,7 +115,7 @@ export function UnifiedSearchDialog({
       className={`${
         fullScreen
           ? "fixed inset-0 z-50 bg-[#0E1116]/97 backdrop-blur-md"
-          : "absolute left-0 right-0 top-full z-50 mt-2"
+          : "relative sm:absolute sm:left-0 sm:right-0 sm:top-full sm:z-50 sm:mt-2"
       }`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onOpenChange(false);
@@ -124,7 +126,7 @@ export function UnifiedSearchDialog({
         className={`w-full bg-[#14171E] border border-zinc-700/80 ${
           fullScreen
             ? "rounded-none h-full shadow-none"
-            : "rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
+            : "border-x-0 border-t-0 sm:border sm:rounded-xl sm:shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
         } overflow-hidden`}
       >
         {/* Ask Lekki AI prompt banner if query present */}
@@ -139,7 +141,7 @@ export function UnifiedSearchDialog({
                 onOpenChange(false);
                 onAskAI(query);
               }}
-              className="text-xs font-medium text-emerald-400 hover:text-emerald-300 flex items-center gap-1 hover:underline"
+              className="-my-2 flex min-h-10 items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
             >
               Poser la question <ArrowRight className="h-3 w-3" />
             </button>
@@ -147,7 +149,7 @@ export function UnifiedSearchDialog({
         )}
 
         {/* Results Container */}
-        <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4">
+        <div className="max-h-[calc(100dvh-7.5rem)] overflow-y-auto p-3 space-y-4 sm:max-h-[60vh]">
           {loading && (
             <div className="py-8 text-center text-xs text-zinc-500">
               Recherche dans tes documents et tes fiches…
@@ -202,14 +204,12 @@ export function UnifiedSearchDialog({
                     <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-zinc-200 group-hover:text-emerald-400 truncate">
-                          {doc.title}
+                        <span className="text-sm font-medium text-zinc-200 group-hover:text-emerald-400 truncate sm:text-xs">
+                          {prettyName(doc.title)}
                         </span>
-                        <span className="text-[10px] font-mono text-zinc-500 shrink-0">
-                          {doc.category}
-                        </span>
+                        <StudentDocBadge info={classifyDocument(doc.title)} compact />
                       </div>
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {doc.excerpt}
                       </p>
                     </div>
@@ -244,7 +244,7 @@ export function UnifiedSearchDialog({
                         </span>
                         {getStatusBadge(page.status)}
                       </div>
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {page.excerpt}
                       </p>
                     </div>
@@ -274,14 +274,14 @@ export function UnifiedSearchDialog({
                     <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-zinc-200 group-hover:text-emerald-400 truncate">
-                          {doc.title}
+                        <span className="text-sm font-medium text-zinc-200 group-hover:text-emerald-400 truncate sm:text-xs">
+                          {prettyName(doc.title)}
                         </span>
-                        <span className="text-[10px] font-mono text-sky-400 shrink-0">
+                        <span className="text-[11px] text-sky-400 shrink-0">
                           Par {doc.shared_by}
                         </span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {doc.excerpt}
                       </p>
                     </div>
@@ -295,7 +295,7 @@ export function UnifiedSearchDialog({
         {/* Footer info */}
         <div className="px-4 py-2 bg-zinc-950/60 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
           <span>Documents et fiches de ton espace</span>
-          <span className="font-mono text-[10px]">Échap pour fermer</span>
+          <span className="hidden font-mono text-[10px] sm:inline">Échap pour fermer</span>
         </div>
       </div>
     </div>

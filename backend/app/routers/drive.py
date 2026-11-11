@@ -1,3 +1,4 @@
+import io
 from typing import List, Optional
 import json
 import uuid
@@ -19,6 +20,7 @@ from app.knowledge.drive.schemas import FolderOut, FolderCreate, FolderUpdate, F
 from app.knowledge.drive.service import build_index_meta, detect_chapters, infer_structural_counts
 from app.knowledge.drive.parser import DocumentParserService
 from app.knowledge.drive.preview import PreviewService
+from app.knowledge.drive.photos import PHOTO_EXTENSIONS, PhotoError, photos_to_pdf
 from app.middleware.auth import get_current_user, get_current_user_for_file
 from app.core.access import (
     accessible_workspace_ids,
@@ -658,14 +660,27 @@ async def create_file(
 
     # 1. File basics
     file_id = f"file-{uuid.uuid4().hex[:8]}"
-    extension = os.path.splitext(_clean_filename(file.filename))[1].lower()
+    display_name = _clean_filename(file.filename)
+    extension = os.path.splitext(display_name)[1].lower()
+    photo_pdf: Optional[bytes] = None
+    if extension in PHOTO_EXTENSIONS:
+        # Photo d'un sujet papier : convertie en PDF, puis lue par OCR comme un scan.
+        try:
+            photo_pdf = photos_to_pdf([await file.read()])
+        except PhotoError as error:
+            raise HTTPException(status_code=422, detail=str(error))
+        display_name = os.path.splitext(display_name)[0] + ".pdf"
+        extension = ".pdf"
     if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
-        raise HTTPException(status_code=415, detail="Format accepté : PDF, DOCX, PPTX, TXT ou MD")
+        raise HTTPException(status_code=415, detail="Format accepté : PDF, DOCX, PPTX, TXT, MD ou photo (JPG, PNG)")
     file_path = os.path.join(STORAGE_DIR, f"{file_id}{extension}")
 
     # Save file to disk
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        if photo_pdf is not None:
+            buffer.write(photo_pdf)
+        else:
+            shutil.copyfileobj(file.file, buffer)
 
     file_size = os.path.getsize(file_path)
 
@@ -697,7 +712,7 @@ async def create_file(
     # 4. DB Record
     f = DriveFile(
         id=file_id,
-        name=_clean_filename(file.filename) or f"document{extension}",
+        name=display_name or f"document{extension}",
         extension=extension,
         content=content,
         structured_text=structured_text,
@@ -719,6 +734,32 @@ async def create_file(
     await db.refresh(f)
 
     return _file_out(f)
+
+
+@router.post("/files/scan", response_model=FileOut)
+async def scan_subject(
+    photos: List[UploadFile] = File(..., description="Une photo par page, dans l'ordre"),
+    name: str = Form(..., min_length=1, max_length=150),
+    workspace_id: Optional[str] = Form(None),
+    folder_id: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Photos d'un sujet papier (une par page) → un seul PDF lu par OCR."""
+    try:
+        pdf_bytes = photos_to_pdf([await photo.read() for photo in photos])
+    except PhotoError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    base = os.path.splitext(_clean_filename(name))[0].strip() or "Sujet photographié"
+    upload = UploadFile(file=io.BytesIO(pdf_bytes), filename=f"{base}.pdf")
+    return await create_file(
+        file=upload,
+        workspace_id=workspace_id,
+        folder_id=folder_id,
+        tags="[]",
+        db=db,
+        current_user=current_user,
+    )
 
 
 @router.post("/files/import", response_model=List[FileOut])
@@ -759,6 +800,14 @@ async def import_files(
     for index, file in enumerate(files):
         filename = _clean_filename(file.filename) or f"document-{index}"
         extension = os.path.splitext(filename)[1].lower()
+        photo_pdf: Optional[bytes] = None
+        if extension in PHOTO_EXTENSIONS:
+            try:
+                photo_pdf = photos_to_pdf([await file.read()])
+            except PhotoError:
+                continue
+            filename = os.path.splitext(filename)[0] + ".pdf"
+            extension = ".pdf"
         if extension not in {".pdf", ".docx", ".pptx", ".txt", ".md"}:
             print(f"Skipping {filename}: unsupported format {extension}")
             continue
@@ -769,7 +818,10 @@ async def import_files(
 
         try:
             with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                if photo_pdf is not None:
+                    buffer.write(photo_pdf)
+                else:
+                    shutil.copyfileobj(file.file, buffer)
             file_size = os.path.getsize(file_path)
 
             parsing_result = parser_service.parse(file_path, extension)
