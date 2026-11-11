@@ -177,7 +177,7 @@ function SourceCard({
     : null;
 
   return (
-    <div className="group rounded-xl border border-white/[0.07] bg-[#151920] p-3 transition-colors hover:border-white/[0.13]">
+    <div className="group rounded-xl border border-white/[0.07] bg-[#222934] p-3 transition-colors hover:border-white/[0.13]">
       <div className="flex items-start gap-3">
         <div
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
@@ -439,7 +439,7 @@ export function LekkiAIPanel({
   return (
     <div
       id="lekki-ai-panel-overlay"
-      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col overflow-hidden border-l border-white/[0.08] bg-[#101318] shadow-2xl animate-in slide-in-from-right duration-200 sm:w-[480px]"
+      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col overflow-hidden border-l border-white/[0.08] bg-[#1D232C] shadow-2xl animate-in slide-in-from-right duration-200 sm:w-[480px]"
     >
       {/* EN-TÊTE */}
 
@@ -487,7 +487,7 @@ export function LekkiAIPanel({
 
       {showClearConfirmation && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 p-5 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#191d25] p-5 shadow-2xl">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#232934] p-5 shadow-2xl">
             <h3 className="text-sm font-semibold text-zinc-100">
               Réinitialiser la conversation ?
             </h3>
@@ -621,7 +621,7 @@ export function LekkiAIPanel({
                 <div
                   className={`max-w-[94%] text-[13px] leading-[1.85] sm:text-sm ${
                     isUser
-                      ? "rounded-2xl rounded-tr-sm bg-[#252b35] px-4 py-3 text-zinc-100"
+                      ? "rounded-2xl rounded-tr-sm bg-[#2F3744] px-4 py-3 text-zinc-100"
                       : "w-full pl-1 text-zinc-300"
                   }`}
                 >
@@ -735,7 +735,7 @@ export function LekkiAIPanel({
 
       {/* SAISIE */}
 
-      <footer className="shrink-0 border-t border-white/[0.07] bg-[#101318] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
+      <footer className="shrink-0 border-t border-white/[0.07] bg-[#1D232C] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -743,7 +743,7 @@ export function LekkiAIPanel({
           }}
           className="mx-auto max-w-2xl"
         >
-          <div className="group flex items-center gap-2 rounded-2xl border border-white/[0.09] bg-[#171b22] p-1.5 transition-colors focus-within:border-sky-400/30 focus-within:bg-[#1a1f27]">
+          <div className="group flex items-center gap-2 rounded-2xl border border-white/[0.09] bg-[#242B36] p-1.5 transition-colors focus-within:border-sky-400/30 focus-within:bg-[#242B36]">
             <input
               ref={inputRef}
               type="text"
@@ -764,7 +764,7 @@ export function LekkiAIPanel({
               type="submit"
               disabled={!input.trim() || loading}
               aria-label="Envoyer le message"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-400 text-[#101318] transition-all hover:bg-sky-300 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-zinc-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-400 text-[#1D232C] transition-all hover:bg-sky-300 disabled:cursor-not-allowed disabled:bg-white/[0.06] disabled:text-zinc-600"
             >
               <Send className="h-4 w-4" />
             </button>

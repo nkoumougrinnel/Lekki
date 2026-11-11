@@ -187,7 +187,7 @@ export function SubjectCard({ subject, shelf, onOpen }: { subject: Subject; shel
     <button
       onClick={onOpen}
       className={`group flex h-full flex-col rounded-xl border p-4 text-left transition ${
-        empty ? "border-zinc-800/70 bg-[#101318]" : "border-zinc-800 bg-[#12151B] hover:border-emerald-400/30"
+        empty ? "border-zinc-800/70 bg-[#1D232C]" : "border-zinc-800 bg-[#1F242F] hover:border-emerald-400/30"
       }`}
     >
       <span className="flex items-center justify-between gap-2">
@@ -244,7 +244,7 @@ function AcademicSetup({ workspace }: { workspace: Workspace }) {
 
   return (
     <Shell>
-      <div className="mx-auto w-full max-w-xl space-y-5 rounded-2xl border border-zinc-800 bg-[#12151B] p-5 sm:p-7">
+      <div className="mx-auto w-full max-w-xl space-y-5 rounded-2xl border border-zinc-800 bg-[#1F242F] p-5 sm:p-7">
         <div className="flex gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300">
             <GraduationCap className="h-5 w-5" />
@@ -281,7 +281,7 @@ function AcademicSetup({ workspace }: { workspace: Workspace }) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 space-y-6 overflow-y-auto bg-[#0E1116] p-4 sm:p-8">{children}</div>;
+  return <div className="flex-1 space-y-6 overflow-y-auto bg-[#1B212A] p-4 sm:p-8">{children}</div>;
 }
 
 function Empty({ text }: { text: string }) {

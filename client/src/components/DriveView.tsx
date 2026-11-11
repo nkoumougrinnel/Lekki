@@ -322,9 +322,9 @@ export function DriveView({
   return (
     <div
       id="drive-view-container"
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#f8fafd] text-[#202124] dark:bg-[#131519] dark:text-zinc-100"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#f8fafd] text-[#2C2D32] dark:bg-[#21252C] dark:text-zinc-100"
     >
-      <header className="sticky top-0 z-20 border-b border-[#e4e7eb] bg-[#f8fafd]/95 px-4 py-3 backdrop-blur dark:border-white/[0.08] dark:bg-[#17191e]/95 sm:px-7">
+      <header className="sticky top-0 z-20 border-b border-[#e4e7eb] bg-[#f8fafd]/95 px-4 py-3 backdrop-blur dark:border-white/[0.08] dark:bg-[#252931]/95 sm:px-7">
         <div className="flex items-center justify-between gap-3">
           <nav
             ref={breadcrumbRef}
@@ -391,7 +391,7 @@ export function DriveView({
                   setNewFolderName("");
                   setShowNewFolderInput(true);
                 }}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
               >
                 <FolderPlus className="h-4 w-4" />
                 <span className="hidden sm:inline">Dossier</span>
@@ -402,7 +402,7 @@ export function DriveView({
                 type="button"
                 onClick={() => onImportFolderClick(currentFolderId || undefined)}
                 title="Importer un dossier entier, avec ses sous-dossiers"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
               >
                 <FolderUp className="h-4 w-4" />
                 <span className="hidden md:inline">Importer un dossier</span>
@@ -413,7 +413,7 @@ export function DriveView({
                 type="button"
                 onClick={() => onDriveImportClick(currentFolderId || undefined)}
                 title="Importer depuis Google Drive ou SUP'DOCS"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#3c4043] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#22252b] dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
               >
                 <HardDrive className="h-4 w-4" />
                 <span className="hidden md:inline">Google Drive</span>
@@ -439,7 +439,7 @@ export function DriveView({
             role="menu"
             aria-label="Ajouter"
             onClick={(event) => event.stopPropagation()}
-            className="w-full rounded-t-2xl border-t border-white/[0.08] bg-[#1b1e24] px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+            className="w-full rounded-t-2xl border-t border-white/[0.08] bg-[#262A33] px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
           >
             <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/15" />
             <p className="px-3 pb-2 text-xs text-zinc-500">
@@ -500,7 +500,7 @@ export function DriveView({
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-folder-title"
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#dadce0] bg-white shadow-2xl dark:border-white/10 dark:bg-[#1b1e24]"
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#dadce0] bg-white shadow-2xl dark:border-white/10 dark:bg-[#262A33]"
           >
             <div className="flex items-start gap-3 border-b border-[#e8eaed] p-4 dark:border-white/[0.08] sm:p-5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -581,7 +581,7 @@ export function DriveView({
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") setCurrentFolderId(folder.id);
                   }}
-                  className="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-[#dadce0] bg-white px-3 py-2.5 transition hover:border-[#c4c7c5] hover:bg-[#f1f3f4] dark:border-white/[0.09] dark:bg-[#1c1f25] dark:hover:bg-[#252932]"
+                  className="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-[#dadce0] bg-white px-3 py-2.5 transition hover:border-[#c4c7c5] hover:bg-[#f1f3f4] dark:border-white/[0.09] dark:bg-[#272B34] dark:hover:bg-[#303541]"
                 >
                   <Folder className="h-5 w-5 shrink-0 fill-emerald-200 text-emerald-600 dark:fill-emerald-500/20 dark:text-emerald-400" />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{folder.name}</span>
@@ -669,9 +669,9 @@ export function DriveView({
                   }}
                   role="button"
                   tabIndex={0}
-                  className={`group relative flex min-w-0 cursor-pointer flex-col overflow-visible rounded-xl border bg-white transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-md dark:bg-[#202329] ${openMenuId === file.id ? "z-30 border-emerald-500 shadow-xl ring-2 ring-emerald-500/25 dark:border-emerald-400 dark:ring-emerald-400/20" : "border-[#dadce0] dark:border-white/[0.09]"}`}
+                  className={`group relative flex min-w-0 cursor-pointer flex-col overflow-visible rounded-xl border bg-white transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-md dark:bg-[#2B2F37] ${openMenuId === file.id ? "z-30 border-emerald-500 shadow-xl ring-2 ring-emerald-500/25 dark:border-emerald-400 dark:ring-emerald-400/20" : "border-[#dadce0] dark:border-white/[0.09]"}`}
                 >
-                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#f8fafd] dark:bg-[#17191e]">
+                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#f8fafd] dark:bg-[#252931]">
                     {file.thumbnail_path || getExtension(file) === "pdf" ? (
                       <img
                         src={fileUrl(`/drive/files/${file.id}/thumbnail`)}
@@ -695,7 +695,7 @@ export function DriveView({
                         setOpenMenuId((id) => (id === file.id ? null : file.id));
                       }}
                       aria-label={`Options pour ${file.name}`}
-                      className="absolute right-1 top-1 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#22252b]/95 dark:text-zinc-100 dark:hover:bg-[#2d3139]"
+                      className="absolute right-1 top-1 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#2D3139]/95 dark:text-zinc-100 dark:hover:bg-[#383D47]"
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" />
                     </button>
@@ -773,7 +773,7 @@ function FileActionMenu({
   return (
     <div
       onClick={(event) => event.stopPropagation()}
-      className={`absolute top-12 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/35 bg-white p-1.5 shadow-2xl ring-1 ring-emerald-500/10 dark:border-emerald-400/30 dark:bg-[#252830] dark:ring-emerald-400/10 ${alignLeft ? "left-2 right-auto" : "right-2 left-auto"}`}
+      className={`absolute top-12 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/35 bg-white p-1.5 shadow-2xl ring-1 ring-emerald-500/10 dark:border-emerald-400/30 dark:bg-[#30343E] dark:ring-emerald-400/10 ${alignLeft ? "left-2 right-auto" : "right-2 left-auto"}`}
     >
       <button type="button" disabled={busy} onClick={onOpen} className={itemClass}>
         <Eye className="h-4 w-4 text-zinc-500" />

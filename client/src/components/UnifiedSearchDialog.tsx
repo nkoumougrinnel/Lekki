@@ -114,7 +114,7 @@ export function UnifiedSearchDialog({
       id="unified-search-dropdown"
       className={`${
         fullScreen
-          ? "fixed inset-0 z-50 bg-[#0E1116]/97 backdrop-blur-md"
+          ? "fixed inset-0 z-50 bg-[#1B212A]/97 backdrop-blur-md"
           : "relative sm:absolute sm:left-0 sm:right-0 sm:top-full sm:z-50 sm:mt-2"
       }`}
       onClick={(e) => {
@@ -123,7 +123,7 @@ export function UnifiedSearchDialog({
     >
       <div
         id="unified-search-modal"
-        className={`w-full bg-[#14171E] border border-zinc-700/80 ${
+        className={`w-full bg-[#212632] border border-zinc-700/80 ${
           fullScreen
             ? "rounded-none h-full shadow-none"
             : "border-x-0 border-t-0 sm:border sm:rounded-xl sm:shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"

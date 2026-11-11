@@ -63,7 +63,7 @@ export function MobileTabBar({
   return (
     <nav
       aria-label="Navigation principale"
-      className="lg:hidden shrink-0 border-t border-white/[0.07] bg-[#0D0F12]/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      className="lg:hidden shrink-0 border-t border-white/[0.07] bg-[#1B1F25]/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="flex">
         {tabs.map(({ key, label, icon: Icon, active, onPress }) => (

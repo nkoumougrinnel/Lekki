@@ -133,7 +133,7 @@ export function WikiView({
   const isEmptyWiki = pages.length === 0;
 
   return (
-    <div id="wiki-home-view" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-y-auto">
+    <div id="wiki-home-view" className="flex-1 flex flex-col min-w-0 bg-[#1B212A] overflow-y-auto">
       <WikiHeaderBar>
         <WikiBreadcrumbs
           items={filterTopic ? [{ label: filterTopic }] : []}
@@ -169,7 +169,7 @@ export function WikiView({
               <span>Nouvelle fiche</span>
             </button>
             {createMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-2 z-30 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-2 z-30 overflow-hidden">
                 <button
                   onClick={() => {
                     setCreateMenuOpen(false);
@@ -218,7 +218,7 @@ export function WikiView({
                 Aucune page ne correspond à « {searchQuery} ».
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800/80 rounded-xl border border-zinc-800 bg-[#12151B] overflow-hidden">
+              <div className="divide-y divide-zinc-800/80 rounded-xl border border-zinc-800 bg-[#1F242F] overflow-hidden">
                 {searchResults.map((page) => (
                   <div
                     key={page.id}
@@ -271,7 +271,7 @@ export function WikiView({
               </button>
             </div>
             {showWikiGuide && (
-              <div className="max-w-lg rounded-xl border border-zinc-800 bg-[#12151B] p-4 text-left">
+              <div className="max-w-lg rounded-xl border border-zinc-800 bg-[#1F242F] p-4 text-left">
                 <div className="flex items-start gap-3">
                   <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
                   <p className="text-xs leading-relaxed text-zinc-400">
@@ -307,7 +307,7 @@ export function WikiView({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from(tree.get(filterTopic)?.entries() || []).map(([sectionName, secPages]) => (
-              <div key={sectionName} className="break-inside-avoid rounded-xl border border-zinc-800/60 bg-[#12151B] overflow-hidden shadow-sm hover:border-zinc-700/60 transition-colors">
+              <div key={sectionName} className="break-inside-avoid rounded-xl border border-zinc-800/60 bg-[#1F242F] overflow-hidden shadow-sm hover:border-zinc-700/60 transition-colors">
                 <div className="px-5 py-4 bg-zinc-900/40 border-b border-zinc-800/60 flex items-center justify-between">
                   <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2">
                     <FolderTree className="h-4 w-4 text-emerald-400" />
@@ -372,7 +372,7 @@ export function WikiView({
                 <button
                   key={t.name}
                   onClick={() => onNavigateToTopic?.(t.name)}
-                  className="text-left rounded-xl border border-zinc-800/60 bg-[#12151B] p-5 hover:border-emerald-500/40 hover:bg-zinc-800/40 transition-colors group"
+                  className="text-left rounded-xl border border-zinc-800/60 bg-[#1F242F] p-5 hover:border-emerald-500/40 hover:bg-zinc-800/40 transition-colors group"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
@@ -391,7 +391,7 @@ export function WikiView({
             </div>
 
             <div className="max-w-4xl">
-              <section className="overflow-hidden rounded-2xl border border-zinc-800/70 bg-[#12151B] shadow-lg shadow-black/10">
+              <section className="overflow-hidden rounded-2xl border border-zinc-800/70 bg-[#1F242F] shadow-lg shadow-black/10">
                 <div className="flex items-center justify-between gap-3 border-b border-zinc-800/70 px-4 py-4 sm:px-5">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">

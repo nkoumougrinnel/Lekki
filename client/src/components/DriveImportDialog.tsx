@@ -196,7 +196,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
         role="dialog"
         aria-modal="true"
         aria-labelledby="drive-import-title"
-        className={`flex w-full flex-col ${step === "supdocs" ? "h-[92dvh]" : "max-h-[92dvh]"} overflow-hidden rounded-t-2xl bg-[#14171D] sm:h-auto sm:max-h-[85vh] sm:max-w-xl sm:rounded-2xl sm:border sm:border-white/[0.09]`}
+        className={`flex w-full flex-col ${step === "supdocs" ? "h-[92dvh]" : "max-h-[92dvh]"} overflow-hidden rounded-t-2xl bg-[#222731] sm:h-auto sm:max-h-[85vh] sm:max-w-xl sm:rounded-2xl sm:border sm:border-white/[0.09]`}
       >
         <header className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-3 sm:px-5 sm:py-4">
           {step === "supdocs" && (

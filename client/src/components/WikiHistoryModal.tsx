@@ -154,10 +154,10 @@ export function WikiHistoryModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="wiki-history-title"
-        className="flex h-full w-full flex-col overflow-hidden bg-[#0c0f14] sm:rounded-2xl sm:border sm:border-white/[0.08] sm:shadow-2xl lg:rounded-none lg:border-0"
+        className="flex h-full w-full flex-col overflow-hidden bg-[#191F28] sm:rounded-2xl sm:border sm:border-white/[0.08] sm:shadow-2xl lg:rounded-none lg:border-0"
       >
         {/* HEADER */}
-        <header className="flex h-[68px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#101319] px-4 sm:px-6">
+        <header className="flex h-[68px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#1D222D] px-4 sm:px-6">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/[0.07]">
             <History className="h-[17px] w-[17px] text-emerald-400" />
           </div>
@@ -191,7 +191,7 @@ export function WikiHistoryModal({
         {/* MAIN LAYOUT */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
           {/* VERSION TIMELINE */}
-          <aside className="flex max-h-[38%] w-full shrink-0 flex-col border-b border-white/[0.07] bg-[#101319] lg:max-h-none lg:w-[310px] lg:border-b-0 lg:border-r xl:w-[340px]">
+          <aside className="flex max-h-[38%] w-full shrink-0 flex-col border-b border-white/[0.07] bg-[#1D222D] lg:max-h-none lg:w-[310px] lg:border-b-0 lg:border-r xl:w-[340px]">
             {/* Search */}
             <div className="shrink-0 px-4 pb-3 pt-4 sm:px-5">
               <div className="relative">
@@ -204,7 +204,7 @@ export function WikiHistoryModal({
                   }
                   placeholder="Rechercher une révision..."
                   aria-label="Rechercher une révision"
-                  className="w-full rounded-lg border border-white/[0.07] bg-[#0c0f14] py-2.5 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40"
+                  className="w-full rounded-lg border border-white/[0.07] bg-[#191F28] py-2.5 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40"
                 />
               </div>
             </div>
@@ -254,7 +254,7 @@ export function WikiHistoryModal({
                                 ? "border-emerald-400/50 bg-emerald-400/15"
                                 : current
                                   ? "border-emerald-400/30 bg-emerald-400/[0.07]"
-                                  : "border-white/[0.10] bg-[#101319]"
+                                  : "border-white/[0.10] bg-[#1D222D]"
                             }`}
                           >
                             {current ? (
@@ -346,11 +346,11 @@ export function WikiHistoryModal({
           </aside>
 
           {/* VERSION CONTENT */}
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#0c0f14]">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#191F28]">
             {selectedVersion ? (
               <>
                 {/* Preview header */}
-                <div className="flex shrink-0 flex-col gap-4 border-b border-white/[0.07] bg-[#101319] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                <div className="flex shrink-0 flex-col gap-4 border-b border-white/[0.07] bg-[#1D222D] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
@@ -390,7 +390,7 @@ export function WikiHistoryModal({
                       type="button"
                       onClick={() => handleRestore(selectedVersion)}
                       disabled={restoring}
-                      className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2.5 text-xs font-semibold text-[#081018] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2.5 text-xs font-semibold text-[#192128] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <RotateCcw
                         className={`h-3.5 w-3.5 ${
@@ -455,7 +455,7 @@ export function WikiHistoryModal({
                 </div>
 
                 {/* Bottom status */}
-                <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-[#101319] px-5 py-3 sm:px-7">
+                <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-[#1D222D] px-5 py-3 sm:px-7">
                   <span className="text-[10px] text-zinc-600">
                     {isCurrentVersion(selectedVersion)
                       ? "Tu consultes la dernière version enregistrée."

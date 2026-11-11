@@ -41,9 +41,9 @@ export function AuthLayout({
   subtitle: string;
 }) {
   return (
-    <div className="h-screen overflow-y-auto bg-[#0D0F12] text-zinc-100">
+    <div className="h-screen overflow-y-auto bg-[#1B1F25] text-zinc-100">
       <div className="min-h-full grid lg:grid-cols-2">
-        <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-zinc-800/80 bg-[#0B0D10] px-12 py-10">
+        <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-zinc-800/80 bg-[#191D24] px-12 py-10">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
             <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-teal-500/8 blur-3xl" />
@@ -165,7 +165,7 @@ export function AuthField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           required={required}
-          className="w-full rounded-xl border border-zinc-800 bg-[#12151B] px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
+          className="w-full rounded-xl border border-zinc-800 bg-[#1F242F] px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
         />
         {trailing}
       </div>

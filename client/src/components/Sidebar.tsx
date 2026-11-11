@@ -111,7 +111,7 @@ export function Sidebar({
 
       {/* Panel centré */}
       <div
-        className="relative w-full max-w-sm rounded-2xl bg-[#13161E] border border-zinc-700/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="relative w-full max-w-sm rounded-2xl bg-[#202532] border border-zinc-700/80 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header modal */}
@@ -361,7 +361,7 @@ export function Sidebar({
       {/* ── Desktop sidebar ── */}
       <aside
         id="lekki-app-sidebar"
-        className="hidden lg:flex w-64 bg-[#0E1116] border-r border-zinc-800/80 flex-col shrink-0 select-none overflow-y-auto"
+        className="hidden lg:flex w-64 bg-[#1B212A] border-r border-zinc-800/80 flex-col shrink-0 select-none overflow-y-auto"
       >
         {sidebarContent}
       </aside>
@@ -372,7 +372,7 @@ export function Sidebar({
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onMobileClose} />
           <aside
             id="lekki-app-sidebar-mobile"
-            className="relative z-50 h-dvh max-h-dvh w-72 max-w-[85vw] bg-[#0E1116] border-r border-zinc-800/80 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200"
+            className="relative z-50 h-dvh max-h-dvh w-72 max-w-[85vw] bg-[#1B212A] border-r border-zinc-800/80 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200"
           >
             {/* Header drawer */}
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-zinc-800/80">
@@ -397,7 +397,7 @@ export function Sidebar({
                     onClick={() => setMobileProfileOpen(false)}
                   />
                   <div
-                    className="absolute bottom-0 left-0 right-0 z-50 mb-[calc(0.75rem+env(safe-area-inset-bottom))] mx-2 rounded-xl border border-zinc-800 bg-[#0E1116]/95 backdrop-blur-md p-1 shadow-2xl animate-in fade-in slide-in-from-bottom-1 duration-100"
+                    className="absolute bottom-0 left-0 right-0 z-50 mb-[calc(0.75rem+env(safe-area-inset-bottom))] mx-2 rounded-xl border border-zinc-800 bg-[#1B212A]/95 backdrop-blur-md p-1 shadow-2xl animate-in fade-in slide-in-from-bottom-1 duration-100"
                   >
                     <button
                       onClick={() => setMobileProfileOpen(false)}

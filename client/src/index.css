@@ -4,26 +4,38 @@
    sans cette ligne, le Drive s'affichait en clair sur les appareils en mode clair. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Thème sombre éclairci : gris anthracite plutôt que noir, et gris de texte plus lisibles.
+   On ajuste la palette « zinc » de Tailwind, utilisée partout pour les surfaces et les textes. */
+@theme {
+  --color-zinc-400: #b0b0b9;
+  --color-zinc-500: #93939d;
+  --color-zinc-600: #747480;
+  --color-zinc-700: #4a4b55;
+  --color-zinc-800: #343640;
+  --color-zinc-900: #272a32;
+  --color-zinc-950: #1d2027;
+}
+
 @layer base {
   :root {
-    --background: 220 18% 6%;
+    --background: 220 16% 12%;
     --foreground: 210 20% 98%;
-    --card: 220 18% 8%;
+    --card: 220 16% 16%;
     --card-foreground: 210 20% 98%;
-    --popover: 220 18% 8%;
+    --popover: 220 16% 16%;
     --popover-foreground: 210 20% 98%;
     --primary: 160 100% 39%;
-    --primary-foreground: 220 18% 6%;
-    --secondary: 220 14% 14%;
+    --primary-foreground: 220 18% 8%;
+    --secondary: 220 14% 20%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 220 14% 16%;
-    --muted-foreground: 218 11% 65%;
-    --accent: 220 14% 16%;
+    --muted: 220 14% 21%;
+    --muted-foreground: 218 12% 72%;
+    --accent: 220 14% 21%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 18%;
-    --input: 220 13% 18%;
+    --border: 220 13% 26%;
+    --input: 220 13% 26%;
     --ring: 160 100% 39%;
     --radius: 0.5rem;
   }
@@ -36,7 +48,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #0d0f12;
+  background-color: #1B1F25;
   color: #f4f4f5;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

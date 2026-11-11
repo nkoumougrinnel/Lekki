@@ -59,7 +59,7 @@ const features = [
 
 export function LandingPage() {
   return (
-    <div className="h-screen overflow-y-auto bg-[#0D0F12] text-zinc-100">
+    <div className="h-screen overflow-y-auto bg-[#1B1F25] text-zinc-100">
       <div className="relative min-h-full">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-[-8rem] h-[28rem] w-[42rem] -translate-x-1/2 rounded-full bg-emerald-500/12 blur-3xl" />
@@ -123,7 +123,7 @@ export function LandingPage() {
 
             {/* Exemple d'échange : ce que Lekki fait, montré plutôt que décrit */}
             <figure aria-label="Exemple de réponse de Lekki AI" className="relative">
-              <div className="rounded-2xl border border-zinc-800/80 bg-[#12151B]/90 p-4 shadow-2xl sm:p-5">
+              <div className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/90 p-4 shadow-2xl sm:p-5">
                 <div className="flex items-center justify-between text-[11px] text-zinc-500">
                   <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Lekki AI · ITT2</span>
                   <span>Exemple</span>
@@ -157,7 +157,7 @@ export function LandingPage() {
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Comment ça marche</h2>
             <ol className="mt-5 grid gap-4 sm:grid-cols-3">
               {steps.map(({ icon: Icon, title, text }, index) => (
-                <li key={title} className="rounded-2xl border border-zinc-800/80 bg-[#12151B]/80 p-5">
+                <li key={title} className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/80 p-5">
                   <div className="flex items-center gap-3">
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-xs font-bold text-emerald-300">
                       {index + 1}
@@ -173,7 +173,7 @@ export function LandingPage() {
 
           <section className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map(({ icon: Icon, title, text }) => (
-              <article key={title} className="rounded-2xl border border-zinc-800/80 bg-[#12151B]/60 p-5">
+              <article key={title} className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/60 p-5">
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
                   <Icon className="h-5 w-5" />
                 </div>
@@ -209,7 +209,7 @@ export function LandingPage() {
 
 export function AuthSplash() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#0D0F12] text-zinc-100 gap-4">
+    <div className="h-screen flex flex-col items-center justify-center bg-[#1B1F25] text-zinc-100 gap-4">
       <LekkiMark size="lg" />
       <p className="text-xs font-semibold tracking-[0.22em] text-zinc-500">LEKKI</p>
     </div>

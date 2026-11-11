@@ -171,11 +171,11 @@ export function MarkdownEditor({ value, onChange, placeholder, onSave, className
   };
 
   return (
-    <div className={`overflow-clip rounded-2xl border border-white/[0.07] bg-[#101319] focus-within:border-emerald-500/40 sm:rounded-xl ${className}`}>
+    <div className={`overflow-clip rounded-2xl border border-white/[0.07] bg-[#1D222D] focus-within:border-emerald-500/40 sm:rounded-xl ${className}`}>
       <div
         role="toolbar"
         aria-label="Mise en forme"
-        className="sticky top-0 z-10 flex gap-0.5 overflow-x-auto border-b border-white/[0.06] bg-[#12161c]/95 px-1.5 py-1.5 backdrop-blur [scrollbar-width:none] sm:px-3"
+        className="sticky top-0 z-10 flex gap-0.5 overflow-x-auto border-b border-white/[0.06] bg-[#1F2630]/95 px-1.5 py-1.5 backdrop-blur [scrollbar-width:none] sm:px-3"
       >
         {actions.map(({ label, shortcut, icon: Icon, run }, index) => (
           <React.Fragment key={label}>

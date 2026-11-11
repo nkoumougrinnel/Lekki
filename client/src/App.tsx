@@ -374,7 +374,7 @@ function LekkiMain() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0D0F12] font-sans text-zinc-100">
+    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1B1F25] font-sans text-zinc-100">
       {/* Top Application Header */}
       <Header
         onSelectDocument={handleOpenDocFromId}
@@ -406,7 +406,7 @@ function LekkiMain() {
         />
 
         {/* Dynamic Center Stage View */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#1B212A] overflow-hidden">
           {currentView === "home" && (
             <HomeOverview
               files={files}

@@ -55,12 +55,12 @@ export function SubjectView({
   };
 
   return (
-    <div className="flex-1 space-y-6 overflow-y-auto bg-[#0E1116] p-4 sm:p-8">
+    <div className="flex-1 space-y-6 overflow-y-auto bg-[#1B212A] p-4 sm:p-8">
       <button onClick={onBack} className="-my-2 inline-flex min-h-10 items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200 sm:text-xs">
         <ArrowLeft className="h-3.5 w-3.5" /> Matières
       </button>
 
-      <section className="relative space-y-4 overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#141820] via-[#161B24] to-[#12151B] p-5 sm:p-7">
+      <section className="relative space-y-4 overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#212734] via-[#242B38] to-[#1F242F] p-5 sm:p-7">
         <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 -translate-y-10 translate-x-10 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="relative space-y-1">
           <p className="font-mono text-[11px] text-zinc-500">
@@ -77,7 +77,7 @@ export function SubjectView({
             onChange={(event) => setQuestion(event.target.value)}
             placeholder={`Une question sur ${subject.title} ?`}
             aria-label={`Question sur ${subject.title}`}
-            className="w-full rounded-xl border border-zinc-700/70 bg-[#0D1015]/90 py-3 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60"
+            className="w-full rounded-xl border border-zinc-700/70 bg-[#1A2029]/90 py-3 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60"
           />
           <button
             type="submit"
@@ -170,7 +170,7 @@ export function SubjectView({
                   <button
                     key={page.id}
                     onClick={() => onOpenWiki(page)}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-zinc-800 bg-[#12151B] p-3 text-left transition hover:border-zinc-700"
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-zinc-800 bg-[#1F242F] p-3 text-left transition hover:border-zinc-700"
                   >
                     <FileText className="h-4 w-4 shrink-0 text-sky-400" />
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-200">{page.title}</span>
@@ -194,7 +194,7 @@ function Row({
   entry, onOpen, action,
 }: { entry: LibraryEntry; onOpen: () => void; action?: { label: string; onClick: () => void } }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#12151B] p-2.5 transition hover:border-zinc-700">
+    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#1F242F] p-2.5 transition hover:border-zinc-700">
       <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
         <span className="shrink-0 rounded bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
           <DocumentTypeIcon extension={entry.file.extension} className="h-4 w-3.5" />

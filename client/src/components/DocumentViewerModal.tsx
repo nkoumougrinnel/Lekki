@@ -157,7 +157,7 @@ export function DocumentViewerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="document-viewer-title"
-        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-[#11141a] shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl sm:border sm:border-white/[0.09]"
+        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-[#1E232E] shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl sm:border sm:border-white/[0.09]"
       >
         {/* En-tête fixe */}
         <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-3.5">
@@ -310,7 +310,7 @@ export function DocumentViewerModal({
               </h3>
               <span className="text-[11px] text-zinc-600">Première page</span>
             </div>
-            <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-xl bg-[#1a1e26] p-3 sm:min-h-[340px] sm:p-5">
+            <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-xl bg-[#242A35] p-3 sm:min-h-[340px] sm:p-5">
               {!thumbnailFailed ? (
                 <img
                   key={file.id}

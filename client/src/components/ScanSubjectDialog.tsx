@@ -143,7 +143,7 @@ export function ScanSubjectDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="scan-title"
-        className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-[#14171D] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:border sm:border-white/[0.09]"
+        className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-[#222731] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:border sm:border-white/[0.09]"
       >
         <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
           <div>
@@ -210,7 +210,7 @@ export function ScanSubjectDialog({
                 <select
                   value={subjectId}
                   onChange={(event) => setSubjectId(event.target.value)}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#0D1015] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
                 >
                   <option value="">Autre / je l’écris moi-même</option>
                   {library.semesters.map((semester) => (
@@ -231,7 +231,7 @@ export function ScanSubjectDialog({
                   onChange={(event) => setFreeName(event.target.value)}
                   placeholder="Ex. TS_Examen_CL_2024"
                   maxLength={120}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#0D1015] px-3 text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
                 />
               </label>
             )}
@@ -258,7 +258,7 @@ export function ScanSubjectDialog({
                   value={year}
                   onChange={(event) => setYear(event.target.value.replace(/\D/g, "").slice(0, 4))}
                   inputMode="numeric"
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#0D1015] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
                 />
               </label>
               <label className="block space-y-1.5">
@@ -266,7 +266,7 @@ export function ScanSubjectDialog({
                 <select
                   value={track}
                   onChange={(event) => setTrack(event.target.value as "" | "CL" | "ALT")}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#0D1015] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
                 >
                   <option value="">Les deux / non précisé</option>
                   <option value="CL">Classique (CL)</option>

@@ -379,7 +379,7 @@ export function ImportFolderDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="import-folder-dialog-title"
-        className="flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#12161d] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#1F2631] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-4">
           <div className="flex items-center gap-3">

@@ -124,9 +124,9 @@ export function HomeOverview({
   const isReader = Boolean(activeWorkspace) && !canManage;
 
   return (
-    <div id="home-overview-container" className="flex-1 overflow-y-auto bg-[#0E1116] p-4 sm:p-8 space-y-6 sm:space-y-8">
+    <div id="home-overview-container" className="flex-1 overflow-y-auto bg-[#1B212A] p-4 sm:p-8 space-y-6 sm:space-y-8">
       {/* Accueil : poser une question tout de suite */}
-      <section className="relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#141820] via-[#161B24] to-[#12151B] p-4 shadow-xl sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#212734] via-[#242B38] to-[#1F242F] p-4 shadow-xl sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl sm:h-80 sm:w-80" />
         <div className="relative z-10 max-w-3xl space-y-4 sm:space-y-5">
           <div className="space-y-1.5">
@@ -151,7 +151,7 @@ export function HomeOverview({
               placeholder={narrow ? "Pose ta question à Lekki…" : wording.askPlaceholder}
               aria-label="Question pour Lekki"
               enterKeyHint="send"
-              className="h-12 w-full truncate rounded-xl border border-zinc-700/70 bg-[#0D1015]/90 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10 max-sm:placeholder:text-[13px]"
+              className="h-12 w-full truncate rounded-xl border border-zinc-700/70 bg-[#1A2029]/90 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10 max-sm:placeholder:text-[13px]"
             />
             <button
               type="submit"
@@ -273,7 +273,7 @@ export function HomeOverview({
                 ? { icon: GraduationCap, title: "Révise", text: "Questions sourcées, quiz par chapitre, corrections d’anciens sujets.", action: () => onOpenRevision("quiz"), cta: "Essayer" }
                 : { icon: Sparkles, title: "Retrouve tout", text: "Pose ta question : Lekki AI répond en citant le document d’où vient l’information.", action: () => onOpenAI(), cta: "Poser une question" },
             ].map(({ icon: Icon, title, text, action, cta }, index) => (
-              <li key={title} className="rounded-xl bg-[#12151B] p-4 ring-1 ring-inset ring-zinc-800">
+              <li key={title} className="rounded-xl bg-[#1F242F] p-4 ring-1 ring-inset ring-zinc-800">
                 <div className="flex items-center gap-2 text-emerald-300">
                   <span className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-400/10 text-[11px] font-bold">{index + 1}</span>
                   <Icon className="h-4 w-4" />
@@ -314,7 +314,7 @@ export function HomeOverview({
               {exams.length ? (
                 <ul className="space-y-2">
                   {exams.slice(0, 6).map(({ file, info }) => (
-                    <li key={file.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#12151B] p-3 transition hover:border-zinc-700">
+                    <li key={file.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#1F242F] p-3 transition hover:border-zinc-700">
                       <button onClick={() => onOpenFile(file)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
                         <span className="rounded bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
                           <DocumentTypeIcon extension={file.extension} className="h-5 w-4" />
@@ -345,7 +345,7 @@ export function HomeOverview({
               {courses.length ? (
                 <ul className="space-y-2">
                   {courses.slice(0, 6).map(({ file, info }) => (
-                    <li key={file.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#12151B] p-3 transition hover:border-zinc-700">
+                    <li key={file.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#1F242F] p-3 transition hover:border-zinc-700">
                       <button onClick={() => onOpenFile(file)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
                         <span className="rounded bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
                           <DocumentTypeIcon extension={file.extension} className="h-5 w-4" />
@@ -380,7 +380,7 @@ export function HomeOverview({
                   <li key={page.id}>
                     <button
                       onClick={() => onOpenWiki(page)}
-                      className="w-full rounded-xl border border-zinc-800 bg-[#12151B] p-3 text-left transition hover:border-zinc-700"
+                      className="w-full rounded-xl border border-zinc-800 bg-[#1F242F] p-3 text-left transition hover:border-zinc-700"
                     >
                       <span className="flex items-center gap-2">
                         <span className="truncate text-xs font-medium text-zinc-200">{page.title}</span>
@@ -413,7 +413,7 @@ function StatCard({
   return (
     <Tag
       onClick={onClick}
-      className={`rounded-xl border border-zinc-800 bg-[#12151B] p-4 text-left ${onClick ? "transition hover:border-zinc-700 hover:bg-zinc-900/80" : ""}`}
+      className={`rounded-xl border border-zinc-800 bg-[#1F242F] p-4 text-left ${onClick ? "transition hover:border-zinc-700 hover:bg-zinc-900/80" : ""}`}
     >
       <div className="mb-2 flex items-center justify-between">
         <Icon className={`h-5 w-5 ${tone}`} />

@@ -144,7 +144,7 @@ export function WikiPageReader({
   [body]);
 
   return (
-    <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#0E1116] overflow-hidden">
+    <div id="wiki-page-reader" className="flex-1 flex flex-col min-w-0 bg-[#1B212A] overflow-hidden">
       {/* 1. Header Bar: Breadcrumb only */}
       <WikiHeaderBar>
         <WikiBreadcrumbs items={breadcrumbs} onRootClick={onBack} />
@@ -192,7 +192,7 @@ export function WikiPageReader({
                   </button>
 
                   {showStatusMenu && (
-                    <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1 z-30 overflow-hidden">
+                    <div className="absolute left-0 mt-2 w-56 rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-1 z-30 overflow-hidden">
                       {canVerifyWiki && (
                         <button
                           type="button"
@@ -278,7 +278,7 @@ export function WikiPageReader({
         </div>
 
         {/* RIGHT: Context Panel */}
-        <div className="w-80 sm:w-96 border-l border-zinc-800/60 bg-[#0E1116]/50 backdrop-blur-sm overflow-y-auto p-6 space-y-8 shrink-0 hidden lg:block">
+        <div className="w-80 sm:w-96 border-l border-zinc-800/60 bg-[#1B212A]/50 backdrop-blur-sm overflow-y-auto p-6 space-y-8 shrink-0 hidden lg:block">
 
           {headings.length > 1 && (
             <section className="space-y-3">

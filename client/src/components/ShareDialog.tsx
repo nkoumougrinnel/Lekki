@@ -73,7 +73,7 @@ export function ShareDialog({
     >
       <div
         id="share-dialog-modal"
-        className="w-full max-w-md bg-[#161A22] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        className="w-full max-w-md bg-[#232936] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
       >
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">

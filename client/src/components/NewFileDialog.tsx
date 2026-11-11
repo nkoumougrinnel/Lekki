@@ -214,7 +214,7 @@ export function NewFileDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-file-dialog-title"
-        className="flex max-h-[90vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#12161d] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[90vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#1F2631] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
         {/* EN-TÊTE */}
 
@@ -557,7 +557,7 @@ export function NewFileDialog({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#101318] transition-colors hover:bg-sky-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#1D232C] transition-colors hover:bg-sky-300"
                   >
                     Terminer
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -567,7 +567,7 @@ export function NewFileDialog({
                 <button
                   type="submit"
                   disabled={!selectedFile || creating}
-                  className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#101318] transition-colors hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#1D232C] transition-colors hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {creating ? (
                     <>

@@ -69,7 +69,7 @@ export function Header({
   return (
     <>
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[70] bg-[#0E1116] pt-[env(safe-area-inset-top)] sm:inset-auto sm:left-0 sm:top-0 sm:w-full sm:bg-[#0E1116]/98 sm:backdrop-blur-md sm:border-b sm:border-zinc-800/80">
+        <div className="fixed inset-0 z-[70] bg-[#1B212A] pt-[env(safe-area-inset-top)] sm:inset-auto sm:left-0 sm:top-0 sm:w-full sm:bg-[#1B212A]/98 sm:backdrop-blur-md sm:border-b sm:border-zinc-800/80">
           <div className="px-4 sm:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/60">
             <button
               onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }}
@@ -125,7 +125,7 @@ export function Header({
 
       <header
         id="lekki-app-header"
-        className="h-14 sm:h-16 border-b border-zinc-800/80 bg-[#0E1116]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 select-none shrink-0 z-30"
+        className="h-14 sm:h-16 border-b border-zinc-800/80 bg-[#1B212A]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 select-none shrink-0 z-30"
       >
 
         {/* Left: Hamburger + Logo + Workspace Selector */}
@@ -166,7 +166,7 @@ export function Header({
             {showWorkspaceMenu && (
               <div
                 id="header-workspace-dropdown"
-                className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
               >
                 <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-500 flex items-center justify-between">
                   <span>Espaces de travail</span>
@@ -281,7 +281,7 @@ export function Header({
             {showUserMenu && (
               <div
                 id="header-user-dropdown"
-                className="absolute right-0 mt-2 w-64 rounded-xl bg-[#161A22] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 mt-2 w-64 rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
               >
                 <div className="px-4 py-3 border-b border-zinc-800/80">
                   <div className="flex items-center gap-3">

@@ -142,7 +142,7 @@ export function RevisionPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby="revision-title"
-        className="flex h-full w-full flex-col overflow-hidden bg-[#14171D] sm:h-[min(760px,92vh)] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-white/[0.09] sm:shadow-[0_24px_100px_rgba(0,0,0,0.55)]"
+        className="flex h-full w-full flex-col overflow-hidden bg-[#222731] sm:h-[min(760px,92vh)] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-white/[0.09] sm:shadow-[0_24px_100px_rgba(0,0,0,0.55)]"
       >
         <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 gap-3">
@@ -216,7 +216,7 @@ export function RevisionPanel({
                           value={filter}
                           onChange={(event) => setFilter(event.target.value)}
                           placeholder="Filtrer les documents…"
-                          className="w-full rounded-lg border border-white/[0.08] bg-[#0D1015] py-2 pl-8 pr-3 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/50"
+                          className="w-full rounded-lg border border-white/[0.08] bg-[#1A2029] py-2 pl-8 pr-3 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/50"
                         />
                       </div>
                     )}
@@ -268,7 +268,7 @@ export function RevisionPanel({
                         onChange={(event) => setFocus(event.target.value)}
                         maxLength={200}
                         placeholder="Ex. théorème de Shannon, formule de Friis…"
-                        className="w-full rounded-xl border border-white/[0.09] bg-[#0D1015] px-3.5 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
+                        className="w-full rounded-xl border border-white/[0.09] bg-[#1A2029] px-3.5 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
                       />
                     </label>
                     <div className="space-y-2">

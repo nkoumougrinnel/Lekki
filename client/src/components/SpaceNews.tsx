@@ -100,7 +100,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
           </span>
         )}
       </div>
-      <ul className="divide-y divide-zinc-800/70 overflow-hidden rounded-xl border border-zinc-800 bg-[#12151B]">
+      <ul className="divide-y divide-zinc-800/70 overflow-hidden rounded-xl border border-zinc-800 bg-[#1F242F]">
         {items.slice(0, MAX_ITEMS).map((item) => {
           const isNew = Boolean(seenAt) && item.at > seenAt && !item.mine;
           // Prénom seulement : c'est une promo, on se connaît.
@@ -112,7 +112,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
                 <button onClick={() => onOpenFile(item.file)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-white/[0.02] active:bg-white/[0.04]">
                   <span className="relative shrink-0 rounded-lg bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
                     <DocumentTypeIcon extension={item.file.extension} className="h-5 w-4" />
-                    <FilePlus2 className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#12151B] text-emerald-400" />
+                    <FilePlus2 className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#1F242F] text-emerald-400" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-zinc-200 sm:text-xs">{prettyName(item.file.name)}</span>
@@ -131,7 +131,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
               <button onClick={() => onOpenWiki(item.page)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-white/[0.02] active:bg-white/[0.04]">
                 <span className="relative shrink-0 rounded-lg bg-sky-500/10 p-1.5 text-sky-400 ring-1 ring-sky-400/15">
                   <BookOpen className="h-5 w-4" />
-                  {!item.created && <PenLine className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#12151B] text-sky-300" />}
+                  {!item.created && <PenLine className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#1F242F] text-sky-300" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-zinc-200 sm:text-xs">{item.page.title}</span>

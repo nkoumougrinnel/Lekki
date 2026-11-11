@@ -239,7 +239,7 @@ export function WorkspaceAdminDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="workspace-admin-title"
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#14171D] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#222731] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
       >
         <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-5 sm:px-6">
           <div className="flex min-w-0 items-start gap-3">
@@ -303,7 +303,7 @@ export function WorkspaceAdminDialog({
                 </button>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#0D1015] p-2">
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#1A2029] p-2">
                 <code className="min-w-0 flex-1 truncate px-2 py-1 text-center font-mono text-lg tracking-[0.18em] text-emerald-200 sm:text-xl">
                   {loading ? "Chargement…" : joinCode || "Indisponible"}
                 </code>
@@ -383,7 +383,7 @@ export function WorkspaceAdminDialog({
                               value={newRole}
                               onChange={(event) => setNewRole(event.target.value)}
                               disabled={loading}
-                              className="rounded-lg border border-white/[0.08] bg-[#0D1015] px-2 py-2 text-xs text-zinc-200 outline-none focus:border-emerald-400/50 disabled:opacity-50"
+                              className="rounded-lg border border-white/[0.08] bg-[#1A2029] px-2 py-2 text-xs text-zinc-200 outline-none focus:border-emerald-400/50 disabled:opacity-50"
                             >
                               {Object.entries(roleLabels).map(([role, label]) => (
                                 <option key={role} value={role}>{label}</option>

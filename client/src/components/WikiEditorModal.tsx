@@ -46,7 +46,7 @@ const COMMON_TOPICS = [
 ];
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.09] bg-[#11151b] px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10";
+  "w-full rounded-lg border border-white/[0.09] bg-[#1E252F] px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10";
 
 const labelClass =
   "mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500";
@@ -278,10 +278,10 @@ export function WikiEditorModal({
   return (
     <div
       id="wiki-editor-modal"
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0c0f14] text-zinc-100"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#191F28] text-zinc-100"
     >
       {/* HEADER */}
-      <header className="relative z-20 flex min-h-[68px] shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/[0.07] bg-[#101319] px-3 py-2 sm:h-[68px] sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
+      <header className="relative z-20 flex min-h-[68px] shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/[0.07] bg-[#1D222D] px-3 py-2 sm:h-[68px] sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
         <button
           type="button"
           onClick={() => onOpenChange(false)}
@@ -349,7 +349,7 @@ export function WikiEditorModal({
           form="wiki-editor-form"
           disabled={saving || !title.trim()}
           aria-label={saving ? "Publication en cours" : page ? "Enregistrer la page" : "Publier la page"}
-          className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#081018] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
+          className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#192128] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
         >
           {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           <span>
@@ -378,7 +378,7 @@ export function WikiEditorModal({
                   setShowOrganization((previous) => !previous)
                 }
                 aria-expanded={showOrganization}
-                className="group flex w-full items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 text-left transition hover:border-emerald-500/20 hover:bg-[#12171b] sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#1D222D] p-3.5 text-left transition hover:border-emerald-500/20 hover:bg-[#1F282F] sm:p-4"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07]">
                   <FolderTree className="h-4 w-4 text-emerald-400" />
@@ -402,7 +402,7 @@ export function WikiEditorModal({
               </button>
 
               {showOrganization && (
-                <div className="mt-3 grid gap-4 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 sm:grid-cols-2 sm:p-4">
+                <div className="mt-3 grid gap-4 rounded-2xl border border-white/[0.07] bg-[#1D222D] p-3.5 sm:grid-cols-2 sm:p-4">
                   <div>
                     <label className={labelClass}>Matière ou thème</label>
 
@@ -457,7 +457,7 @@ export function WikiEditorModal({
                 </p>
               </div>
 
-              <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#11151b] p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#1E252F] p-1">
                 <button
                   type="button"
                   onClick={() => setMode("edit")}
@@ -505,7 +505,7 @@ export function WikiEditorModal({
             {/* EDITING AREA */}
             {(() => {
               const preview = (
-                <div className="rounded-2xl border border-white/[0.07] bg-[#101319] px-4 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
+                <div className="rounded-2xl border border-white/[0.07] bg-[#1D222D] px-4 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
                   <h1 className="mb-4 text-xl font-semibold tracking-tight text-zinc-100 sm:mb-6 sm:text-2xl">
                     {title || "Sans titre"}
                   </h1>
@@ -587,7 +587,7 @@ export function WikiEditorModal({
               />
             )}
             <aside
-              className={`${mobileSourcesOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] animate-in slide-in-from-bottom duration-200 rounded-t-3xl border-x border-t shadow-2xl" : "hidden"} w-full shrink-0 flex-col border-white/[0.07] bg-[#101319] lg:static lg:z-auto lg:max-h-none lg:w-[310px] lg:animate-none lg:rounded-none lg:border-x-0 lg:border-y-0 lg:border-l lg:shadow-none xl:w-[350px] ${sidebarOpen ? "lg:flex" : "lg:hidden"}`}
+              className={`${mobileSourcesOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] animate-in slide-in-from-bottom duration-200 rounded-t-3xl border-x border-t shadow-2xl" : "hidden"} w-full shrink-0 flex-col border-white/[0.07] bg-[#1D222D] lg:static lg:z-auto lg:max-h-none lg:w-[310px] lg:animate-none lg:rounded-none lg:border-x-0 lg:border-y-0 lg:border-l lg:shadow-none xl:w-[350px] ${sidebarOpen ? "lg:flex" : "lg:hidden"}`}
             >
             {/* SIDEBAR HEADER */}
             <div className="shrink-0 px-5 pb-4 pt-2 lg:pt-5">
@@ -741,7 +741,7 @@ export function WikiEditorModal({
                       ? "Rechercher un document..."
                       : "Rechercher une page..."
                   }
-                  className="w-full rounded-lg border border-white/[0.07] bg-[#0c0f14] py-3 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
+                  className="w-full rounded-lg border border-white/[0.07] bg-[#191F28] py-3 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
                 />
               </div>
             </div>
