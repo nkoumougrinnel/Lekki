@@ -115,6 +115,7 @@ export function HomeOverview({
     }
   };
 
+  const narrow = typeof window !== "undefined" && window.innerWidth < 640;
   const isEmpty = spaceFiles.length === 0 && wikiPages.length === 0;
   const wording = spaceWording(activeWorkspace);
   const semesterSubjects = library.current ? library.subjectsOfSemester(library.current) : [];
@@ -125,90 +126,93 @@ export function HomeOverview({
   return (
     <div id="home-overview-container" className="flex-1 overflow-y-auto bg-[#0E1116] p-4 sm:p-8 space-y-6 sm:space-y-8">
       {/* Accueil : poser une question tout de suite */}
-      <section className="rounded-2xl bg-gradient-to-br from-[#141820] via-[#161B24] to-[#12151B] border border-zinc-800/80 p-5 sm:p-8 relative overflow-hidden shadow-xl">
-        <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <p className="text-xs font-medium text-emerald-300/90">
-            {firstName ? `Bonjour ${firstName}` : "Bonjour"}
-            {activeWorkspace ? ` · ${activeWorkspace.name}` : " · Mon espace"}
-            {library.academic && library.current ? ` · semestre ${library.current}` : ""}
-          </p>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-100 leading-tight">
-            {wording.headline[0]} <span className="text-emerald-400 whitespace-nowrap">{wording.headline[1].replace(" ?", "\u00a0?")}</span>
-          </h1>
+      <section className="relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#141820] via-[#161B24] to-[#12151B] p-4 shadow-xl sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl sm:h-80 sm:w-80" />
+        <div className="relative z-10 max-w-3xl space-y-4 sm:space-y-5">
+          <div className="space-y-1.5">
+            <p className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-emerald-300/90">
+              <span className="shrink-0">{firstName ? `Bonjour ${firstName}` : "Bonjour"}</span>
+              <span className="truncate text-zinc-500">
+                · {activeWorkspace ? activeWorkspace.name : "Mon espace"}
+                {library.academic && library.current ? ` · S${library.current}` : ""}
+              </span>
+            </p>
+            <h1 className="text-[1.65rem] font-extrabold leading-[1.15] tracking-tight text-zinc-100 sm:text-4xl">
+              {wording.headline[0]}{" "}
+              <span className="whitespace-nowrap text-emerald-400">{wording.headline[1].replace(" ?", "\u00a0?")}</span>
+            </h1>
+          </div>
 
           <form onSubmit={submit} className="relative">
             <Sparkles className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
             <input
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder={wording.askPlaceholder}
-              aria-label="Question pour Lekki AI"
-              className="w-full rounded-xl border border-zinc-700/70 bg-[#0D1015]/90 py-3.5 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10"
+              placeholder={narrow ? "Pose ta question à Lekki…" : wording.askPlaceholder}
+              aria-label="Question pour Lekki"
+              enterKeyHint="send"
+              className="h-12 w-full truncate rounded-xl border border-zinc-700/70 bg-[#0D1015]/90 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/10 max-sm:placeholder:text-[13px]"
             />
             <button
               type="submit"
               disabled={!question.trim()}
-              aria-label="Demander à Lekki AI"
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-400 text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-30"
+              aria-label="Demander à Lekki"
+              className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-400 text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-30"
             >
               <ArrowUp className="h-4 w-4" />
             </button>
           </form>
 
-          <div className="flex flex-wrap gap-2">
+          {/* Suggestions : une seule ligne qui défile sur mobile, plutôt qu'un empilement. */}
+          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => onAsk(suggestion)}
-                className="min-h-9 max-w-full truncate rounded-full border border-zinc-700/60 bg-zinc-900/60 px-3 py-1.5 text-xs sm:min-h-0 sm:text-[11px] text-zinc-300 transition hover:border-emerald-400/40 hover:text-emerald-200"
+                className="min-h-9 max-w-[16rem] shrink-0 snap-start truncate rounded-full border border-zinc-700/60 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-emerald-400/40 hover:text-emerald-200 sm:max-w-full sm:text-[11px]"
               >
                 {suggestion}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            {wording.study ? (
-              <>
-                <button
-                  onClick={() => onOpenRevision("quiz")}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
-                >
-                  <GraduationCap className="h-3.5 w-3.5" /> Réviser avec un quiz
-                </button>
-                <button
-                  onClick={() => onOpenRevision("correction")}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
-                >
-                  <FileCheck2 className="h-3.5 w-3.5" /> Corriger un ancien sujet
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => onNavigate("workspace_files")}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300"
-              >
-                <FolderOpen className="h-3.5 w-3.5" /> Ouvrir les documents
-              </button>
-            )}
-            {wording.study && onScan && activeWorkspace && (
-              <button
-                onClick={onScan}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
-                <Camera className="h-3.5 w-3.5" /> Photographier un sujet
-              </button>
-            )}
-            {!isReader && (
-              <button
-                onClick={() => void invite()}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/50 px-3.5 py-2 text-sm sm:min-h-0 sm:text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
-              >
-                <UserPlus className="h-3.5 w-3.5" /> {wording.invite}
-              </button>
-            )}
-          </div>
+          {/* Actions : grille de tuiles sur mobile (pouce), rangée de boutons sur ordinateur. */}
+          {(() => {
+            const actions: { key: string; icon: React.ElementType; label: string; short: string; onClick: () => void; primary?: boolean }[] = [];
+            if (wording.study) {
+              actions.push({ key: "quiz", icon: GraduationCap, label: "Réviser avec un quiz", short: "Quiz", onClick: () => onOpenRevision("quiz"), primary: true });
+              actions.push({ key: "correction", icon: FileCheck2, label: "Corriger un ancien sujet", short: "Corriger un sujet", onClick: () => onOpenRevision("correction") });
+            } else {
+              actions.push({ key: "docs", icon: FolderOpen, label: "Ouvrir les documents", short: "Documents", onClick: () => onNavigate("workspace_files"), primary: true });
+            }
+            if (wording.study && onScan && activeWorkspace) {
+              actions.push({ key: "scan", icon: Camera, label: "Photographier un sujet", short: "Photo d’un sujet", onClick: onScan });
+            }
+            if (!isReader) {
+              actions.push({ key: "invite", icon: UserPlus, label: wording.invite, short: "Inviter", onClick: () => void invite() });
+            }
+            const cols = actions.length >= 4 ? "grid-cols-4" : actions.length === 3 ? "grid-cols-3" : "grid-cols-2";
+            return (
+              <div className={`grid ${cols} gap-2 sm:flex sm:flex-wrap sm:pt-1`}>
+                {actions.map(({ key, icon: Icon, label, short, onClick, primary }) => (
+                  <button
+                    key={key}
+                    onClick={onClick}
+                    aria-label={label}
+                    className={`flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center text-[11px] font-medium leading-tight transition sm:min-h-0 sm:flex-row sm:gap-2 sm:rounded-lg sm:px-3.5 sm:py-2 sm:text-xs ${
+                      primary
+                        ? "bg-emerald-400 font-semibold text-zinc-950 hover:bg-emerald-300"
+                        : "border border-zinc-700/70 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
+                    }`}
+                  >
+                    <Icon className="h-[18px] w-[18px] shrink-0 sm:h-3.5 sm:w-3.5" />
+                    <span className="sm:hidden">{short}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </section>
 

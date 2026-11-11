@@ -3,6 +3,7 @@ import { WikiPage, DriveFile } from "@/types/lekki";
 import { wiki } from "@/lib/api";
 import { toast } from "sonner";
 import { MarkdownContent } from "./MarkdownContent";
+import { MarkdownEditor } from "./MarkdownEditor";
 import {
   X,
   BookOpen,
@@ -19,6 +20,7 @@ import {
   ArrowUpRight,
   PanelRightClose,
   PanelRightOpen,
+  Columns2,
   CornerDownRight,
   LoaderCircle,
 } from "lucide-react";
@@ -69,7 +71,9 @@ export function WikiEditorModal({
   const [comment, setComment] = useState("");
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [selectedWikiIds, setSelectedWikiIds] = useState<string[]>([]);
-  const [previewMode, setPreviewMode] = useState(false);
+  // « split » : texte et aperçu côte à côte (grand écran seulement).
+  const [mode, setMode] = useState<"edit" | "preview" | "split">("edit");
+  const previewMode = mode === "preview";
   const [saving, setSaving] = useState(false);
   const [showOrganization, setShowOrganization] = useState(false);
   const [linkSearch, setLinkSearch] = useState("");
@@ -131,10 +135,24 @@ export function WikiEditorModal({
       setSelectedWikiIds([]);
     }
 
-    setPreviewMode(false);
+    setMode(typeof window !== "undefined" && window.innerWidth >= 1280 ? "split" : "edit");
     setShowOrganization(false);
+
+    // Brouillon gardé sur l'appareil (réseau coupé, fenêtre fermée par erreur) : on le propose.
+    const saved = readDraft(draftKeyFor(page, activeWorkspaceId));
+    const original = page?.content ?? null;
+    if (saved && saved.content !== original && (!page || saved.at > new Date(page.updated_at).getTime())) {
+      setContent(saved.content);
+      if (saved.title) setTitle(saved.title);
+      toast.info("Brouillon non enregistré récupéré.", {
+        action: original !== null
+          ? { label: "Annuler", onClick: () => { setContent(original); clearDraft(draftKeyFor(page, activeWorkspaceId)); } }
+          : undefined,
+      });
+    }
     setLinkSearch("");
     setActiveSourceTab("documents");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     open,
     page,
@@ -142,6 +160,16 @@ export function WikiEditorModal({
     defaultSection,
     initialKind,
   ]);
+
+  // Enregistre le brouillon pendant la frappe (toutes les secondes au plus).
+  const draftKey = draftKeyFor(page, activeWorkspaceId);
+  useEffect(() => {
+    if (!open) return;
+    const unchanged = page ? content === (page.content || "") && title === page.title : !content.trim();
+    if (unchanged) return;
+    const timer = window.setTimeout(() => writeDraft(draftKey, { title, content, at: Date.now() }), 1000);
+    return () => window.clearTimeout(timer);
+  }, [open, draftKey, title, content, page]);
 
   const finalTopic =
     topic === "Autre" ? customTopic.trim() : topic.trim();
@@ -235,6 +263,7 @@ export function WikiEditorModal({
         toast.success(`« ${result.title} » a été ajouté au Wiki`);
       }
 
+      clearDraft(draftKey);
       onSaved(result);
       onOpenChange(false);
     } catch {
@@ -304,7 +333,7 @@ export function WikiEditorModal({
           type="button"
           onClick={() => setMobileSourcesOpen(true)}
           aria-label={`Ouvrir les sources et relations (${selectedDocIds.length + selectedWikiIds.length} associées)`}
-          className="order-2 inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] lg:hidden"
+          className="order-2 ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] lg:hidden"
         >
           <Link2 className="h-4 w-4 text-emerald-400" />
           <span>Sources</span>
@@ -323,7 +352,7 @@ export function WikiEditorModal({
           className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#081018] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
         >
           {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">
+          <span>
             {saving
               ? "Publication..."
               : page
@@ -431,10 +460,10 @@ export function WikiEditorModal({
               <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#11151b] p-1">
                 <button
                   type="button"
-                  onClick={() => setPreviewMode(false)}
-                  aria-pressed={!previewMode}
+                  onClick={() => setMode("edit")}
+                  aria-pressed={mode === "edit"}
                   className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
-                    !previewMode
+                    mode === "edit"
                       ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
                       : "text-zinc-500 hover:text-zinc-300"
                   }`}
@@ -445,7 +474,7 @@ export function WikiEditorModal({
 
                 <button
                   type="button"
-                  onClick={() => setPreviewMode(true)}
+                  onClick={() => setMode("preview")}
                   aria-pressed={previewMode}
                   className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
                     previewMode
@@ -456,37 +485,60 @@ export function WikiEditorModal({
                   <Eye className="h-3 w-3" />
                   Aperçu
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMode("split")}
+                  aria-pressed={mode === "split"}
+                  className={`hidden min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition lg:flex ${
+                    mode === "split"
+                      ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  <Columns2 className="h-3 w-3" />
+                  Côte à côte
+                </button>
               </div>
             </div>
 
             {/* EDITING AREA */}
-            {previewMode ? (
-              <div className="rounded-2xl border border-white/[0.07] bg-[#101319] px-3 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
-                <h1 className="mb-4 text-xl font-semibold tracking-tight text-zinc-100 sm:mb-8 sm:text-2xl">
-                  {title || "Sans titre"}
-                </h1>
-
-                {content ? (
-                  <MarkdownContent content={content} className="text-sm leading-7" />
-                ) : (
-                  <div className="text-sm italic text-zinc-600">
-                    <span className="italic text-zinc-600">
-                      Aucun contenu pour le moment.
-                    </span>
+            {(() => {
+              const preview = (
+                <div className="rounded-2xl border border-white/[0.07] bg-[#101319] px-4 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
+                  <h1 className="mb-4 text-xl font-semibold tracking-tight text-zinc-100 sm:mb-6 sm:text-2xl">
+                    {title || "Sans titre"}
+                  </h1>
+                  {content.trim() ? (
+                    <MarkdownContent content={content} title={title} className="text-sm leading-7" />
+                  ) : (
+                    <p className="text-sm italic text-zinc-600">Aucun contenu pour le moment.</p>
+                  )}
+                </div>
+              );
+              const editor = (
+                <MarkdownEditor
+                  value={content}
+                  onChange={setContent}
+                  onSave={() => (document.getElementById("wiki-editor-form") as HTMLFormElement | null)?.requestSubmit()}
+                  placeholder={"# L'essentiel\n\nRésume la notion…\n\n## Définitions et formules\n\n$$f_e \\ge 2B$$\n\n## Méthode"}
+                />
+              );
+              if (mode === "preview") return preview;
+              if (mode === "split") {
+                return (
+                  <div className="grid items-start gap-4 lg:grid-cols-2">
+                    {editor}
+                    <div className="lg:sticky lg:top-4">{preview}</div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <textarea
-                value={content}
-                onChange={(event) => setContent(event.target.value)}
-                placeholder={
-                  "# L'essentiel\n\nRésume la notion…\n\n## Définitions et formules\n\n## Méthode\n\n## Exemple corrigé"
-                }
-                spellCheck
-                className="min-h-[45dvh] w-full resize-y rounded-2xl border border-white/[0.07] bg-[#101319] p-4 font-mono text-[13px] leading-7 text-zinc-300 outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10 sm:min-h-[55vh] sm:rounded-xl sm:p-7"
-              />
-            )}
+                );
+              }
+              return editor;
+            })()}
+
+            <p className="mt-2 hidden text-[11px] text-zinc-600 sm:block">
+              Markdown : **gras**, _italique_, ## titre, - liste, $formule$, $$formule centrée$$. Ctrl+S pour enregistrer.
+            </p>
 
             {/* EDIT HISTORY */}
             {page && (
@@ -794,4 +846,42 @@ export function WikiEditorModal({
       </form>
     </div>
   );
+}
+
+// ── Brouillons gardés sur l'appareil ─────────────────────────────────────────
+interface Draft {
+  title: string;
+  content: string;
+  at: number;
+}
+
+function draftKeyFor(page: WikiPage | null | undefined, workspaceId: string | null | undefined): string {
+  return `lekki_draft_${page ? page.id : `new_${workspaceId ?? "perso"}`}`;
+}
+
+function readDraft(key: string): Draft | null {
+  try {
+    const raw = localStorage.getItem(key);
+    const draft = raw ? (JSON.parse(raw) as Draft) : null;
+    // Au-delà de 14 jours, un brouillon oublié ne doit plus réapparaître.
+    return draft && Date.now() - draft.at < 14 * 86400000 ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(key: string, draft: Draft): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(draft));
+  } catch {
+    // stockage plein ou indisponible : tant pis pour le brouillon
+  }
+}
+
+function clearDraft(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // rien à faire
+  }
 }

@@ -210,18 +210,43 @@ body {
   border-top: 1px solid rgb(255 255 255 / 10%);
 }
 
-.wiki-markdown table {
-  display: block;
-  width: 100%;
+/* Tableau : le cadre arrondi est porté par l'enveloppe, qui défile seule sur téléphone. */
+.wiki-markdown div[data-streamdown="table-wrapper"] {
   margin: 1.25rem 0;
   overflow-x: auto;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Streamdown met le même attribut sur le <table> : pas de seconde marge/bordure. */
+.wiki-markdown table[data-streamdown="table-wrapper"] {
+  margin: 0;
+  border-radius: 0;
+}
+.wiki-markdown div[data-streamdown="table-wrapper"] > * + * {
+  margin-top: 0;
+}
+
+.wiki-markdown table {
+  width: 100%;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
   border-collapse: collapse;
+  border-style: hidden; /* pas de double bordure avec l'enveloppe */
   font-size: 0.92em;
+}
+
+.wiki-markdown thead,
+.wiki-markdown tbody,
+.wiki-markdown tr {
+  border-color: rgb(255 255 255 / 10%) !important;
 }
 
 .wiki-markdown th,
 .wiki-markdown td {
-  min-width: 7rem;
+  min-width: 6rem;
   border: 1px solid rgb(255 255 255 / 10%);
   padding: 0.6rem 0.75rem;
   text-align: left;
@@ -232,6 +257,18 @@ body {
   background: rgb(255 255 255 / 4%);
   color: #f4f4f5;
   font-weight: 600;
+}
+
+/* Formules : en bloc, centrées, défilement horizontal si l'écran est étroit */
+.wiki-markdown .katex-display {
+  margin: 1.1rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+.wiki-markdown .katex {
+  font-size: 1.08em;
 }
 
 .wiki-markdown img {
