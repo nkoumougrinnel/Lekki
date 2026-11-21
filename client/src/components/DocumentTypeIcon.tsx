@@ -15,8 +15,8 @@ export function DocumentTypeIcon({ extension, className = "h-5 w-5" }: DocumentT
     pdf: { color: "#E5484D", label: "PDF", fontSize: 9 },
     docx: { color: "#3B82F6", label: "W", fontSize: 17 },
     pptx: { color: "#F97316", label: "P", fontSize: 17 },
-    md: { color: "#10B981", label: "MD", fontSize: 12 },
-    txt: { color: "#64748B", label: "TXT", fontSize: 9 },
+    md: { color: "#3E8F6A", label: "MD", fontSize: 12 },
+    txt: { color: "#6C8578", label: "TXT", fontSize: 9 },
   };
   const mark = fileTypeMarks[normalizedExtension];
 
@@ -40,5 +40,5 @@ export function DocumentTypeIcon({ extension, className = "h-5 w-5" }: DocumentT
     );
   }
 
-  return <FileText aria-hidden="true" className={`${className} shrink-0 text-zinc-400`} />;
+  return <FileText aria-hidden="true" className={`${className} shrink-0 text-muted`} />;
 }

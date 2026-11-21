@@ -157,18 +157,18 @@ export function DocumentViewerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="document-viewer-title"
-        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-[#1E232E] shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl sm:border sm:border-white/[0.09]"
+        className="flex h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-150 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl sm:border sm:border-[#E7E4D9]"
       >
         {/* En-tête fixe */}
-        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-3.5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+        <header className="flex shrink-0 items-center justify-between border-b border-[#E7E4D9] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:py-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-subtle">
             Document
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label="Fermer la fiche documentaire"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted transition hover:bg-[#F8F7F2] hover:text-[#16241D]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -178,17 +178,17 @@ export function DocumentViewerModal({
           {/* Changement d’espace uniquement si l’espace est connu */}
           {isDifferentWorkspace && fileWorkspace && (
             <div className="flex flex-col gap-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-start gap-2.5 text-sm text-zinc-300">
-                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+              <div className="flex min-w-0 items-start gap-2.5 text-sm text-body">
+                <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
                 <span>
                   Ce document appartient à l’espace{" "}
-                  <strong className="font-medium text-amber-200">{fileWorkspace.name}</strong>.
+                  <strong className="font-medium text-amber-700">{fileWorkspace.name}</strong>.
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => file.workspace_id && onSwitchWorkspace(file.workspace_id)}
-                className="shrink-0 self-start text-xs font-medium text-amber-200 transition hover:text-amber-100 sm:self-auto"
+                className="shrink-0 self-start text-xs font-medium text-amber-700 transition hover:text-amber-700 sm:self-auto"
               >
                 Basculer vers cet espace <span aria-hidden="true">→</span>
               </button>
@@ -198,19 +198,19 @@ export function DocumentViewerModal({
           {/* Identité du document : volontairement compacte */}
           <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/[0.045] ring-1 ring-white/[0.07] sm:h-14 sm:w-14">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F8F7F2] ring-1 ring-black/[0.07] sm:h-14 sm:w-14">
               <DocumentTypeIcon extension={file.extension} className="h-7 w-7" />
             </div>
             <div className="min-w-0 flex-1">
               <h2
                 id="document-viewer-title"
                 title={file.name}
-                className="break-words text-base font-semibold leading-snug text-zinc-100 sm:text-lg"
+                className="break-words text-base font-semibold leading-snug text-heading sm:text-lg"
               >
                 {prettyName(file.name)}
               </h2>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
-                <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 font-semibold uppercase tracking-wide text-zinc-300">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-subtle">
+                <span className="rounded-md bg-[#F8F7F2] px-1.5 py-0.5 font-semibold uppercase tracking-wide text-body">
                   {extension || "Fichier"}
                 </span>
                 {isPdf && totalPages != null && <span>{totalPages} {totalPages === 1 ? "page" : "pages"}</span>}
@@ -249,7 +249,7 @@ export function DocumentViewerModal({
               href={fileUrl(`/drive/files/${file.id}/preview`)}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 sm:order-first sm:min-h-0 sm:text-xs ${onRevise ? "" : "col-span-2"}`}
+              className={`flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-on-primary transition hover:bg-emerald-300 sm:order-first sm:min-h-0 sm:text-xs ${onRevise ? "" : "col-span-2"}`}
               title="Lire le document en entier dans un nouvel onglet"
             >
               <BookOpenText className="h-4 w-4" />
@@ -260,7 +260,7 @@ export function DocumentViewerModal({
               onClick={() => void shareDocument(file)}
               aria-label="Partager"
               title="Partager le lien (WhatsApp, Telegram…)"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white sm:min-h-0"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7E4D9] px-3 py-2 text-xs font-medium text-body transition hover:border-[#E7E4D9] hover:bg-[#F8F7F2] hover:text-[#16241D] sm:min-h-0"
             >
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">Partager</span>
@@ -269,7 +269,7 @@ export function DocumentViewerModal({
               type="button"
               onClick={handleDownload}
               aria-label="Télécharger"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-white/[0.09] px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-white sm:min-h-0"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#E7E4D9] px-3 py-2 text-xs font-medium text-body transition hover:border-[#E7E4D9] hover:bg-[#F8F7F2] hover:text-[#16241D] sm:min-h-0"
               title="Télécharger le document original"
             >
               <Download className="h-4 w-4" />
@@ -280,12 +280,12 @@ export function DocumentViewerModal({
 
           {/* Hors ligne : utile avant un examen, quand le réseau ou les données manquent */}
           {offline !== "unknown" && (
-            <div className="-mt-2 flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5">
-              <span className="flex min-w-0 items-center gap-2 text-xs text-zinc-400">
+            <div className="-mt-2 flex items-center justify-between gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] px-3.5 py-2.5">
+              <span className="flex min-w-0 items-center gap-2 text-xs text-muted">
                 {offline === "yes" ? (
                   <><CloudCheck className="h-4 w-4 shrink-0 text-emerald-400" /> Disponible hors ligne sur cet appareil</>
                 ) : (
-                  <><CloudDownload className="h-4 w-4 shrink-0 text-zinc-500" /> Lisible sans réseau une fois gardé</>
+                  <><CloudDownload className="h-4 w-4 shrink-0 text-subtle" /> Lisible sans réseau une fois gardé</>
                 )}
               </span>
               {offline !== "yes" && (
@@ -305,12 +305,12 @@ export function DocumentViewerModal({
           {/* L'aperçu agrandit la même vignette que celle de la liste */}
           <section aria-labelledby="document-preview-heading">
             <div className="mb-3 flex items-center justify-between">
-              <h3 id="document-preview-heading" className="text-sm font-medium text-zinc-200">
+              <h3 id="document-preview-heading" className="text-sm font-medium text-strong">
                 Aperçu du document
               </h3>
-              <span className="text-[11px] text-zinc-600">Première page</span>
+              <span className="text-[11px] text-faint">Première page</span>
             </div>
-            <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-xl bg-[#242A35] p-3 sm:min-h-[340px] sm:p-5">
+            <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-xl bg-[#FFFFFF] p-3 sm:min-h-[340px] sm:p-5">
               {!thumbnailFailed ? (
                 <img
                   key={file.id}
@@ -322,17 +322,17 @@ export function DocumentViewerModal({
                 />
               ) : (
                 <div className="flex max-w-sm flex-col items-center px-5 py-10 text-center">
-                  <div className="mb-3 rounded-xl bg-white/[0.04] p-3 text-zinc-500">
+                  <div className="mb-3 rounded-xl bg-[#F8F7F2] p-3 text-subtle">
                     <ImageOff className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-medium text-zinc-300">Aperçu indisponible</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                  <p className="text-sm font-medium text-body">Aperçu indisponible</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-subtle">
                     La vignette de ce document n'a pas pu être chargée. Tu peux quand même télécharger le fichier.
                   </p>
                   <button
                     type="button"
                     onClick={() => setThumbnailFailed(false)}
-                    className="mt-3 text-xs font-medium text-sky-300 transition hover:text-sky-200"
+                    className="mt-3 text-xs font-medium text-sky-700 transition hover:text-sky-700"
                   >
                     Réessayer
                   </button>
@@ -340,7 +340,7 @@ export function DocumentViewerModal({
               )}
             </div>
             {isOfficeDocument && (
-              <p className="mt-2 text-[11px] text-zinc-600">
+              <p className="mt-2 text-[11px] text-faint">
                 Aperçu de la première {extension === "pptx" ? "diapositive" : "page"} · la mise en page peut différer du document original.
               </p>
             )}
@@ -351,11 +351,11 @@ export function DocumentViewerModal({
             <section aria-labelledby="document-structure-heading">
               <div className="mb-2.5 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Compass className="h-4 w-4 shrink-0 text-sky-300" />
-                  <h3 id="document-structure-heading" className="text-sm font-medium text-zinc-200">
+                  <Compass className="h-4 w-4 shrink-0 text-sky-700" />
+                  <h3 id="document-structure-heading" className="text-sm font-medium text-strong">
                     Structure détectée
                   </h3>
-                  <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500">
+                  <span className="rounded-md bg-[#F8F7F2] px-1.5 py-0.5 text-[10px] text-subtle">
                     {chapters.length}
                   </span>
                 </div>
@@ -363,30 +363,30 @@ export function DocumentViewerModal({
                   <button
                     type="button"
                     onClick={() => setShowAllChapters((current) => !current)}
-                    className="inline-flex shrink-0 items-center gap-1 text-xs text-zinc-400 transition hover:text-zinc-200"
+                    className="inline-flex shrink-0 items-center gap-1 text-xs text-muted transition hover:text-strong"
                   >
                     {showAllChapters ? "Réduire" : "Tout afficher"}
                     {showAllChapters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
                 )}
               </div>
-              <div className="overflow-hidden rounded-xl border border-white/[0.07] divide-y divide-white/[0.055]">
+              <div className="overflow-hidden rounded-xl border border-[#E7E4D9] divide-y divide-[#E7E4D9]">
                 {visibleChapters.map((chapter, index) => (
                   <div
                     key={`${chapter.number}-${chapter.title}-${index}`}
-                    className="flex min-w-0 items-center gap-3 px-3 py-3 transition hover:bg-white/[0.025] sm:px-4"
+                    className="flex min-w-0 items-center gap-3 px-3 py-3 transition hover:bg-[#F8F7F2] sm:px-4"
                   >
-                    <span className="w-7 shrink-0 text-[11px] font-medium tabular-nums text-zinc-500">
+                    <span className="w-7 shrink-0 text-[11px] font-medium tabular-nums text-subtle">
                       {String(chapter.number ?? index + 1).padStart(2, "0")}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p title={chapter.title} className="truncate text-xs font-medium text-zinc-200 sm:text-sm">
+                      <p title={chapter.title} className="truncate text-xs font-medium text-strong sm:text-sm">
                         {chapter.title}
                       </p>
                       {(chapter.subtopics?.length ?? 0) > 0 && (
                         <p
                           title={chapter.subtopics?.join(" · ") ?? ""}
-                          className="mt-1 truncate text-[11px] text-zinc-600"
+                          className="mt-1 truncate text-[11px] text-faint"
                         >
                           {(chapter.subtopics ?? []).slice(0, 3).join(" · ")}
                           {(chapter.subtopics ?? []).length > 3 ? " …" : ""}
@@ -394,7 +394,7 @@ export function DocumentViewerModal({
                       )}
                     </div>
                     {(chapter.location || chapter.page != null) && (
-                      <span className="shrink-0 rounded-md bg-white/[0.045] px-2 py-1 text-[10px] tabular-nums text-zinc-500">
+                      <span className="shrink-0 rounded-md bg-[#F8F7F2] px-2 py-1 text-[10px] tabular-nums text-subtle">
                         {chapter.location || `p. ${chapter.page}`}
                       </span>
                     )}
@@ -409,12 +409,12 @@ export function DocumentViewerModal({
             <section aria-labelledby="associated-wiki-heading">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-sky-300" />
-                  <h3 id="associated-wiki-heading" className="text-sm font-medium text-zinc-200">
+                  <BookOpen className="h-4 w-4 text-sky-700" />
+                  <h3 id="associated-wiki-heading" className="text-sm font-medium text-strong">
                     Fiches Wiki associées
                   </h3>
                   {linkedWikiList.length > 0 && (
-                    <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500">
+                    <span className="rounded-md bg-[#F8F7F2] px-1.5 py-0.5 text-[10px] text-subtle">
                       {linkedWikiList.length}
                     </span>
                   )}
@@ -424,7 +424,7 @@ export function DocumentViewerModal({
                   onClick={handleCreateWiki}
                   disabled={!canUseWiki}
                   title={isDifferentWorkspace ? "Passe d’abord dans l’espace du document" : undefined}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-sky-700 transition hover:bg-sky-300/[0.08] hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <BookPlus className="h-3.5 w-3.5" />
                   Créer une fiche
@@ -432,7 +432,7 @@ export function DocumentViewerModal({
               </div>
 
               {linkedWikiList.length > 0 ? (
-                <div className="overflow-hidden rounded-xl border border-white/[0.07] divide-y divide-white/[0.055]">
+                <div className="overflow-hidden rounded-xl border border-[#E7E4D9] divide-y divide-[#E7E4D9]">
                   {linkedWikiList.map((wikiPage) => (
                     <button
                       key={wikiPage.id}
@@ -441,32 +441,32 @@ export function DocumentViewerModal({
                         onOpenChange(false);
                         onOpenWikiPage?.(wikiPage.id);
                       }}
-                      className="group flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-white/[0.035] sm:px-4"
+                      className="group flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-[#F8F7F2] sm:px-4"
                     >
                       <div className="min-w-0 flex-1">
-                        <p title={wikiPage.title} className="truncate text-sm font-medium text-zinc-200 transition group-hover:text-sky-200">
+                        <p title={wikiPage.title} className="truncate text-sm font-medium text-strong transition group-hover:text-sky-700">
                           {wikiPage.title}
                         </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500">
-                          <span className={wikiPage.status === "verified" ? "text-sky-300" : "text-zinc-500"}>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-subtle">
+                          <span className={wikiPage.status === "verified" ? "text-sky-700" : "text-subtle"}>
                             {wikiPage.status === "verified" ? "Vérifiée" : "Communautaire"}
                           </span>
                           <span aria-hidden="true">·</span>
                           <span>{wikiPage.topic || "Général"}</span>
                         </div>
                       </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-sky-300" />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-sky-700" />
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-white/[0.09] px-4 py-5 text-center">
-                  <p className="text-xs text-zinc-500">Aucune fiche Wiki n'est encore associée à ce document.</p>
+                <div className="rounded-xl border border-dashed border-[#E7E4D9] px-4 py-5 text-center">
+                  <p className="text-xs text-subtle">Aucune fiche Wiki n'est encore associée à ce document.</p>
                   <button
                     type="button"
                     onClick={handleCreateWiki}
                     disabled={!canUseWiki}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-sky-300 transition hover:bg-sky-300/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-sky-700 transition hover:bg-sky-300/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <BookPlus className="h-3.5 w-3.5" />
                     Créer la première fiche

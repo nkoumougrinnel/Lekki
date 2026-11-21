@@ -142,7 +142,7 @@ export function WikiHistoryModal({
   return (
     <div
       id="wiki-history-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-0 text-zinc-100 backdrop-blur-sm lg:bottom-0 lg:left-64 lg:right-0 lg:top-16"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-0 text-heading backdrop-blur-sm lg:bottom-0 lg:left-64 lg:right-0 lg:top-16"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !restoring) {
           onOpenChange(false);
@@ -154,10 +154,10 @@ export function WikiHistoryModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="wiki-history-title"
-        className="flex h-full w-full flex-col overflow-hidden bg-[#191F28] sm:rounded-2xl sm:border sm:border-white/[0.08] sm:shadow-2xl lg:rounded-none lg:border-0"
+        className="flex h-full w-full flex-col overflow-hidden bg-[#F4F3ED] sm:rounded-2xl sm:border sm:border-[#E7E4D9] sm:shadow-2xl lg:rounded-none lg:border-0"
       >
         {/* HEADER */}
-        <header className="flex h-[68px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#1D222D] px-4 sm:px-6">
+        <header className="flex h-[68px] shrink-0 items-center gap-3 border-b border-[#E7E4D9] bg-white px-4 sm:px-6">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/[0.07]">
             <History className="h-[17px] w-[17px] text-emerald-400" />
           </div>
@@ -165,14 +165,14 @@ export function WikiHistoryModal({
           <div className="min-w-0 flex-1">
             <h2
               id="wiki-history-title"
-              className="text-sm font-semibold text-zinc-100"
+              className="text-sm font-semibold text-heading"
             >
               Historique des versions
             </h2>
 
-            <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+            <p className="mt-0.5 truncate text-[11px] text-subtle">
               {page.title}
-              <span className="mx-1.5 text-zinc-700">/</span>
+              <span className="mx-1.5 text-subtle">/</span>
               {getPageVersions(page).length} révisions
             </p>
           </div>
@@ -182,7 +182,7 @@ export function WikiHistoryModal({
             onClick={() => !restoring && onOpenChange(false)}
             disabled={restoring}
             aria-label="Fermer l'historique"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-subtle transition hover:bg-[#F8F7F2] hover:text-[#16241D] disabled:opacity-40"
           >
             <X className="h-[18px] w-[18px]" />
           </button>
@@ -191,11 +191,11 @@ export function WikiHistoryModal({
         {/* MAIN LAYOUT */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
           {/* VERSION TIMELINE */}
-          <aside className="flex max-h-[38%] w-full shrink-0 flex-col border-b border-white/[0.07] bg-[#1D222D] lg:max-h-none lg:w-[310px] lg:border-b-0 lg:border-r xl:w-[340px]">
+          <aside className="flex max-h-[38%] w-full shrink-0 flex-col border-b border-[#E7E4D9] bg-white lg:max-h-none lg:w-[310px] lg:border-b-0 lg:border-r xl:w-[340px]">
             {/* Search */}
             <div className="shrink-0 px-4 pb-3 pt-4 sm:px-5">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
 
                 <input
                   value={searchQuery}
@@ -204,18 +204,18 @@ export function WikiHistoryModal({
                   }
                   placeholder="Rechercher une révision..."
                   aria-label="Rechercher une révision"
-                  className="w-full rounded-lg border border-white/[0.07] bg-[#191F28] py-2.5 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40"
+                  className="w-full rounded-lg border border-[#E7E4D9] bg-[#F4F3ED] py-2.5 pl-9 pr-3 text-xs text-strong outline-none transition-colors placeholder:text-faint focus:border-emerald-500/40"
                 />
               </div>
             </div>
 
             {/* Timeline header */}
             <div className="flex shrink-0 items-center justify-between px-5 pb-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
                 Chronologie
               </span>
 
-              <span className="rounded-md bg-white/[0.05] px-2 py-1 font-mono text-[10px] text-zinc-400">
+              <span className="rounded-md bg-[#F8F7F2] px-2 py-1 font-mono text-[10px] text-muted">
                 {versions.length}
               </span>
             </div>
@@ -239,13 +239,13 @@ export function WikiHistoryModal({
                         className={`group relative flex w-full gap-3 rounded-xl border p-3 text-left transition-colors ${
                           selected
                             ? "border-emerald-400/25 bg-emerald-400/[0.07]"
-                            : "border-transparent hover:bg-white/[0.035]"
+                            : "border-transparent hover:bg-[#F8F7F2]"
                         }`}
                       >
                         {/* Timeline indicator */}
                         <div className="relative flex w-5 shrink-0 justify-center pt-0.5">
                           {index < versions.length - 1 && (
-                            <div className="absolute bottom-[-24px] top-5 w-px bg-white/[0.07]" />
+                            <div className="absolute bottom-[-24px] top-5 w-px bg-[#F8F7F2]" />
                           )}
 
                           <div
@@ -254,7 +254,7 @@ export function WikiHistoryModal({
                                 ? "border-emerald-400/50 bg-emerald-400/15"
                                 : current
                                   ? "border-emerald-400/30 bg-emerald-400/[0.07]"
-                                  : "border-white/[0.10] bg-[#1D222D]"
+                                  : "border-[#E7E4D9] bg-white"
                             }`}
                           >
                             {current ? (
@@ -264,7 +264,7 @@ export function WikiHistoryModal({
                                 className={`h-1.5 w-1.5 rounded-full ${
                                   selected
                                     ? "bg-emerald-400"
-                                    : "bg-zinc-600"
+                                    : "bg-[#CFCBBB]"
                                 }`}
                               />
                             )}
@@ -278,7 +278,7 @@ export function WikiHistoryModal({
                               className={`font-mono text-xs font-semibold ${
                                 selected
                                   ? "text-emerald-300"
-                                  : "text-zinc-200"
+                                  : "text-strong"
                               }`}
                             >
                               v{version.version}
@@ -291,19 +291,19 @@ export function WikiHistoryModal({
                             )}
                           </div>
 
-                          <p className="mt-2 line-clamp-2 break-words text-xs leading-relaxed text-zinc-300">
+                          <p className="mt-2 line-clamp-2 break-words text-xs leading-relaxed text-body">
                             {version.comment ||
                               "Modification du contenu"}
                           </p>
 
-                          <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[10px] text-zinc-500">
+                          <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[10px] text-subtle">
                             <UserRound className="h-3 w-3 shrink-0" />
 
                             <span className="min-w-0 truncate">
                               {version.author_name || "Auteur inconnu"}
                             </span>
 
-                            <span className="shrink-0 text-zinc-700">
+                            <span className="shrink-0 text-subtle">
                               ·
                             </span>
 
@@ -322,15 +322,15 @@ export function WikiHistoryModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center px-5 py-10 text-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.035]">
-                    <History className="h-5 w-5 text-zinc-600" />
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F8F7F2]">
+                    <History className="h-5 w-5 text-faint" />
                   </div>
 
-                  <p className="text-xs font-medium text-zinc-400">
+                  <p className="text-xs font-medium text-muted">
                     Aucune révision trouvée
                   </p>
 
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-600">
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                     Essaie un autre mot.
                   </p>
                 </div>
@@ -338,26 +338,26 @@ export function WikiHistoryModal({
             </div>
 
             {/* Sidebar footer */}
-            <div className="hidden shrink-0 border-t border-white/[0.07] px-5 py-3 lg:block">
-              <p className="text-[10px] text-zinc-600">
+            <div className="hidden shrink-0 border-t border-[#E7E4D9] px-5 py-3 lg:block">
+              <p className="text-[10px] text-faint">
                 Choisis une version pour voir son contenu.
               </p>
             </div>
           </aside>
 
           {/* VERSION CONTENT */}
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#191F28]">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#F4F3ED]">
             {selectedVersion ? (
               <>
                 {/* Preview header */}
-                <div className="flex shrink-0 flex-col gap-4 border-b border-white/[0.07] bg-[#1D222D] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                <div className="flex shrink-0 flex-col gap-4 border-b border-[#E7E4D9] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
-                        <FileText className="h-3.5 w-3.5 text-zinc-400" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#F8F7F2]">
+                        <FileText className="h-3.5 w-3.5 text-muted" />
                       </div>
 
-                      <h3 className="text-sm font-semibold text-zinc-100">
+                      <h3 className="text-sm font-semibold text-heading">
                         Version v{selectedVersion.version}
                       </h3>
 
@@ -369,7 +369,7 @@ export function WikiHistoryModal({
                       )}
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-subtle">
                       <span className="inline-flex items-center gap-1.5">
                         <UserRound className="h-3 w-3" />
                         {selectedVersion.author_name || "Auteur inconnu"}
@@ -390,7 +390,7 @@ export function WikiHistoryModal({
                       type="button"
                       onClick={() => handleRestore(selectedVersion)}
                       disabled={restoring}
-                      className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2.5 text-xs font-semibold text-[#192128] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3.5 py-2.5 text-xs font-semibold text-[#F1F0E9] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <RotateCcw
                         className={`h-3.5 w-3.5 ${
@@ -406,15 +406,15 @@ export function WikiHistoryModal({
                 </div>
 
                 {/* Version metadata */}
-                <div className="flex shrink-0 items-start gap-3 border-b border-white/[0.05] px-5 py-3 sm:px-7">
-                  <GitBranch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600" />
+                <div className="flex shrink-0 items-start gap-3 border-b border-[#E7E4D9] px-5 py-3 sm:px-7">
+                  <GitBranch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-faint" />
 
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-600">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
                       Commentaire de révision
                     </p>
 
-                    <p className="mt-1 break-words text-xs leading-relaxed text-zinc-400">
+                    <p className="mt-1 break-words text-xs leading-relaxed text-muted">
                       {selectedVersion.comment ||
                         "Aucun commentaire pour cette révision."}
                     </p>
@@ -424,28 +424,28 @@ export function WikiHistoryModal({
                 {/* Document body */}
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   <div className="mx-auto w-full max-w-[900px] px-5 py-7 sm:px-8 sm:py-10">
-                    <div className="mb-8 border-b border-white/[0.06] pb-5">
-                      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-600">
+                    <div className="mb-8 border-b border-[#E7E4D9] pb-5">
+                      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-faint">
                         Aperçu du document
                       </p>
 
-                      <h1 className="break-words text-xl font-semibold tracking-tight text-zinc-100 sm:text-2xl">
+                      <h1 className="break-words text-xl font-semibold tracking-tight text-heading sm:text-2xl">
                         {page.title}
                       </h1>
                     </div>
 
-                    <article className="whitespace-pre-wrap break-words font-mono text-[12px] leading-7 text-zinc-300 sm:text-[13px]">
+                    <article className="whitespace-pre-wrap break-words font-mono text-[12px] leading-7 text-body sm:text-[13px]">
                       {selectedVersion.content || (
-                        <span className="italic text-zinc-600">
+                        <span className="italic text-faint">
                           Cette version ne contient aucun texte.
                         </span>
                       )}
                     </article>
 
-                    <div className="mt-10 flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600" />
+                    <div className="mt-10 flex items-start gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-4">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-faint" />
 
-                      <p className="text-[11px] leading-relaxed text-zinc-500">
+                      <p className="text-[11px] leading-relaxed text-subtle">
                         Tu consultes une version historique en lecture
                         seule. Son contenu ne sera modifié que si tu
                         décides de la restaurer.
@@ -455,15 +455,15 @@ export function WikiHistoryModal({
                 </div>
 
                 {/* Bottom status */}
-                <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-[#1D222D] px-5 py-3 sm:px-7">
-                  <span className="text-[10px] text-zinc-600">
+                <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E7E4D9] bg-white px-5 py-3 sm:px-7">
+                  <span className="text-[10px] text-faint">
                     {isCurrentVersion(selectedVersion)
                       ? "Tu consultes la dernière version enregistrée."
                       : `Révision historique · v${selectedVersion.version}`}
                   </span>
 
                   {!isCurrentVersion(selectedVersion) && (
-                    <span className="text-[10px] text-zinc-500">
+                    <span className="text-[10px] text-subtle">
                       Lecture seule
                     </span>
                   )}
@@ -471,15 +471,15 @@ export function WikiHistoryModal({
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.025]">
-                  <History className="h-6 w-6 text-zinc-600" />
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#E7E4D9] bg-[#F8F7F2]">
+                  <History className="h-6 w-6 text-faint" />
                 </div>
 
-                <h3 className="text-sm font-medium text-zinc-300">
+                <h3 className="text-sm font-medium text-body">
                   Aucun historique disponible
                 </h3>
 
-                <p className="mt-2 max-w-xs text-xs leading-relaxed text-zinc-600">
+                <p className="mt-2 max-w-xs text-xs leading-relaxed text-faint">
                   Les révisions enregistrées apparaîtront ici et pourront
                   être consultées individuellement.
                 </p>

@@ -1,3 +1,4 @@
+import { DEMO_ENABLED, handleDemoRequest } from "@/lib/demo";
 import {
   DriveFolder,
   DriveFile,
@@ -93,6 +94,15 @@ function parseServerJson(text: string): unknown {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // Mode démo (voir lib/demo.ts) : aucune requête ne part vers le backend.
+  if (DEMO_ENABLED) {
+    const demo = handleDemoRequest(path, options);
+    if (demo.handled) {
+      await new Promise((resolve) => setTimeout(resolve, 140));
+      return demo.data as T;
+    }
+  }
+
   const headers = new Headers(options.headers);
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);

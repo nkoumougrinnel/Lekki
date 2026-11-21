@@ -374,7 +374,7 @@ function LekkiMain() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#1B1F25] font-sans text-zinc-100">
+    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#FBFAF6] font-sans text-heading">
       {/* Top Application Header */}
       <Header
         onSelectDocument={handleOpenDocFromId}
@@ -406,7 +406,7 @@ function LekkiMain() {
         />
 
         {/* Dynamic Center Stage View */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#1B212A] overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#F8F7F4] overflow-hidden">
           {currentView === "home" && (
             <HomeOverview
               files={files}
@@ -750,7 +750,7 @@ function AuthGate() {
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="dark">
+    <ThemeProvider defaultTheme="light">
       <AuthProvider>
         <WorkspaceProvider>
           <AuthGate />

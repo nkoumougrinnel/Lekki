@@ -5,11 +5,13 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { AuthField, AuthLayout, AuthSubmit } from "@/components/auth/AuthLayout";
+import { isDemoEnabled } from "@/lib/demo";
 
 export function LoginView() {
   const { login } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const demo = isDemoEnabled();
+  const [username, setUsername] = useState(demo ? "demo" : "");
+  const [password, setPassword] = useState(demo ? "lekki" : "");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +54,7 @@ export function LoginView() {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300"
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#8A968E] hover:text-[#16241D]"
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -65,9 +67,16 @@ export function LoginView() {
         </AuthSubmit>
       </form>
 
-      <p className="mt-6 text-sm text-zinc-500 text-center">
+      {demo && (
+        <div className="mt-5 rounded-xl border border-[#E5E9DC] bg-[#F4F6EE] px-4 py-3 text-[13px] leading-relaxed text-[#4A5A50]">
+          <span className="font-semibold text-[#16241D]">Mode démo.</span> N’importe quel
+          identifiant fonctionne — les données sont fictives et aucun serveur n’est appelé.
+        </div>
+      )}
+
+      <p className="mt-6 text-center text-sm text-[#5C6B62]">
         Pas encore de compte ?{" "}
-        <Link href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium">
+        <Link href="/register" className="font-medium text-[#2E7D5B] hover:text-[#246147]">
           Créer un compte
         </Link>
       </p>

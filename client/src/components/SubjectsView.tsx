@@ -79,8 +79,8 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
         <p className="text-xs font-medium text-emerald-300/90">
           {program.school} · {academicLabel(library.academic)} · {program.source}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Matières</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold tracking-tight text-heading">Matières</h1>
+        <p className="text-sm text-muted">
           Chaque document est rangé sous sa matière d’après son nom ou son dossier.
         </p>
       </header>
@@ -98,8 +98,8 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
                 semester === value
                   ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200"
                   : ofPromo
-                    ? "border-zinc-700 text-zinc-200 hover:bg-zinc-800"
-                    : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                    ? "border-line-strong text-strong hover:bg-[#EFEEE7]"
+                    : "border-line text-subtle hover:text-body"
               }`}
             >
               S{value}
@@ -114,7 +114,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
           onClick={() => void createFolders()}
           disabled={creatingFolders}
           title={`Crée « Semestre ${semester} » avec un dossier par matière (COURS, TD, CC, SUJETS)`}
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-line-strong px-3 py-2 text-xs font-medium text-strong transition hover:bg-[#EFEEE7] disabled:opacity-50"
         >
           {creatingFolders ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <FolderTree className="h-3.5 w-3.5 text-emerald-400" />}
           Créer les dossiers du S{semester}
@@ -125,9 +125,9 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
       <div className="space-y-6">
         {ues.map((ue) => (
           <section key={ue.code} className="space-y-2.5">
-            <h2 className="flex flex-wrap items-baseline gap-x-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              <span className="text-zinc-200">{ue.code}</span>
-              <span className="font-normal normal-case tracking-normal text-zinc-500">
+            <h2 className="flex flex-wrap items-baseline gap-x-2 text-xs font-semibold uppercase tracking-wider text-muted">
+              <span className="text-strong">{ue.code}</span>
+              <span className="font-normal normal-case tracking-normal text-subtle">
                 {UE_CATEGORY[ue.category]} · {ue.credits} crédits
               </span>
             </h2>
@@ -148,11 +148,11 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
       </div>
 
       {library.unmatched.length > 0 && (
-        <section className="space-y-2.5 rounded-2xl border border-dashed border-zinc-800 p-4 sm:p-5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
-            <HelpCircle className="h-4 w-4 text-zinc-500" /> Documents sans matière ({library.unmatched.length})
+        <section className="space-y-2.5 rounded-2xl border border-dashed border-line p-4 sm:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-strong">
+            <HelpCircle className="h-4 w-4 text-subtle" /> Documents sans matière ({library.unmatched.length})
           </h2>
-          <p className="text-xs leading-relaxed text-zinc-500">
+          <p className="text-xs leading-relaxed text-subtle">
             Lekki reconnaît la matière par le nom du fichier (« TS_Examen_CL_2024 », « Antennes_TD_1 ») ou par
             son dossier (« TRAITEMENT DU SIGNAL »). Renomme ou déplace ceux-ci pour qu’ils rejoignent leur matière.
           </p>
@@ -161,7 +161,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
               <li key={file.id}>
                 <button
                   onClick={() => onOpenFile(file)}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-zinc-300 hover:bg-zinc-900"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-body hover:bg-surface"
                 >
                   <span className="min-w-0 flex-1 truncate">{prettyName(file.name)}</span>
                   <StudentDocBadge info={info} compact />
@@ -170,7 +170,7 @@ export function SubjectsView({ library, workspace, onOpenSubject, onOpenFile, on
             ))}
           </ul>
           {library.unmatched.length > 10 && (
-            <p className="text-[11px] text-zinc-600">… et {library.unmatched.length - 10} autres, visibles dans Documents.</p>
+            <p className="text-[11px] text-faint">… et {library.unmatched.length - 10} autres, visibles dans Documents.</p>
           )}
         </section>
       )}
@@ -187,24 +187,24 @@ export function SubjectCard({ subject, shelf, onOpen }: { subject: Subject; shel
     <button
       onClick={onOpen}
       className={`group flex h-full flex-col rounded-xl border p-4 text-left transition ${
-        empty ? "border-zinc-800/70 bg-[#1D232C]" : "border-zinc-800 bg-[#1F242F] hover:border-emerald-400/30"
+        empty ? "border-line/70 bg-white" : "border-line bg-[#FFFFFF] hover:border-emerald-400/30"
       }`}
     >
       <span className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[10px] font-semibold text-zinc-500">{subject.code ?? subject.ue.code}</span>
-        <ArrowRight className="h-3.5 w-3.5 text-zinc-700 transition group-hover:translate-x-0.5 group-hover:text-emerald-400" />
+        <span className="font-mono text-[10px] font-semibold text-subtle">{subject.code ?? subject.ue.code}</span>
+        <ArrowRight className="h-3.5 w-3.5 text-subtle transition group-hover:translate-x-0.5 group-hover:text-emerald-400" />
       </span>
-      <span className={`mt-1.5 text-sm font-semibold leading-snug ${empty ? "text-zinc-400" : "text-zinc-100"}`}>
+      <span className={`mt-1.5 text-sm font-semibold leading-snug ${empty ? "text-muted" : "text-heading"}`}>
         {subject.title}
       </span>
-      <span className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-3 text-[11px] text-zinc-500">
+      <span className="mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-3 text-[11px] text-subtle">
         {empty ? (
           <span>Aucun document pour l’instant</span>
         ) : (
           <>
             <Count icon={LibraryIcon} value={courses} label="cours & TD" tone="text-emerald-400" />
-            <Count icon={FileCheck2} value={exams} label={exams > 1 ? "sujets" : "sujet"} tone="text-rose-300" />
-            {notes > 0 && <Count icon={BookOpen} value={notes} label={notes > 1 ? "fiches" : "fiche"} tone="text-sky-400" />}
+            <Count icon={FileCheck2} value={exams} label={exams > 1 ? "sujets" : "sujet"} tone="text-rose-700" />
+            {notes > 0 && <Count icon={BookOpen} value={notes} label={notes > 1 ? "fiches" : "fiche"} tone="text-sky-700" />}
           </>
         )}
       </span>
@@ -217,7 +217,7 @@ function Count({ icon: Icon, value, label, tone }: { icon: React.ElementType; va
   return (
     <span className="inline-flex items-center gap-1">
       <Icon className={`h-3 w-3 ${tone}`} />
-      <span className="text-zinc-300">{value}</span> {label}
+      <span className="text-body">{value}</span> {label}
     </span>
   );
 }
@@ -244,14 +244,14 @@ function AcademicSetup({ workspace }: { workspace: Workspace }) {
 
   return (
     <Shell>
-      <div className="mx-auto w-full max-w-xl space-y-5 rounded-2xl border border-zinc-800 bg-[#1F242F] p-5 sm:p-7">
+      <div className="mx-auto w-full max-w-xl space-y-5 rounded-2xl border border-line bg-[#FFFFFF] p-5 sm:p-7">
         <div className="flex gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300">
             <GraduationCap className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-zinc-100">Quel programme suit « {workspace.name} » ?</h1>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+            <h1 className="text-base font-semibold text-heading">Quel programme suit « {workspace.name} » ?</h1>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
               Avec le programme, Lekki range chaque cours, TD et ancien sujet sous sa matière, et la révision
               se fait matière par matière.
             </p>
@@ -264,14 +264,14 @@ function AcademicSetup({ workspace }: { workspace: Workspace }) {
               <button
                 onClick={() => void save()}
                 disabled={!value || saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-45"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-on-primary transition hover:bg-emerald-300 disabled:opacity-45"
               >
                 {saving ? "Enregistrement…" : "Ranger par matière"}
               </button>
             </div>
           </>
         ) : (
-          <p className="rounded-lg bg-black/20 p-3 text-xs text-zinc-400">
+          <p className="rounded-lg bg-[#F1F0E9] p-3 text-xs text-muted">
             Demande à un admin de l’espace de choisir le programme (menu Administration).
           </p>
         )}
@@ -281,9 +281,9 @@ function AcademicSetup({ workspace }: { workspace: Workspace }) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 space-y-6 overflow-y-auto bg-[#1B212A] p-4 sm:p-8">{children}</div>;
+  return <div className="flex-1 space-y-6 overflow-y-auto bg-[#F8F7F4] p-4 sm:p-8">{children}</div>;
 }
 
 function Empty({ text }: { text: string }) {
-  return <div className="rounded-xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">{text}</div>;
+  return <div className="rounded-xl border border-dashed border-line p-8 text-center text-sm text-subtle">{text}</div>;
 }

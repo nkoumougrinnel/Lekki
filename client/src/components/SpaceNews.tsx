@@ -91,7 +91,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
   return (
     <section className="space-y-3" aria-labelledby="space-news-title">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="space-news-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-300">
+        <h2 id="space-news-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-body">
           <Sparkles className="h-4 w-4 text-emerald-400" /> Nouveautés
         </h2>
         {fresh > 0 && (
@@ -100,7 +100,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
           </span>
         )}
       </div>
-      <ul className="divide-y divide-zinc-800/70 overflow-hidden rounded-xl border border-zinc-800 bg-[#1F242F]">
+      <ul className="divide-y divide-line/70 overflow-hidden rounded-xl border border-line bg-[#FFFFFF]">
         {items.slice(0, MAX_ITEMS).map((item) => {
           const isNew = Boolean(seenAt) && item.at > seenAt && !item.mine;
           // Prénom seulement : c'est une promo, on se connaît.
@@ -109,14 +109,14 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
             const info = classifyFile(item.file);
             return (
               <li key={`f-${item.file.id}`}>
-                <button onClick={() => onOpenFile(item.file)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-white/[0.02] active:bg-white/[0.04]">
-                  <span className="relative shrink-0 rounded-lg bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
+                <button onClick={() => onOpenFile(item.file)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-[#F8F7F2] active:bg-[#F8F7F2]">
+                  <span className="relative shrink-0 rounded-lg bg-[#F1F0E9] p-1.5 ring-1 ring-line-strong/60">
                     <DocumentTypeIcon extension={item.file.extension} className="h-5 w-4" />
-                    <FilePlus2 className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#1F242F] text-emerald-400" />
+                    <FilePlus2 className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#FFFFFF] text-emerald-400" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-zinc-200 sm:text-xs">{prettyName(item.file.name)}</span>
-                    <span className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <span className="block truncate text-sm text-strong sm:text-xs">{prettyName(item.file.name)}</span>
+                    <span className="mt-1 flex items-center gap-1.5 text-[11px] text-subtle">
                       <StudentDocBadge info={info} compact />
                       <span className="truncate">{item.mine ? "Tu l’as ajouté" : `${who} l’a ajouté`} · {relativeTime(item.at)}</span>
                     </span>
@@ -128,14 +128,14 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
           }
           return (
             <li key={`w-${item.page.id}`}>
-              <button onClick={() => onOpenWiki(item.page)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-white/[0.02] active:bg-white/[0.04]">
-                <span className="relative shrink-0 rounded-lg bg-sky-500/10 p-1.5 text-sky-400 ring-1 ring-sky-400/15">
+              <button onClick={() => onOpenWiki(item.page)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-3 text-left transition hover:bg-[#F8F7F2] active:bg-[#F8F7F2]">
+                <span className="relative shrink-0 rounded-lg bg-sky-500/10 p-1.5 text-sky-700 ring-1 ring-sky-400/15">
                   <BookOpen className="h-5 w-4" />
-                  {!item.created && <PenLine className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#1F242F] text-sky-300" />}
+                  {!item.created && <PenLine className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-[#FFFFFF] text-sky-700" />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm text-zinc-200 sm:text-xs">{item.page.title}</span>
-                  <span className="mt-1 block truncate text-[11px] text-zinc-500">
+                  <span className="block truncate text-sm text-strong sm:text-xs">{item.page.title}</span>
+                  <span className="mt-1 block truncate text-[11px] text-subtle">
                     Fiche {item.created ? "écrite" : "modifiée"} par {item.mine ? "toi" : who} · {relativeTime(item.at)}
                   </span>
                 </span>
@@ -151,7 +151,7 @@ export function SpaceNews({ spaceId, userId, files, wikiPages, onOpenFile, onOpe
 
 function NewDot() {
   return (
-    <span className="shrink-0 rounded-md bg-emerald-400 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-950">
+    <span className="shrink-0 rounded-md bg-emerald-400 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-on-primary">
       Nouveau
     </span>
   );

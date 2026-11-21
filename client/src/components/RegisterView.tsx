@@ -81,7 +81,7 @@ export function RegisterView() {
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300"
+              className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#8A968E] hover:text-[#16241D]"
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -103,9 +103,9 @@ export function RegisterView() {
         </AuthSubmit>
       </form>
 
-      <p className="mt-6 text-sm text-zinc-500 text-center">
+      <p className="mt-6 text-center text-sm text-[#5C6B62]">
         Déjà inscrit ?{" "}
-        <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
+        <Link href="/login" className="font-medium text-[#2E7D5B] hover:text-[#246147]">
           Se connecter
         </Link>
       </p>

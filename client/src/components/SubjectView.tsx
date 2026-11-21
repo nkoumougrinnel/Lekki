@@ -55,19 +55,19 @@ export function SubjectView({
   };
 
   return (
-    <div className="flex-1 space-y-6 overflow-y-auto bg-[#1B212A] p-4 sm:p-8">
-      <button onClick={onBack} className="-my-2 inline-flex min-h-10 items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200 sm:text-xs">
+    <div className="flex-1 space-y-6 overflow-y-auto bg-[#F8F7F4] p-4 sm:p-8">
+      <button onClick={onBack} className="-my-2 inline-flex min-h-10 items-center gap-1.5 text-sm text-muted hover:text-strong sm:text-xs">
         <ArrowLeft className="h-3.5 w-3.5" /> Matières
       </button>
 
-      <section className="relative space-y-4 overflow-hidden rounded-2xl border border-zinc-800/80 bg-gradient-to-br from-[#212734] via-[#242B38] to-[#1F242F] p-5 sm:p-7">
+      <section className="relative space-y-4 overflow-hidden rounded-2xl border border-line/80 bg-gradient-to-br from-[#EDF3E9] via-[#F5F8F1] to-[#FFFFFF] p-5 sm:p-7">
         <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 -translate-y-10 translate-x-10 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="relative space-y-1">
-          <p className="font-mono text-[11px] text-zinc-500">
+          <p className="font-mono text-[11px] text-subtle">
             S{subject.semester} · {subject.ue.code}
             {subject.code ? ` · ${subject.code}` : ""} · {UE_CATEGORY[subject.ue.category]} · {subject.ue.credits} crédits
           </p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-100 sm:text-3xl">{subject.title}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-heading sm:text-3xl">{subject.title}</h1>
         </div>
 
         <form onSubmit={ask} className="relative max-w-2xl">
@@ -77,13 +77,13 @@ export function SubjectView({
             onChange={(event) => setQuestion(event.target.value)}
             placeholder={`Une question sur ${subject.title} ?`}
             aria-label={`Question sur ${subject.title}`}
-            className="w-full rounded-xl border border-zinc-700/70 bg-[#1A2029]/90 py-3 pl-11 pr-14 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-emerald-400/60"
+            className="w-full rounded-xl border border-line-strong/70 bg-[#F4F3ED]/90 py-3 pl-11 pr-14 text-sm text-heading outline-none transition placeholder:text-subtle focus:border-emerald-400/60"
           />
           <button
             type="submit"
             disabled={!question.trim()}
             aria-label="Demander à Lekki AI"
-            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-400 text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-30"
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-emerald-400 text-on-primary transition hover:bg-emerald-300 disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" />
           </button>
@@ -108,9 +108,9 @@ export function SubjectView({
       </section>
 
       {isEmpty ? (
-        <div className="rounded-2xl border border-dashed border-zinc-800 p-6 text-center">
-          <p className="text-sm text-zinc-300">Aucun document pour {subject.title}.</p>
-          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-zinc-500">
+        <div className="rounded-2xl border border-dashed border-line p-6 text-center">
+          <p className="text-sm text-body">Aucun document pour {subject.title}.</p>
+          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-subtle">
             Importe le dossier de la matière, ou nomme les fichiers avec l’abréviation de la matière
             (ex. « {subject.ec.aliases?.[0]?.toUpperCase() || "TS"}_Examen_CL_2024 »).
           </p>
@@ -128,7 +128,7 @@ export function SubjectView({
               <div className="space-y-4">
                 {examsByYear.map(([year, entries]) => (
                   <div key={year} className="space-y-1.5">
-                    <p className="text-[11px] font-semibold text-zinc-500">{year}</p>
+                    <p className="text-[11px] font-semibold text-subtle">{year}</p>
                     {entries.map((entry) => (
                       <Row
                         key={entry.file.id}
@@ -170,14 +170,14 @@ export function SubjectView({
                   <button
                     key={page.id}
                     onClick={() => onOpenWiki(page)}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-zinc-800 bg-[#1F242F] p-3 text-left transition hover:border-zinc-700"
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-[#FFFFFF] p-3 text-left transition hover:border-line-strong"
                   >
-                    <FileText className="h-4 w-4 shrink-0 text-sky-400" />
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-200">{page.title}</span>
+                    <FileText className="h-4 w-4 shrink-0 text-sky-700" />
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-strong">{page.title}</span>
                     {page.status === "verified" ? (
                       <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-label="Fiche vérifiée" />
                     ) : (
-                      <Clock className="h-3.5 w-3.5 shrink-0 text-amber-400" aria-label="Fiche non vérifiée" />
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-amber-700" aria-label="Fiche non vérifiée" />
                     )}
                   </button>
                 ))}
@@ -194,20 +194,20 @@ function Row({
   entry, onOpen, action,
 }: { entry: LibraryEntry; onOpen: () => void; action?: { label: string; onClick: () => void } }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#1F242F] p-2.5 transition hover:border-zinc-700">
+    <div className="flex items-center gap-3 rounded-xl border border-line bg-[#FFFFFF] p-2.5 transition hover:border-line-strong">
       <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-        <span className="shrink-0 rounded bg-zinc-800 p-1.5 ring-1 ring-zinc-700/60">
+        <span className="shrink-0 rounded bg-[#F1F0E9] p-1.5 ring-1 ring-line-strong/60">
           <DocumentTypeIcon extension={entry.file.extension} className="h-4 w-3.5" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-xs font-medium text-zinc-200">{prettyName(entry.file.name)}</span>
+          <span className="block truncate text-xs font-medium text-strong">{prettyName(entry.file.name)}</span>
           <span className="mt-1 block"><StudentDocBadge info={entry.info} /></span>
         </span>
       </button>
       {action && (
         <button
           onClick={action.onClick}
-          className="min-h-10 shrink-0 rounded-lg border border-zinc-700/70 px-3 py-1.5 text-xs sm:min-h-0 sm:px-2.5 sm:text-[11px] font-medium text-zinc-300 transition hover:border-emerald-400/30 hover:text-emerald-200"
+          className="min-h-10 shrink-0 rounded-lg border border-line-strong/70 px-3 py-1.5 text-xs sm:min-h-0 sm:px-2.5 sm:text-[11px] font-medium text-body transition hover:border-emerald-400/30 hover:text-emerald-200"
         >
           {action.label}
         </button>
@@ -225,8 +225,8 @@ function ActionButton({
       disabled={disabled}
       className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
         primary
-          ? "bg-emerald-400 text-zinc-950 hover:bg-emerald-300"
-          : "border border-zinc-700/70 bg-zinc-900/50 font-medium text-zinc-200 hover:bg-zinc-800"
+          ? "bg-emerald-400 text-on-primary hover:bg-emerald-300"
+          : "border border-line-strong/70 bg-[#F8F7F2] font-medium text-strong hover:bg-[#EFEEE7]"
       }`}
     >
       <Icon className="h-3.5 w-3.5" /> {children}
@@ -236,12 +236,12 @@ function ActionButton({
 
 function SectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
-    <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-300">
+    <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-body">
       <Icon className="h-4 w-4 text-emerald-400" /> {title}
     </h2>
   );
 }
 
 function Muted({ text }: { text: string }) {
-  return <p className="rounded-xl border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-500">{text}</p>;
+  return <p className="rounded-xl border border-dashed border-line p-4 text-center text-xs text-subtle">{text}</p>;
 }

@@ -17,14 +17,14 @@ export function StudentDocBadge({ info, compact = false }: { info: StudentDocInf
         </span>
       )}
       {!compact && info.year && (
-        <span className="rounded-md bg-zinc-800/80 px-1.5 py-0.5 text-[11px] sm:text-[10px] font-medium text-zinc-300 ring-1 ring-inset ring-white/5">
+        <span className="rounded-md bg-[#F1F0E9]/80 px-1.5 py-0.5 text-[11px] sm:text-[10px] font-medium text-body ring-1 ring-inset ring-black/5">
           {info.year}
         </span>
       )}
       {!compact && info.track && (
         <span
           title={info.track === "ALT" ? "Filière alternance" : "Filière classique"}
-          className="rounded-md bg-zinc-800/80 px-1.5 py-0.5 text-[11px] sm:text-[10px] font-medium text-zinc-400 ring-1 ring-inset ring-white/5"
+          className="rounded-md bg-[#F1F0E9]/80 px-1.5 py-0.5 text-[11px] sm:text-[10px] font-medium text-muted ring-1 ring-inset ring-black/5"
         >
           {info.track}
         </span>

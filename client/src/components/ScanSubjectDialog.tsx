@@ -143,14 +143,14 @@ export function ScanSubjectDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="scan-title"
-        className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-[#222731] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:border sm:border-white/[0.09]"
+        className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-[#FFFFFF] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:border sm:border-[#E7E4D9]"
       >
-        <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
+        <header className="flex items-center justify-between gap-3 border-b border-[#E7E4D9] px-5 py-4">
           <div>
-            <h2 id="scan-title" className="text-[15px] font-semibold text-zinc-100">Photographier un sujet</h2>
-            <p className="mt-0.5 text-xs text-zinc-400">Une photo par page. Lekki en fait un PDF et lit le texte.</p>
+            <h2 id="scan-title" className="text-[15px] font-semibold text-heading">Photographier un sujet</h2>
+            <p className="mt-0.5 text-xs text-muted">Une photo par page. Lekki en fait un PDF et lit le texte.</p>
           </div>
-          <button onClick={onClose} disabled={busy === "upload"} aria-label="Fermer" className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.06]">
+          <button onClick={onClose} disabled={busy === "upload"} aria-label="Fermer" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-[#F8F7F2]">
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -164,7 +164,7 @@ export function ScanSubjectDialog({
               type="button"
               onClick={() => cameraRef.current?.click()}
               disabled={busy !== null || pages.length >= 12}
-              className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-sm font-semibold text-zinc-950 active:bg-emerald-400 disabled:opacity-50"
+              className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-sm font-semibold text-on-primary active:bg-emerald-400 disabled:opacity-50"
             >
               <Camera className="h-5 w-5" /> {pages.length ? "Page suivante" : "Prendre une photo"}
             </button>
@@ -172,29 +172,29 @@ export function ScanSubjectDialog({
               type="button"
               onClick={() => galleryRef.current?.click()}
               disabled={busy !== null || pages.length >= 12}
-              className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] text-sm font-medium text-zinc-200 active:bg-white/[0.05] disabled:opacity-50"
+              className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border border-[#E7E4D9] text-sm font-medium text-strong active:bg-[#F8F7F2] disabled:opacity-50"
             >
               <ImagePlus className="h-5 w-5" /> Depuis la galerie
             </button>
           </div>
 
           {busy === "compress" && (
-            <p className="flex items-center gap-2 text-xs text-zinc-400"><LoaderCircle className="h-4 w-4 animate-spin" /> Préparation des photos…</p>
+            <p className="flex items-center gap-2 text-xs text-muted"><LoaderCircle className="h-4 w-4 animate-spin" /> Préparation des photos…</p>
           )}
 
           {pages.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted">
                 {pages.length} page{pages.length > 1 ? "s" : ""} · {totalKb < 1024 ? `${totalKb} Ko` : `${(totalKb / 1024).toFixed(1)} Mo`} à envoyer
               </p>
               <ol className="grid grid-cols-3 gap-2">
                 {pages.map((page, index) => (
-                  <li key={page.id} className="relative overflow-hidden rounded-lg border border-white/[0.08] bg-black">
+                  <li key={page.id} className="relative overflow-hidden rounded-lg border border-[#E7E4D9] bg-black">
                     <img src={page.url} alt={`Page ${index + 1}`} className="aspect-[3/4] w-full object-cover" />
                     <span className="absolute left-1.5 top-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold text-white">{index + 1}</span>
                     <div className="absolute inset-x-0 bottom-0 flex justify-between bg-gradient-to-t from-black/80 to-transparent p-1">
                       <button type="button" aria-label="Avancer la page" disabled={index === 0} onClick={() => move(index, -1)} className="flex h-8 w-8 items-center justify-center rounded-md text-white disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
-                      <button type="button" aria-label="Retirer la page" onClick={() => setPages((current) => current.filter((item) => item.id !== page.id))} className="flex h-8 w-8 items-center justify-center rounded-md text-rose-300"><Trash2 className="h-4 w-4" /></button>
+                      <button type="button" aria-label="Retirer la page" onClick={() => setPages((current) => current.filter((item) => item.id !== page.id))} className="flex h-8 w-8 items-center justify-center rounded-md text-rose-700"><Trash2 className="h-4 w-4" /></button>
                       <button type="button" aria-label="Reculer la page" disabled={index === pages.length - 1} onClick={() => move(index, 1)} className="flex h-8 w-8 items-center justify-center rounded-md text-white disabled:opacity-30"><ArrowRight className="h-4 w-4" /></button>
                     </div>
                   </li>
@@ -206,11 +206,11 @@ export function ScanSubjectDialog({
           <div className="space-y-3">
             {subjects.length > 0 ? (
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-zinc-300">Matière</span>
+                <span className="text-xs font-medium text-body">Matière</span>
                 <select
                   value={subjectId}
                   onChange={(event) => setSubjectId(event.target.value)}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] px-3 text-heading outline-none focus:border-emerald-400/60"
                 >
                   <option value="">Autre / je l’écris moi-même</option>
                   {library.semesters.map((semester) => (
@@ -225,18 +225,18 @@ export function ScanSubjectDialog({
             ) : null}
             {!subject && (
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-zinc-300">Matière ou titre</span>
+                <span className="text-xs font-medium text-body">Matière ou titre</span>
                 <input
                   value={freeName}
                   onChange={(event) => setFreeName(event.target.value)}
                   placeholder="Ex. TS_Examen_CL_2024"
                   maxLength={120}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] px-3 text-heading outline-none placeholder:text-faint focus:border-emerald-400/60"
                 />
               </label>
             )}
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-zinc-300">Type</span>
+              <span className="text-xs font-medium text-body">Type</span>
               <div className="flex flex-wrap gap-1.5">
                 {KINDS.map((item) => (
                   <button
@@ -244,7 +244,7 @@ export function ScanSubjectDialog({
                     type="button"
                     onClick={() => setKind(item.value)}
                     aria-pressed={kind === item.value}
-                    className={`min-h-10 rounded-full border px-3.5 text-sm ${kind === item.value ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.1] text-zinc-400"}`}
+                    className={`min-h-10 rounded-full border px-3.5 text-sm ${kind === item.value ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-[#E7E4D9] text-muted"}`}
                   >
                     {item.label}
                   </button>
@@ -253,20 +253,20 @@ export function ScanSubjectDialog({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-zinc-300">Année</span>
+                <span className="text-xs font-medium text-body">Année</span>
                 <input
                   value={year}
                   onChange={(event) => setYear(event.target.value.replace(/\D/g, "").slice(0, 4))}
                   inputMode="numeric"
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] px-3 text-heading outline-none focus:border-emerald-400/60"
                 />
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-medium text-zinc-300">Filière</span>
+                <span className="text-xs font-medium text-body">Filière</span>
                 <select
                   value={track}
                   onChange={(event) => setTrack(event.target.value as "" | "CL" | "ALT")}
-                  className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#1A2029] px-3 text-zinc-100 outline-none focus:border-emerald-400/60"
+                  className="h-12 w-full rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] px-3 text-heading outline-none focus:border-emerald-400/60"
                 >
                   <option value="">Les deux / non précisé</option>
                   <option value="CL">Classique (CL)</option>
@@ -274,18 +274,18 @@ export function ScanSubjectDialog({
                 </select>
               </label>
             </div>
-            <p className="text-[12px] text-zinc-500">
-              Nom du fichier : <span className="font-mono text-zinc-300">{name}.pdf</span>
+            <p className="text-[12px] text-subtle">
+              Nom du fichier : <span className="font-mono text-body">{name}.pdf</span>
             </p>
           </div>
         </div>
 
-        <footer className="border-t border-white/[0.06] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+        <footer className="border-t border-[#E7E4D9] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
           <button
             type="button"
             onClick={() => void submit()}
             disabled={!pages.length || busy !== null}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-zinc-950 active:bg-emerald-400 disabled:opacity-40"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-on-primary active:bg-emerald-400 disabled:opacity-40"
           >
             {busy === "upload" ? <><LoaderCircle className="h-4 w-4 animate-spin" /> Envoi et lecture du texte…</> : "Ajouter le sujet"}
           </button>

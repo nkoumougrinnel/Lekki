@@ -19,7 +19,7 @@ export function WikiBreadcrumbs({ items, onRootClick }: WikiBreadcrumbsProps) {
           <button
             type="button"
             onClick={onRootClick}
-            className="inline-flex h-8 items-center gap-2 rounded-lg px-2.5 font-semibold text-zinc-300 transition-colors hover:bg-zinc-800/80 hover:text-emerald-300"
+            className="inline-flex h-8 items-center gap-2 rounded-lg px-2.5 font-semibold text-body transition-colors hover:bg-[#EFEEE7]/80 hover:text-emerald-300"
           >
             <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
             <span>Wiki</span>
@@ -29,12 +29,12 @@ export function WikiBreadcrumbs({ items, onRootClick }: WikiBreadcrumbsProps) {
           const isCurrent = index === items.length - 1 && !item.onClick;
           return (
             <li key={`${item.label}-${index}`} className="flex min-w-0 shrink-0 items-center gap-1">
-              <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-zinc-600" />
+              <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 text-faint" />
               {item.onClick ? (
                 <button
                   type="button"
                   onClick={item.onClick}
-                  className="inline-flex h-8 max-w-48 items-center truncate rounded-lg px-2.5 font-medium text-zinc-400 transition-colors hover:bg-zinc-800/80 hover:text-emerald-300"
+                  className="inline-flex h-8 max-w-48 items-center truncate rounded-lg px-2.5 font-medium text-muted transition-colors hover:bg-[#EFEEE7]/80 hover:text-emerald-300"
                 >
                   {item.label}
                 </button>
@@ -44,7 +44,7 @@ export function WikiBreadcrumbs({ items, onRootClick }: WikiBreadcrumbsProps) {
                   className={`inline-flex h-8 max-w-56 items-center truncate rounded-lg px-2.5 ${
                     isCurrent
                       ? "bg-emerald-500/10 font-semibold text-emerald-300"
-                      : "font-medium text-zinc-300"
+                      : "font-medium text-body"
                   }`}
                 >
                   {item.label}

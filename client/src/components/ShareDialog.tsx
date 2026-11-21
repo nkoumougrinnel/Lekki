@@ -73,34 +73,34 @@ export function ShareDialog({
     >
       <div
         id="share-dialog-modal"
-        className="w-full max-w-md bg-[#232936] border border-zinc-700/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+        className="w-full max-w-md bg-[#FFFFFF] border border-line-strong/80 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
       >
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+        <div className="p-4 border-b border-line flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Share2 className="h-4 w-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-zinc-100">
+            <h2 className="text-sm font-semibold text-heading">
               Partager le document
             </h2>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+            className="p-1 rounded text-muted hover:text-strong hover:bg-[#EFEEE7]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="p-4 space-y-4">
-          <div className="p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs">
-            <div className="font-medium text-zinc-200 truncate">{file.name}</div>
-            <div className="text-[11px] text-zinc-400 mt-0.5">
+          <div className="p-2.5 rounded-lg bg-[#F7F6F1] border border-line text-xs">
+            <div className="font-medium text-strong truncate">{file.name}</div>
+            <div className="text-[11px] text-muted mt-0.5">
               Propriétaire : {file.owner_name || currentUser?.name || "Toi"}
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-zinc-400" />
+            <label className="text-xs font-medium text-body flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-muted" />
               Choisis les camarades avec qui partager :
             </label>
 
@@ -115,23 +115,23 @@ export function ShareDialog({
                     className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between transition-colors text-xs ${
                       isSelected
                         ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-200"
-                        : "bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:bg-zinc-800/60"
+                        : "bg-[#F8F7F2] border-line text-body hover:bg-[#EFEEE7]/60"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs text-zinc-300">
+                      <div className="h-7 w-7 rounded-full bg-[#F1F0E9] border border-line-strong flex items-center justify-center font-bold text-xs text-body">
                         {u.name.charAt(0)}
                       </div>
                       <div>
                         <div className="font-medium">{u.name}</div>
-                        <div className="text-[11px] text-zinc-400">{u.email}</div>
+                        <div className="text-[11px] text-muted">{u.email}</div>
                       </div>
                     </div>
                     <div
                       className={`h-4 w-4 rounded flex items-center justify-center border ${
                         isSelected
-                          ? "bg-emerald-500 border-emerald-400 text-zinc-950"
-                          : "border-zinc-700"
+                          ? "bg-emerald-500 border-emerald-400 text-on-primary"
+                          : "border-line-strong"
                       }`}
                     >
                       {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -142,17 +142,17 @@ export function ShareDialog({
             </div>
           </div>
 
-          <div className="text-[11px] text-zinc-400 p-2 rounded bg-zinc-900/40 border border-zinc-800/60">
+          <div className="text-[11px] text-muted p-2 rounded bg-[#F8F7F2] border border-line/60">
             Le document reste dans ton espace personnel. Tes camarades le verront dans
             <strong> « Partagés avec moi »</strong> et pourront interroger Lekki AI dessus.
           </div>
         </div>
 
-        <div className="p-3 border-t border-zinc-800 bg-zinc-950/40 flex items-center justify-end gap-2">
+        <div className="p-3 border-t border-line bg-[#F1F0E9] flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted hover:text-strong hover:bg-[#EFEEE7] transition-colors"
           >
             Annuler
           </button>
@@ -160,7 +160,7 @@ export function ShareDialog({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-on-primary transition-colors disabled:opacity-50"
           >
             <UserPlus className="h-3.5 w-3.5" />
             {saving ? "Enregistrement..." : "Appliquer le partage"}

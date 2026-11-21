@@ -108,6 +108,7 @@ export function DriveView({
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAscending, setSortAscending] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [brokenThumbs, setBrokenThumbs] = useState<string[]>([]);
   const [busyFileId, setBusyFileId] = useState<string | null>(null);
   const [creatingFolder, setCreatingFolder] = useState(false);
   const breadcrumbRef = useRef<HTMLElement>(null);
@@ -322,19 +323,19 @@ export function DriveView({
   return (
     <div
       id="drive-view-container"
-      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#f8fafd] text-[#2C2D32] dark:bg-[#21252C] dark:text-zinc-100"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#F8F7F4] text-[#1B211D]"
     >
-      <header className="sticky top-0 z-20 border-b border-[#e4e7eb] bg-[#f8fafd]/95 px-4 py-3 backdrop-blur dark:border-white/[0.08] dark:bg-[#252931]/95 sm:px-7">
+      <header className="sticky top-0 z-20 border-b border-[#e4e7eb] bg-[#F8F7F4]/95 px-4 py-3 backdrop-blur sm:px-7">
         <div className="flex items-center justify-between gap-3">
           <nav
             ref={breadcrumbRef}
             aria-label="Fil d’Ariane"
-            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-sm text-zinc-600 dark:text-zinc-300"
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-sm text-faint"
             style={{ scrollbarWidth: "none" }}
           >
-            <FolderOpen className="mr-1 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <FolderOpen className="mr-1 h-4 w-4 shrink-0 text-emerald-600" />
             {currentFolderPath.length === 0 ? (
-              <span className="max-w-full truncate px-1 font-semibold text-zinc-900 dark:text-white" aria-current="page">
+              <span className="max-w-full truncate px-1 font-semibold text-heading" aria-current="page">
                 {rootLabel}
               </span>
             ) : (
@@ -343,18 +344,18 @@ export function DriveView({
                   type="button"
                   onClick={() => setCurrentFolderId(null)}
                   title={rootLabel}
-                  className="max-w-[34vw] shrink-0 truncate rounded-lg px-2 py-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white sm:max-w-48"
+                  className="max-w-[34vw] shrink-0 truncate rounded-lg px-2 py-1.5 text-subtle transition hover:bg-black/5 hover:text-heading sm:max-w-48"
                 >
                   {rootLabel}
                 </button>
                 {currentFolderPath.map((folder, index) => (
                   <React.Fragment key={folder.id}>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400/80" />
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted/80" />
                     {index === currentFolderPath.length - 1 ? (
                       <span
                         title={folder.name}
                         aria-current="page"
-                        className="max-w-[42vw] shrink-0 truncate rounded-lg bg-emerald-500/10 px-2.5 py-1.5 font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/20 sm:max-w-64"
+                        className="max-w-[42vw] shrink-0 truncate rounded-lg bg-emerald-500/10 px-2.5 py-1.5 font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/20 sm:max-w-64"
                       >
                         {folder.name}
                       </span>
@@ -363,7 +364,7 @@ export function DriveView({
                         type="button"
                         onClick={() => setCurrentFolderId(folder.id)}
                         title={folder.name}
-                        className="max-w-[24vw] shrink-0 truncate rounded-lg px-2 py-1.5 transition hover:bg-black/5 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white sm:max-w-40"
+                        className="max-w-[24vw] shrink-0 truncate rounded-lg px-2 py-1.5 transition hover:bg-black/5 hover:text-heading sm:max-w-40"
                       >
                         {folder.name}
                       </button>
@@ -378,7 +379,7 @@ export function DriveView({
             <button
               type="button"
               onClick={() => setAddSheetOpen(true)}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-4 text-sm font-semibold text-zinc-950 shadow-sm active:bg-emerald-400 sm:hidden"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-4 text-sm font-semibold text-on-primary shadow-sm active:bg-emerald-400 sm:hidden"
             >
               <Plus className="h-4 w-4" /> Ajouter
             </button>
@@ -391,7 +392,7 @@ export function DriveView({
                   setNewFolderName("");
                   setShowNewFolderInput(true);
                 }}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#E6E3DA] bg-white px-3 text-xs font-medium text-[#3E4641] transition hover:bg-[#F1F0E9]"
               >
                 <FolderPlus className="h-4 w-4" />
                 <span className="hidden sm:inline">Dossier</span>
@@ -402,7 +403,7 @@ export function DriveView({
                 type="button"
                 onClick={() => onImportFolderClick(currentFolderId || undefined)}
                 title="Importer un dossier entier, avec ses sous-dossiers"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#E6E3DA] bg-white px-3 text-xs font-medium text-[#3E4641] transition hover:bg-[#F1F0E9]"
               >
                 <FolderUp className="h-4 w-4" />
                 <span className="hidden md:inline">Importer un dossier</span>
@@ -413,7 +414,7 @@ export function DriveView({
                 type="button"
                 onClick={() => onDriveImportClick(currentFolderId || undefined)}
                 title="Importer depuis Google Drive ou SUP'DOCS"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-3 text-xs font-medium text-[#484D50] transition hover:bg-[#f1f3f4] dark:border-white/10 dark:bg-[#2D3139] dark:text-zinc-100 dark:hover:bg-[#383D47]"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#E6E3DA] bg-white px-3 text-xs font-medium text-[#3E4641] transition hover:bg-[#F1F0E9]"
               >
                 <HardDrive className="h-4 w-4" />
                 <span className="hidden md:inline">Google Drive</span>
@@ -423,7 +424,7 @@ export function DriveView({
               <button
                 type="button"
                 onClick={() => onNewFileClick(currentFolderId || undefined)}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-zinc-950 shadow-sm transition hover:bg-emerald-400"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-emerald-500 px-3 text-xs font-semibold text-on-primary shadow-sm transition hover:bg-emerald-400"
               >
                 <Upload className="h-4 w-4" />
                 <span className="hidden sm:inline">Fichier</span>
@@ -439,10 +440,10 @@ export function DriveView({
             role="menu"
             aria-label="Ajouter"
             onClick={(event) => event.stopPropagation()}
-            className="w-full rounded-t-2xl border-t border-white/[0.08] bg-[#262A33] px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
+            className="w-full rounded-t-2xl border-t border-[#E7E4D9] bg-[#FFFFFF] px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2"
           >
             <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/15" />
-            <p className="px-3 pb-2 text-xs text-zinc-500">
+            <p className="px-3 pb-2 text-xs text-subtle">
               Ajouter dans « {currentFolder ? currentFolder.name : rootLabel} »
             </p>
             {[
@@ -461,12 +462,12 @@ export function DriveView({
                     role="menuitem"
                     type="button"
                     onClick={() => { setAddSheetOpen(false); action(); }}
-                    className="flex min-h-14 w-full items-center gap-3.5 rounded-xl px-3 text-left active:bg-white/[0.06]"
+                    className="flex min-h-14 w-full items-center gap-3.5 rounded-xl px-3 text-left active:bg-[#F8F7F2]"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400"><Icon className="h-5 w-5" /></span>
                     <span>
-                      <span className="block text-[15px] text-zinc-100">{label}</span>
-                      {hint && <span className="block text-xs text-zinc-500">{hint}</span>}
+                      <span className="block text-[15px] text-heading">{label}</span>
+                      {hint && <span className="block text-xs text-subtle">{hint}</span>}
                     </span>
                   </button>
                 );
@@ -476,7 +477,7 @@ export function DriveView({
                 type="button"
                 role="menuitem"
                 onClick={(event) => { setAddSheetOpen(false); void handleDeleteFolder(currentFolder, event); }}
-                className="mt-1 flex min-h-12 w-full items-center gap-3.5 rounded-xl border-t border-white/[0.06] px-3 text-left text-sm text-rose-300 active:bg-rose-500/10"
+                className="mt-1 flex min-h-12 w-full items-center gap-3.5 rounded-xl border-t border-[#E7E4D9] px-3 text-left text-sm text-rose-700 active:bg-rose-500/10"
               >
                 <Trash2 className="h-4 w-4" /> Supprimer le dossier « {currentFolder.name} »
               </button>
@@ -500,15 +501,15 @@ export function DriveView({
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-folder-title"
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#dadce0] bg-white shadow-2xl dark:border-white/10 dark:bg-[#262A33]"
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-[#E6E3DA] bg-white shadow-2xl"
           >
-            <div className="flex items-start gap-3 border-b border-[#e8eaed] p-4 dark:border-white/[0.08] sm:p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-start gap-3 border-b border-[#E6E3DA] p-4 sm:p-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
                 <Folder className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
-                <h2 id="new-folder-title" className="text-base font-semibold text-zinc-900 dark:text-white">Nouveau dossier</h2>
-                <p className="mt-1 text-xs text-zinc-500">{currentFolder ? `Créer dans « ${currentFolder.name} »` : `Créer dans « ${rootLabel} »`}</p>
+                <h2 id="new-folder-title" className="text-base font-semibold text-heading">Nouveau dossier</h2>
+                <p className="mt-1 text-xs text-subtle">{currentFolder ? `Créer dans « ${currentFolder.name} »` : `Créer dans « ${rootLabel} »`}</p>
               </div>
               <button
                 type="button"
@@ -518,13 +519,13 @@ export function DriveView({
                   setShowNewFolderInput(false);
                   setNewFolderName("");
                 }}
-                className="-mr-1 -mt-1 rounded-full p-2 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 disabled:opacity-50 dark:hover:bg-white/10 dark:hover:text-white"
+                className="-mr-1 -mt-1 rounded-full p-2 text-subtle transition hover:bg-black/5 hover:text-heading disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-4 p-4 sm:p-5">
-              <label htmlFor="new-folder-name" className="block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              <label htmlFor="new-folder-name" className="block text-xs font-medium text-faint">
                 Nom du dossier
               </label>
               <input
@@ -534,7 +535,7 @@ export function DriveView({
                 onChange={(event) => setNewFolderName(event.target.value)}
                 placeholder="Ex. Cours du semestre"
                 maxLength={120}
-                className="h-12 w-full rounded-xl border border-[#dadce0] bg-transparent px-3.5 text-sm outline-none transition placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 dark:border-white/10 dark:placeholder:text-zinc-600"
+                className="h-12 w-full rounded-xl border border-[#E6E3DA] bg-transparent px-3.5 text-sm outline-none transition placeholder:text-muted focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10"
               />
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
@@ -544,14 +545,14 @@ export function DriveView({
                     setShowNewFolderInput(false);
                     setNewFolderName("");
                   }}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#dadce0] px-4 text-sm font-medium text-zinc-600 transition hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#E6E3DA] px-4 text-sm font-medium text-faint transition hover:bg-black/5 disabled:opacity-50"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={!newFolderName.trim() || creatingFolder}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-on-primary transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {creatingFolder && <LoaderCircle className="h-4 w-4 animate-spin" />}
                   Créer
@@ -566,8 +567,8 @@ export function DriveView({
         {visibleFolders.length > 0 && (
           <section className="space-y-2">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Dossiers</h2>
-              <span className="rounded-full bg-[#f1f3f4] px-2 py-0.5 text-[10px] text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-300">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-subtle">Dossiers</h2>
+              <span className="rounded-full bg-[#F1F0E9] px-2 py-0.5 text-[10px] text-faint">
                 {visibleFolders.length}
               </span>
             </div>
@@ -581,16 +582,16 @@ export function DriveView({
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") setCurrentFolderId(folder.id);
                   }}
-                  className="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-[#dadce0] bg-white px-3 py-2.5 transition hover:border-[#c4c7c5] hover:bg-[#f1f3f4] dark:border-white/[0.09] dark:bg-[#272B34] dark:hover:bg-[#303541]"
+                  className="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-[#E6E3DA] bg-white px-3 py-2.5 transition hover:border-[#DAD7CC] hover:bg-[#F1F0E9]"
                 >
-                  <Folder className="h-5 w-5 shrink-0 fill-emerald-200 text-emerald-600 dark:fill-emerald-500/20 dark:text-emerald-400" />
+                  <Folder className="h-5 w-5 shrink-0 fill-emerald-200 text-emerald-600" />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{folder.name}</span>
                   <button
                     type="button"
                     onClick={(event) => handleDeleteFolder(folder, event)}
                     title="Supprimer le dossier"
                     aria-label={`Supprimer le dossier ${folder.name}`}
-                    className="hidden rounded-full p-1.5 text-zinc-500 transition hover:bg-black/5 hover:text-rose-600 sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100 dark:hover:bg-white/10"
+                    className="hidden rounded-full p-1.5 text-subtle transition hover:bg-black/5 hover:text-rose-700 sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -603,8 +604,8 @@ export function DriveView({
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Fichiers</h2>
-              <span className="rounded-full bg-[#f1f3f4] px-2 py-0.5 text-[10px] text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-300">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-subtle">Fichiers</h2>
+              <span className="rounded-full bg-[#F1F0E9] px-2 py-0.5 text-[10px] text-faint">
                 {displayedFiles.length}
               </span>
             </div>
@@ -615,7 +616,7 @@ export function DriveView({
                   setSortKey((key) => (key === "name" ? "modified" : key === "modified" ? "size" : "name"));
                   setSortAscending(true);
                 }}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-zinc-600 transition hover:bg-[#f1f3f4] dark:text-zinc-300 dark:hover:bg-white/[0.08]"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-faint transition hover:bg-[#F1F0E9]"
                 title={`Tri actuel : ${sortKey}`}
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
@@ -624,26 +625,26 @@ export function DriveView({
             )}
           </div>
           {loading ? (
-            <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#dadce0] text-sm text-zinc-500 dark:border-white/10">
+            <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#E6E3DA] text-sm text-subtle">
               <LoaderCircle className="h-6 w-6 animate-spin text-emerald-500" />
               Chargement…
             </div>
           ) : displayedFiles.length === 0 && visibleFolders.length > 0 && !isTrashView ? null : displayedFiles.length === 0 ? (
-            <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-[#dadce0] px-5 py-8 text-center dark:border-white/10">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-[#E6E3DA] px-5 py-8 text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
                 {isTrashView ? <Trash2 className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
               </div>
               <h3 className="text-sm font-medium">
                 {emptyState.title}
               </h3>
-              <p className="mt-1 max-w-md text-xs text-zinc-500">
+              <p className="mt-1 max-w-md text-xs text-subtle">
                 {emptyState.text}
               </p>
               {canAddFiles && (
                 <button
                   type="button"
                   onClick={() => onNewFileClick(currentFolderId || undefined)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400"
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-on-primary transition hover:bg-emerald-400"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   Ajouter un fichier
@@ -657,7 +658,7 @@ export function DriveView({
                   type="button"
                   aria-label="Fermer les options du fichier"
                   onClick={() => setOpenMenuId(null)}
-                  className="absolute inset-0 z-10 cursor-default bg-zinc-950/10 backdrop-blur-[2px]"
+                  className="absolute inset-0 z-10 cursor-default bg-canvas/10 backdrop-blur-[2px]"
                 />
               )}
               {displayedFiles.map((file, index) => (
@@ -669,23 +670,21 @@ export function DriveView({
                   }}
                   role="button"
                   tabIndex={0}
-                  className={`group relative flex min-w-0 cursor-pointer flex-col overflow-visible rounded-xl border bg-white transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-md dark:bg-[#2B2F37] ${openMenuId === file.id ? "z-30 border-emerald-500 shadow-xl ring-2 ring-emerald-500/25 dark:border-emerald-400 dark:ring-emerald-400/20" : "border-[#dadce0] dark:border-white/[0.09]"}`}
+                  className={`group relative flex min-w-0 cursor-pointer flex-col overflow-visible rounded-xl border bg-white transition hover:-translate-y-0.5 hover:border-emerald-400/60 hover:shadow-md ${openMenuId === file.id ? "z-30 border-emerald-500 shadow-xl ring-2 ring-emerald-500/25" : "border-[#E6E3DA]"}`}
                 >
-                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#f8fafd] dark:bg-[#252931]">
-                    {file.thumbnail_path || getExtension(file) === "pdf" ? (
+                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-t-xl bg-[#F3F2EC]">
+                    {(file.thumbnail_path || getExtension(file) === "pdf") && !brokenThumbs.includes(file.id) ? (
                       <img
                         src={fileUrl(`/drive/files/${file.id}/thumbnail`)}
                         alt={`Aperçu de ${file.name}`}
                         loading="lazy"
                         className="h-full w-full rounded-t-xl object-cover"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                        }}
+                        onError={() => setBrokenThumbs((current) => [...current, file.id])}
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 p-4 text-center">
                         <DocumentTypeIcon extension={getExtension(file)} className="h-12 w-12" />
-                        <span className="line-clamp-2 text-[10px] text-zinc-500">{file.summary || file.content || "Document"}</span>
+                        <span className="line-clamp-2 text-[10px] text-subtle">{file.summary || file.content || "Document"}</span>
                       </div>
                     )}
                     <button
@@ -695,7 +694,7 @@ export function DriveView({
                         setOpenMenuId((id) => (id === file.id ? null : file.id));
                       }}
                       aria-label={`Options pour ${file.name}`}
-                      className="absolute right-1 top-1 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm transition hover:bg-white dark:bg-[#2D3139]/95 dark:text-zinc-100 dark:hover:bg-[#383D47]"
+                      className="absolute right-1 top-1 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-subtle shadow-sm transition hover:bg-white"
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" />
                     </button>
@@ -720,7 +719,7 @@ export function DriveView({
                     <DocumentTypeIcon extension={getExtension(file)} className="h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium" title={file.name}>{file.name}</p>
-                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-zinc-500">
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-subtle">
                         <StudentDocBadge
                           info={classifyFile(file, folders.find((folder) => folder.id === file.folder_id)?.name)}
                           compact
@@ -728,7 +727,7 @@ export function DriveView({
                         <span className="truncate">{formatFileSize(file.size_bytes)}</span>
                       </p>
                     </div>
-                    {file.is_starred && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />}
+                    {file.is_starred && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-700" />}
                   </div>
                 </article>
               ))}
@@ -768,15 +767,15 @@ function FileActionMenu({
   onAskAI: () => void;
 }) {
   const itemClass =
-    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-[#f1f3f4] disabled:opacity-50 dark:text-zinc-200 dark:hover:bg-white/[0.08]";
+    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-subtle transition hover:bg-[#F1F0E9] disabled:opacity-50";
 
   return (
     <div
       onClick={(event) => event.stopPropagation()}
-      className={`absolute top-12 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/35 bg-white p-1.5 shadow-2xl ring-1 ring-emerald-500/10 dark:border-emerald-400/30 dark:bg-[#30343E] dark:ring-emerald-400/10 ${alignLeft ? "left-2 right-auto" : "right-2 left-auto"}`}
+      className={`absolute top-12 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-emerald-500/35 bg-white p-1.5 shadow-2xl ring-1 ring-emerald-500/10 ${alignLeft ? "left-2 right-auto" : "right-2 left-auto"}`}
     >
       <button type="button" disabled={busy} onClick={onOpen} className={itemClass}>
-        <Eye className="h-4 w-4 text-zinc-500" />
+        <Eye className="h-4 w-4 text-subtle" />
         Ouvrir le fichier
       </button>
       {isTrashView ? (
@@ -787,33 +786,33 @@ function FileActionMenu({
       ) : (
         <>
           <button type="button" disabled={busy} onClick={onShare} className={itemClass}>
-            <Share2 className="h-4 w-4 text-zinc-500" />
+            <Share2 className="h-4 w-4 text-subtle" />
             Partager
           </button>
           <button type="button" disabled={busy} onClick={onStar} className={itemClass}>
-            <Star className={`h-4 w-4 ${file.is_starred ? "fill-amber-400 text-amber-400" : "text-zinc-500"}`} />
+            <Star className={`h-4 w-4 ${file.is_starred ? "fill-amber-400 text-amber-700" : "text-subtle"}`} />
             {file.is_starred ? "Retirer des favoris" : "Ajouter aux favoris"}
           </button>
           {canAskAI && (
             <button type="button" disabled={busy} onClick={onAskAI} className={itemClass}>
-              <Sparkles className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+              <Sparkles className="h-4 w-4 text-emerald-500" />
               Interroger Lekki AI
             </button>
           )}
           <button type="button" disabled={busy} onClick={onDownload} className={itemClass}>
-            <Download className="h-4 w-4 text-zinc-500" />
+            <Download className="h-4 w-4 text-subtle" />
             Télécharger
           </button>
         </>
       )}
-      <div className="my-1 border-t border-[#e8eaed] dark:border-white/[0.08]" />
+      <div className="my-1 border-t border-[#E6E3DA]" />
       <button
         type="button"
         disabled={busy}
         onClick={onDelete}
-        className={`${itemClass} ${isTrashView ? "text-rose-600 dark:text-rose-300" : ""}`}
+        className={`${itemClass} ${isTrashView ? "text-rose-700" : ""}`}
       >
-        {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-rose-500" />}
+        {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-rose-700" />}
         {isTrashView ? "Supprimer définitivement" : "Mettre à la corbeille"}
       </button>
     </div>

@@ -5,20 +5,15 @@ import {
   Search,
   Sparkles,
   ChevronDown,
-  Plus,
-  Building2,
-  GraduationCap,
-  Cpu,
+  LogOut,
+  X,
   Folder,
+  GraduationCap,
+  Building2,
+  Cpu,
   Users,
   BookMarked,
-  LogOut,
-  Settings,
-  UserCircle,
-  X,
 } from "lucide-react";
-import { CreateWorkspaceDialog } from "./CreateWorkspaceDialog";
-import { WorkspaceAdminDialog } from "./WorkspaceAdminDialog";
 import { UnifiedSearchDialog } from "./UnifiedSearchDialog";
 
 interface HeaderProps {
@@ -36,57 +31,53 @@ export function Header({
   onAskAI,
   onToggleAI,
   isAIOpen,
-  onOpenMobileMenu,
 }: HeaderProps) {
-  const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
+  const { activeWorkspace } = useWorkspace();
   const { user, logout } = useAuth();
-  const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showCreateWsDialog, setShowCreateWsDialog] = useState(false);
-  const [showAdminDialog, setShowAdminDialog] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // Le nom de l'espace reste affiché ici comme repère ; on en change depuis la sidebar.
   const getWorkspaceIcon = (iconName?: string) => {
     switch (iconName) {
       case "GraduationCap":
-        return <GraduationCap className="h-4 w-4 text-emerald-400" />;
+        return <GraduationCap className="h-4 w-4 text-[#2E7D5B]" />;
       case "Building2":
-        return <Building2 className="h-4 w-4 text-sky-400" />;
+        return <Building2 className="h-4 w-4 text-[#2E7D5B]" />;
       case "Cpu":
-        return <Cpu className="h-4 w-4 text-amber-400" />;
+        return <Cpu className="h-4 w-4 text-[#2E7D5B]" />;
       case "Users":
-        return <Users className="h-4 w-4 text-violet-400" />;
+        return <Users className="h-4 w-4 text-[#2E7D5B]" />;
       case "BookMarked":
-        return <BookMarked className="h-4 w-4 text-sky-400" />;
+        return <BookMarked className="h-4 w-4 text-[#2E7D5B]" />;
       default:
-        return <Folder className="h-4 w-4 text-emerald-400" />;
+        return <Folder className="h-4 w-4 text-[#2E7D5B]" />;
     }
   };
 
   return (
     <>
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[70] bg-[#1B212A] pt-[env(safe-area-inset-top)] sm:inset-auto sm:left-0 sm:top-0 sm:w-full sm:bg-[#1B212A]/98 sm:backdrop-blur-md sm:border-b sm:border-zinc-800/80">
-          <div className="px-4 sm:px-6 py-3 flex items-center gap-3 border-b border-zinc-800/60">
+        <div className="fixed inset-0 z-[70] bg-[#FBFAF6] pt-[env(safe-area-inset-top)] sm:inset-auto sm:left-0 sm:top-0 sm:w-full sm:bg-[#FBFAF6]/98 sm:backdrop-blur-md sm:border-b sm:border-[#E5E9DC]">
+          <div className="px-4 sm:px-6 py-3 flex items-center gap-3 border-b border-[#E5E9DC]">
             <button
               onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }}
-              className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors shrink-0"
+              className="p-2 rounded-full text-[#5C6B62] hover:text-[#16241D] hover:bg-[#F1F0E9] transition-colors shrink-0"
               aria-label="Fermer la recherche"
             >
               <X className="h-5 w-5" />
             </button>
             <div className="flex-1 min-w-0 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 shrink-0" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8A968E] shrink-0" />
               <input
                 autoFocus
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  // Entrée = demander à Lekki : la recherche s'affiche déjà en tapant.
                   if (e.key === "Enter" && searchQuery.trim()) {
                     onAskAI(searchQuery.trim());
                     setIsSearchOpen(false);
@@ -95,12 +86,12 @@ export function Header({
                 }}
                 enterKeyHint="send"
                 placeholder="Rechercher ou demander à Lekki…"
-                className="w-full pl-10 pr-8 py-2 bg-transparent border-none text-base text-zinc-100 placeholder-zinc-500 focus:outline-none min-w-0"
+                className="w-full pl-10 pr-8 py-2 bg-transparent border-none text-base text-[#16241D] placeholder:text-[#8A968E] focus:outline-none min-w-0"
               />
               {searchQuery && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setSearchQuery(""); }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 shrink-0"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full hover:bg-[#F1F0E9] text-[#5C6B62] hover:text-[#16241D] shrink-0"
                   aria-label="Effacer la recherche"
                 >
                   <X className="h-4 w-4" />
@@ -125,107 +116,46 @@ export function Header({
 
       <header
         id="lekki-app-header"
-        className="h-14 sm:h-16 border-b border-zinc-800/80 bg-[#1B212A]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 select-none shrink-0 z-30"
+        className="h-14 sm:h-16 shrink-0 z-30 select-none border-b border-[#E5E9DC] bg-white px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4"
       >
-
-        {/* Left: Hamburger + Logo + Workspace Selector */}
-        <div className={`flex items-center gap-2 sm:gap-4 min-w-0 shrink-0 ${isSearchOpen ? "hidden" : ""}`}>
-          {/* Téléphone : pas de ☰, le menu s'ouvre par l'onglet « Plus » de la barre du bas */}
-
-          {/* Logo */}
-          <div className="hidden lg:flex h-16 w-64 shrink-0 border-r border-zinc-800/80 -ml-6 pl-6 items-center gap-3">
-            <img src="/logo.svg" alt="Lekki Logo" className="h-8 w-8 hover:scale-105 transition-transform" />
-            <span className="font-bold text-base tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-zinc-100 to-zinc-400 leading-none">
-              LEKKI
-            </span>
-          </div>
-
-          {/* Logo compact — mobile */}
+        {/* Left: mobile logo, desktop context */}
+        <div className={`flex items-center gap-3 min-w-0 shrink-0 ${isSearchOpen ? "hidden" : ""}`}>
           <div className="lg:hidden flex items-center gap-2">
-            <img src="/logo.svg" alt="Lekki Logo" className="h-7 w-7" />
-            <span className="font-bold text-sm tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-zinc-100 to-zinc-400">
-              LEKKI
+            <img src="/logo.svg" alt="Lekki Logo" className="h-7 w-7 rounded-lg" />
+            <span className="font-display text-base font-medium tracking-tight text-[#16241D]">
+              Lekki
             </span>
           </div>
 
-          {/* Workspace Switcher — desktop uniquement */}
-          <div className="relative hidden lg:block">
-            <button
-              id="header-workspace-selector"
-              onClick={() => setShowWorkspaceMenu((prev) => !prev)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-zinc-800/60 text-zinc-300 hover:text-zinc-100 transition-colors"
-              title="Choisir l’espace actif"
-            >
-              {getWorkspaceIcon(activeWorkspace?.icon)}
-              <span className="truncate max-w-[200px]">
-                {activeWorkspace ? activeWorkspace.name : "Choisir un espace"}
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
-            </button>
-
-            {showWorkspaceMenu && (
-              <div
-                id="header-workspace-dropdown"
-                className="absolute left-0 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
-              >
-                <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-zinc-500 flex items-center justify-between">
-                  <span>Espaces de travail</span>
-                  <button onClick={() => { setShowWorkspaceMenu(false); setShowCreateWsDialog(true); }} className="text-emerald-400 hover:text-emerald-300">
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                <div className="max-h-56 overflow-y-auto py-1">
-                  {workspaces.map((ws) => (
-                    <button
-                      key={ws.id}
-                      onClick={() => {
-                        setActiveWorkspace(ws.id);
-                        setShowWorkspaceMenu(false);
-                      }}
-                      className={`w-full px-4 py-2.5 text-left flex items-start gap-3 text-sm transition-colors ${
-                        ws.id === activeWorkspace?.id
-                          ? "bg-emerald-500/10 text-emerald-300 font-medium"
-                          : "text-zinc-300 hover:bg-zinc-800/60"
-                      }`}
-                    >
-                      <span className="mt-0.5">{getWorkspaceIcon(ws.icon)}</span>
-                      <div className="min-w-0">
-                        <div className="truncate">{ws.name}</div>
-                        {ws.description && (
-                          <div className="text-[11px] text-zinc-500 truncate mt-0.5">
-                            {ws.description}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="hidden lg:flex items-center gap-2 min-w-0 rounded-full border border-[#E5E9DC] bg-[#FBFAF6] py-1.5 pl-2.5 pr-3.5">
+            {getWorkspaceIcon(activeWorkspace?.icon)}
+            <span className="truncate max-w-[220px] text-sm font-medium text-[#3E4641]">
+              {activeWorkspace ? activeWorkspace.name : "Mon espace"}
+            </span>
           </div>
         </div>
 
-        {/* Center: Search — hidden on mobile, full bar on sm+ */}
+        {/* Center: Search */}
         <div className={`relative hidden sm:flex flex-1 max-w-xl mx-auto justify-center overflow-visible ${isSearchOpen ? "hidden" : ""}`}>
           <div className="w-full max-w-lg relative group">
-            <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-zinc-900/60 focus-within:bg-zinc-800/80 border border-zinc-800 focus-within:border-zinc-700 transition-all shadow-sm">
-              <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors shrink-0" />
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#F1F0E9] focus-within:bg-white border border-transparent focus-within:border-[#2E7D5B]/30 transition-all">
+              <Search className="h-4 w-4 text-[#5C6B62] group-focus-within:text-[#2E7D5B] transition-colors shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
                 onFocus={() => setIsSearchOpen(true)}
                 placeholder="Rechercher un cours, un sujet, une notion…"
-                className="w-full bg-transparent border-none text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none"
+                className="w-full bg-transparent border-none text-sm text-[#16241D] placeholder:text-[#5C6B62] focus:outline-none"
               />
               <div className="flex items-center gap-2">
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="p-1 rounded-md hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors">
+                  <button onClick={() => setSearchQuery("")} className="p-1 rounded-full hover:bg-[#E5E9DC] text-[#5C6B62] hover:text-[#16241D] transition-colors">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 )}
                 <div className="hidden md:flex items-center gap-1">
-                  <kbd className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-medium font-sans bg-zinc-800/80 text-zinc-400 rounded-md border border-zinc-700/60 shadow-sm">⌘K</kbd>
+                  <kbd className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-medium font-sans bg-white text-[#5C6B62] rounded-md border border-[#E5E9DC]">⌘K</kbd>
                 </div>
               </div>
             </div>
@@ -237,73 +167,71 @@ export function Header({
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border bg-zinc-900/70 border-zinc-800 text-left hover:border-zinc-700 transition-colors"
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-full border bg-[#F1F0E9] border-transparent text-left hover:border-[#E5E9DC] transition-colors"
             aria-label="Ouvrir la recherche"
           >
-            <Search className="h-4 w-4 text-zinc-500 shrink-0" />
-            <span className="truncate text-sm text-zinc-500">Rechercher ou demander à Lekki…</span>
+            <Search className="h-4 w-4 text-[#5C6B62] shrink-0" />
+            <span className="truncate text-sm text-[#5C6B62]">Rechercher ou demander à Lekki…</span>
           </button>
         </div>
 
         {/* Right: AI + User */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {/* Lekki AI Trigger */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             id="header-lekki-ai-toggle"
             aria-label="Lekki AI"
             onClick={onToggleAI}
-            className={`hidden lg:flex h-10 min-w-10 items-center justify-center gap-1.5 sm:h-auto sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`hidden lg:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               isAIOpen
-                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 border border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]"
-                : "bg-zinc-900/50 hover:bg-zinc-800 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 shadow-sm"
+                ? "bg-[#2E7D5B] text-white shadow-[0_1px_6px_rgba(26,115,232,0.3)]"
+                : "border border-[#2E7D5B]/25 bg-[#E7F1E9] text-[#2E7D5B] hover:bg-[#D6E8D7]"
             }`}
           >
-            <Sparkles className={`h-4 w-4 ${isAIOpen ? "text-zinc-950" : "text-emerald-400"}`} />
-            <span className="hidden sm:inline">{isAIOpen ? "Lekki AI Actif" : "Lekki AI"}</span>
+            <Sparkles className="h-4 w-4" />
+            <span>{isAIOpen ? "Lekki AI actif" : "Lekki AI"}</span>
           </button>
 
-          <div className="h-5 w-[1px] bg-zinc-800/60 hidden sm:block" />
+          <div className="h-6 w-px bg-[#E5E9DC] hidden sm:block" />
 
-          {/* User Persona Switcher */}
-          <div className="relative hidden lg:block">
+          <div className="relative">
             <button
               id="header-user-persona-btn"
               onClick={() => setShowUserMenu((prev) => !prev)}
-              className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-zinc-800/60 transition-colors"
-              title="Compte Utilisateur"
+              className="flex items-center gap-2 rounded-full py-1 pl-1 pr-1 transition-colors hover:bg-[#F1F0E9] lg:pr-2"
+              title="Compte utilisateur"
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-600/40 to-sky-600/40 border border-emerald-500/30 text-emerald-100 flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-transparent hover:ring-zinc-700 transition-all">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#2E7D5B] to-[#1C553F] text-white flex items-center justify-center font-medium text-sm">
                 {user?.name?.charAt(0) || user?.username?.charAt(0) || "U"}
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-zinc-500 hidden md:block" />
+              <ChevronDown className="h-3.5 w-3.5 text-[#5C6B62] hidden md:block" />
             </button>
 
             {showUserMenu && (
               <div
                 id="header-user-dropdown"
-                className="absolute right-0 mt-2 w-64 rounded-xl bg-[#232936] border border-zinc-700/80 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-[#E5E9DC] shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
               >
-                <div className="px-4 py-3 border-b border-zinc-800/80">
+                <div className="px-4 py-3 border-b border-[#E5E9DC]">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-600 to-sky-600 text-white flex items-center justify-center font-bold text-base shadow-sm ring-2 ring-zinc-700">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#2E7D5B] to-[#1C553F] text-white flex items-center justify-center font-medium text-base">
                       {user?.name?.charAt(0) || user?.username?.charAt(0) || "U"}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-sm font-bold text-zinc-100 truncate">
+                      <div className="text-sm font-medium text-[#16241D] truncate">
                         {user?.name || user?.username}
                       </div>
-                      <div className="text-xs text-zinc-400 truncate">{user?.email}</div>
+                      <div className="text-xs text-[#5C6B62] truncate">{user?.email}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-1 border-t border-zinc-800/80 mt-1">
+                <div className="p-1 border-t border-[#E5E9DC] mt-1">
                   <button
                     onClick={() => {
                       logout();
                       setShowUserMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 font-medium transition-colors"
+                    className="w-full flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-[#d93025] hover:bg-[#d93025]/10 font-medium transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
                     Déconnexion
@@ -314,15 +242,6 @@ export function Header({
           </div>
         </div>
       </header>
-
-      <CreateWorkspaceDialog
-        open={showCreateWsDialog}
-        onOpenChange={setShowCreateWsDialog}
-      />
-      <WorkspaceAdminDialog
-        open={showAdminDialog}
-        onOpenChange={setShowAdminDialog}
-      />
     </>
   );
 }

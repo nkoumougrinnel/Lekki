@@ -1,43 +1,65 @@
 @import "tailwindcss";
 
-/* Le thème suit la classe .dark posée par ThemeProvider, pas le réglage du système :
-   sans cette ligne, le Drive s'affichait en clair sur les appareils en mode clair. */
+/* Le thème suit la classe .dark posée par ThemeProvider, pas le réglage du système. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Thème sombre éclairci : gris anthracite plutôt que noir, et gris de texte plus lisibles.
-   On ajuste la palette « zinc » de Tailwind, utilisée partout pour les surfaces et les textes. */
+/*
+ * Identité Lekki — espace documentaire et assistant IA, dans une palette forêt et ivoire.
+ * Surfaces claires, contrastes doux, accent vert profond et typographie sans-serif.
+ * Layout trois-panneaux : Sources | Conversation | Studio.
+ */
 @theme {
-  --color-zinc-400: #b0b0b9;
-  --color-zinc-500: #93939d;
-  --color-zinc-600: #747480;
-  --color-zinc-700: #4a4b55;
-  --color-zinc-800: #343640;
-  --color-zinc-900: #272a32;
-  --color-zinc-950: #1d2027;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Google Sans", "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+
+  /* Palette Lekki : ivoire doux, vert profond et surfaces aérées. */
+  --color-heading: #16241D;
+  --color-strong: #26342B;
+  --color-body: #3E4641;
+  --color-muted: #5C6B62;
+  --color-subtle: #758278;
+  --color-faint: #8A968E;
+  --color-on-primary: #ffffff;
+  --color-line: #E5E9DC;
+  --color-line-strong: #D9DFD2;
+  --color-surface: #ffffff;
+  --color-canvas: #FBFAF6;
+
+  /* Vert forêt Lekki : contrasté, reconnaissable et lisible sur fond clair. */
+  --color-emerald-100: #2E7D5B;
+  --color-emerald-200: #2E7D5B;
+  --color-emerald-300: #2E7D5B;
+  --color-emerald-400: #2E7D5B;
+  --color-emerald-500: #246147;
+  --color-emerald-600: #1C553F;
+  --color-emerald-700: #174A38;
+  --color-emerald-800: #143E30;
+  --color-emerald-900: #103427;
+  --color-emerald-950: #0B2B22;
 }
 
 @layer base {
   :root {
-    --background: 220 16% 12%;
-    --foreground: 210 20% 98%;
-    --card: 220 16% 16%;
-    --card-foreground: 210 20% 98%;
-    --popover: 220 16% 16%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 160 100% 39%;
-    --primary-foreground: 220 18% 8%;
-    --secondary: 220 14% 20%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 220 14% 21%;
-    --muted-foreground: 218 12% 72%;
-    --accent: 220 14% 21%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 26%;
-    --input: 220 13% 26%;
-    --ring: 160 100% 39%;
-    --radius: 0.5rem;
+    --background: 220 20% 98%;
+    --foreground: 0 0% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+    --primary: 155 46% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 140 25% 94%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 14% 91%;
+    --input: 220 14% 91%;
+    --ring: 155 46% 34%;
+    --radius: 0.75rem;
   }
 }
 
@@ -48,16 +70,75 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #1B1F25;
-  color: #f4f4f5;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #FBFAF6;
+  color: #16241D;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
 }
 
+::selection {
+  background: rgb(46 125 91 / 18%);
+  color: #16241D;
+}
+
+/* Barres de défilement discrètes, harmonisées avec les surfaces Lekki. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D9DFD2 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: #D9DFD2 content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6 content-box;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * Fond des grands blocs d'accueil : dégradé bleu très clair,
+ * comme les surfaces de NotebookLM.
+ */
+@utility bg-ink {
+  background-image:
+    radial-gradient(120% 90% at 90% -20%, rgb(46 125 91 / 0.06), transparent 58%),
+    linear-gradient(142deg, #F5F8F3 0%, #FBFAF6 54%, #ffffff 100%);
+}
+
+@utility glow-brass {
+  background-image: radial-gradient(60% 70% at 80% 0%, rgb(46 125 91 / 0.12), transparent 70%);
+}
+
+/* Titres éditoriaux : Google Sans, resserré, sans graisse excessive. */
+@utility display-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .wiki-markdown {
-  color: #d4d4d8;
+  color: #3E4641;
   overflow-wrap: anywhere;
 }
 
@@ -73,21 +154,25 @@ body {
 .wiki-markdown h2,
 .wiki-markdown h3,
 .wiki-markdown h4 {
-  color: #f4f4f5;
-  font-weight: 700;
+  color: #16241D;
+  font-weight: 600;
   line-height: 1.3;
   scroll-margin-top: 6rem;
 }
 
 .wiki-markdown h1 {
   margin: 2rem 0 1rem;
-  font-size: 1.75rem;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 500;
   letter-spacing: -0.025em;
 }
 
 .wiki-markdown h2 {
   margin: 1.8rem 0 0.75rem;
-  font-size: 1.35rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 500;
   letter-spacing: -0.015em;
 }
 
@@ -107,23 +192,23 @@ body {
 }
 
 .wiki-markdown strong {
-  color: #f4f4f5;
+  color: #16241D;
   font-weight: 650;
 }
 
 .wiki-markdown em {
-  color: #e4e4e7;
+  color: #3E4641;
 }
 
 .wiki-markdown a {
-  color: #6ee7b7;
+  color: #2E7D5B;
   text-decoration: underline;
-  text-decoration-color: rgb(52 211 153 / 35%);
+  text-decoration-color: rgb(46 125 91 / 30%);
   text-underline-offset: 3px;
 }
 
 .wiki-markdown a:hover {
-  color: #a7f3d0;
+  color: #246147;
   text-decoration-color: currentColor;
 }
 
@@ -151,16 +236,16 @@ body {
 }
 
 .wiki-markdown li::marker {
-  color: #34d399;
+  color: #2E7D5B;
 }
 
 .wiki-markdown blockquote {
   margin: 1.25rem 0;
-  border-left: 3px solid rgb(52 211 153 / 55%);
+  border-left: 3px solid rgb(46 125 91 / 50%);
   border-radius: 0 0.5rem 0.5rem 0;
-  background: rgb(16 185 129 / 5%);
+  background: rgb(232 240 255 / 50%);
   padding: 0.35rem 1rem;
-  color: #a1a1aa;
+  color: #3E4641;
 }
 
 .wiki-markdown blockquote > :first-child {
@@ -172,11 +257,11 @@ body {
 }
 
 .wiki-markdown code {
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid #E5E9DC;
   border-radius: 0.35rem;
-  background: rgb(255 255 255 / 5%);
+  background: #F1F0E9;
   padding: 0.12rem 0.35rem;
-  color: #a7f3d0;
+  color: #2E7D5B;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
 }
@@ -190,11 +275,11 @@ body {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0.25rem 0;
-  color: #d4d4d8;
+  color: #3E4641;
   font-size: 0.84rem;
   line-height: 1.75;
   tab-size: 2;
-  scrollbar-color: rgb(161 161 170 / 35%) transparent;
+  scrollbar-color: rgb(154 160 166 / 45%) transparent;
   scrollbar-width: thin;
   white-space: pre;
 }
@@ -219,14 +304,14 @@ body {
 .wiki-markdown hr {
   margin: 1.75rem 0;
   border: 0;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid #E5E9DC;
 }
 
 /* Tableau : le cadre arrondi est porté par l'enveloppe, qui défile seule sur téléphone. */
 .wiki-markdown div[data-streamdown="table-wrapper"] {
   margin: 1.25rem 0;
   overflow-x: auto;
-  border: 1px solid rgb(255 255 255 / 10%);
+  border: 1px solid #E5E9DC;
   border-radius: 0.75rem;
   -webkit-overflow-scrolling: touch;
 }
@@ -253,21 +338,21 @@ body {
 .wiki-markdown thead,
 .wiki-markdown tbody,
 .wiki-markdown tr {
-  border-color: rgb(255 255 255 / 10%) !important;
+  border-color: #E5E9DC !important;
 }
 
 .wiki-markdown th,
 .wiki-markdown td {
   min-width: 6rem;
-  border: 1px solid rgb(255 255 255 / 10%);
+  border: 1px solid #E5E9DC;
   padding: 0.6rem 0.75rem;
   text-align: left;
   vertical-align: top;
 }
 
 .wiki-markdown th {
-  background: rgb(255 255 255 / 4%);
-  color: #f4f4f5;
+  background: #F1F0E9;
+  color: #16241D;
   font-weight: 600;
 }
 

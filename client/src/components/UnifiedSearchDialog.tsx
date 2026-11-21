@@ -93,13 +93,13 @@ export function UnifiedSearchDialog({
         );
       case "community":
         return (
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-700 border border-sky-500/30">
             🔵 Communautaire
           </span>
         );
       case "draft":
         return (
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 border border-amber-500/30">
             🟡 Brouillon
           </span>
         );
@@ -114,7 +114,7 @@ export function UnifiedSearchDialog({
       id="unified-search-dropdown"
       className={`${
         fullScreen
-          ? "fixed inset-0 z-50 bg-[#1B212A]/97 backdrop-blur-md"
+          ? "fixed inset-0 z-50 bg-[#F8F7F4]/97 backdrop-blur-md"
           : "relative sm:absolute sm:left-0 sm:right-0 sm:top-full sm:z-50 sm:mt-2"
       }`}
       onClick={(e) => {
@@ -123,7 +123,7 @@ export function UnifiedSearchDialog({
     >
       <div
         id="unified-search-modal"
-        className={`w-full bg-[#212632] border border-zinc-700/80 ${
+        className={`w-full bg-[#FFFFFF] border border-line-strong/80 ${
           fullScreen
             ? "rounded-none h-full shadow-none"
             : "border-x-0 border-t-0 sm:border sm:rounded-xl sm:shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-100"
@@ -154,14 +154,14 @@ export function UnifiedSearchDialog({
         {/* Results Container */}
         <div className="max-h-[calc(100dvh-7.5rem)] overflow-y-auto p-3 space-y-4 sm:max-h-[60vh]">
           {loading && (
-            <div className="py-8 text-center text-xs text-zinc-500">
+            <div className="py-8 text-center text-xs text-subtle">
               Recherche dans tes documents et tes fiches…
             </div>
           )}
 
           {!loading && !query && (
             <div className="py-8 text-center space-y-2">
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted">
                 Tape un mot-clé : Lekki cherche à la fois dans les documents et dans les fiches du wiki.
               </p>
               <div className="flex flex-wrap justify-center gap-1.5 pt-2">
@@ -169,7 +169,7 @@ export function UnifiedSearchDialog({
                   <button
                     key={chip}
                     onClick={() => onQueryChange(chip)}
-                    className="text-[11px] px-2.5 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60"
+                    className="text-[11px] px-2.5 py-1 rounded bg-[#F1F0E9]/80 hover:bg-[#E9E6DD] text-body border border-line-strong/60"
                   >
                     {chip}
                   </button>
@@ -179,9 +179,9 @@ export function UnifiedSearchDialog({
           )}
 
           {!loading && query && totalResults === 0 && (
-            <div className="py-8 text-center text-xs text-zinc-400 space-y-1">
+            <div className="py-8 text-center text-xs text-muted space-y-1">
               <p>Aucun document ou page Wiki trouvé pour « {query} ».</p>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-subtle">
                 La recherche couvre ton espace personnel et l’espace actif.
               </p>
             </div>
@@ -190,7 +190,7 @@ export function UnifiedSearchDialog({
           {/* DOCUMENTS */}
           {results.documents.length > 0 && (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
                 <FileText className="h-3 w-3 text-emerald-400" />
                 <span>Documents ({results.documents.length})</span>
               </div>
@@ -202,17 +202,17 @@ export function UnifiedSearchDialog({
                       onOpenChange(false);
                       onSelectDocument(doc.id);
                     }}
-                    className="w-full text-left p-2.5 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-start gap-2.5 group"
+                    className="w-full text-left p-2.5 rounded-lg bg-[#F8F7F2] hover:bg-[#EFEEE7]/80 border border-line hover:border-line-strong transition-colors flex items-start gap-2.5 group"
                   >
                     <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-zinc-200 group-hover:text-emerald-400 truncate sm:text-xs">
+                        <span className="text-sm font-medium text-strong group-hover:text-emerald-400 truncate sm:text-xs">
                           {prettyName(doc.title)}
                         </span>
                         <StudentDocBadge info={classifyDocument(doc.title)} compact />
                       </div>
-                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
+                      <p className="text-xs text-muted line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {doc.excerpt}
                       </p>
                     </div>
@@ -225,7 +225,7 @@ export function UnifiedSearchDialog({
           {/* WIKI */}
           {results.wiki.length > 0 && (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
+              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
                 <BookOpen className="h-3 w-3 text-emerald-400" />
                 <span>Fiches du wiki ({results.wiki.length})</span>
               </div>
@@ -237,17 +237,17 @@ export function UnifiedSearchDialog({
                       onOpenChange(false);
                       onSelectWiki(page.id);
                     }}
-                    className="w-full text-left p-2.5 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-start gap-2.5 group"
+                    className="w-full text-left p-2.5 rounded-lg bg-[#F8F7F2] hover:bg-[#EFEEE7]/80 border border-line hover:border-line-strong transition-colors flex items-start gap-2.5 group"
                   >
                     <BookOpen className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-zinc-200 group-hover:text-emerald-400 truncate">
+                        <span className="text-xs font-medium text-strong group-hover:text-emerald-400 truncate">
                           {page.title}
                         </span>
                         {getStatusBadge(page.status)}
                       </div>
-                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
+                      <p className="text-xs text-muted line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {page.excerpt}
                       </p>
                     </div>
@@ -260,8 +260,8 @@ export function UnifiedSearchDialog({
           {/* PARTAGES */}
           {results.shared.length > 0 && (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
-                <Share2 className="h-3 w-3 text-sky-400" />
+              <div className="flex items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+                <Share2 className="h-3 w-3 text-sky-700" />
                 <span>Partagés avec moi ({results.shared.length})</span>
               </div>
               <div className="space-y-1">
@@ -272,19 +272,19 @@ export function UnifiedSearchDialog({
                       onOpenChange(false);
                       onSelectDocument(doc.id);
                     }}
-                    className="w-full text-left p-2.5 rounded-lg bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-start gap-2.5 group"
+                    className="w-full text-left p-2.5 rounded-lg bg-[#F8F7F2] hover:bg-[#EFEEE7]/80 border border-line hover:border-line-strong transition-colors flex items-start gap-2.5 group"
                   >
                     <div className="mt-0.5"><DocumentTypeIcon extension={doc.extension} className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-zinc-200 group-hover:text-emerald-400 truncate sm:text-xs">
+                        <span className="text-sm font-medium text-strong group-hover:text-emerald-400 truncate sm:text-xs">
                           {prettyName(doc.title)}
                         </span>
-                        <span className="text-[11px] text-sky-400 shrink-0">
+                        <span className="text-[11px] text-sky-700 shrink-0">
                           Par {doc.shared_by}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
+                      <p className="text-xs text-muted line-clamp-2 mt-0.5 sm:line-clamp-1 sm:text-[11px]">
                         {doc.excerpt}
                       </p>
                     </div>
@@ -296,7 +296,7 @@ export function UnifiedSearchDialog({
         </div>
 
         {/* Footer info */}
-        <div className="px-4 py-2 bg-zinc-950/60 border-t border-zinc-800/80 text-[11px] text-zinc-500 flex items-center justify-between">
+        <div className="px-4 py-2 bg-[#F1F0E9] border-t border-line/80 text-[11px] text-subtle flex items-center justify-between">
           <span>Documents et fiches de ton espace</span>
           <span className="hidden font-mono text-[10px] sm:inline">Échap pour fermer</span>
         </div>

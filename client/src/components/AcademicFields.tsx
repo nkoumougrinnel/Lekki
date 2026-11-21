@@ -38,14 +38,14 @@ export function AcademicFields({ value, onChange, allowNone = true }: AcademicFi
       </div>
 
       {enabled && (
-        <div className="space-y-3 rounded-xl bg-black/20 p-3 ring-1 ring-inset ring-white/[0.05]">
+        <div className="space-y-3 rounded-xl bg-[#F1F0E9] p-3 ring-1 ring-inset ring-black/[0.05]">
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-zinc-300">Niveau</p>
+            <p className="text-[11px] font-medium text-body">Niveau</p>
             <div className="grid grid-cols-3 gap-1.5">
               {([1, 2, 3] as const).map((option) => (
                 <Segment key={option} selected={level === option} onClick={() => setLevel(option)}>
                   ITT{option}
-                  <span className="ml-1 text-[10px] font-normal text-zinc-500">S{option * 2 - 1}–S{option * 2}</span>
+                  <span className="ml-1 text-[10px] font-normal text-subtle">S{option * 2 - 1}–S{option * 2}</span>
                 </Segment>
               ))}
             </div>
@@ -53,8 +53,8 @@ export function AcademicFields({ value, onChange, allowNone = true }: AcademicFi
 
           {needsSpecialty(level) && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-medium text-zinc-300">
-                Spécialité <span className="font-normal text-zinc-500">(à partir du S4)</span>
+              <p className="text-[11px] font-medium text-body">
+                Spécialité <span className="font-normal text-subtle">(à partir du S4)</span>
               </p>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 <Segment selected={!value?.specialty} onClick={() => setSpecialty(null)}>
@@ -73,7 +73,7 @@ export function AcademicFields({ value, onChange, allowNone = true }: AcademicFi
               </div>
             </div>
           )}
-          <p className="text-[10px] leading-relaxed text-zinc-500">
+          <p className="text-[10px] leading-relaxed text-subtle">
             Lekki range les cours et les sujets par matière, d’après le {program.source.toLowerCase()}.
           </p>
         </div>
@@ -91,11 +91,11 @@ function OptionButton({ selected, onClick, title, hint }: { selected: boolean; o
       className={`rounded-xl border p-3 text-left transition ${
         selected
           ? "border-emerald-400/40 bg-emerald-400/[0.07] ring-1 ring-inset ring-emerald-400/10"
-          : "border-white/[0.07] bg-white/[0.015] hover:border-white/[0.14]"
+          : "border-[#E7E4D9] bg-[#F8F7F2] hover:border-[#E7E4D9]"
       }`}
     >
-      <span className={`block text-xs font-medium ${selected ? "text-zinc-100" : "text-zinc-300"}`}>{title}</span>
-      <span className="mt-0.5 block text-[10px] leading-relaxed text-zinc-500">{hint}</span>
+      <span className={`block text-xs font-medium ${selected ? "text-heading" : "text-body"}`}>{title}</span>
+      <span className="mt-0.5 block text-[10px] leading-relaxed text-subtle">{hint}</span>
     </button>
   );
 }
@@ -110,7 +110,7 @@ function Segment({
       title={title}
       aria-pressed={selected}
       className={`rounded-lg border px-2 py-2 text-xs font-medium transition ${
-        selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+        selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-[#E7E4D9] text-muted hover:text-strong"
       }`}
     >
       {children}

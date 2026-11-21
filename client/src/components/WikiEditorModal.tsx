@@ -46,10 +46,10 @@ const COMMON_TOPICS = [
 ];
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.09] bg-[#1E252F] px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10";
+  "w-full rounded-lg border border-[#E7E4D9] bg-[#F5F4EE] px-3 py-2.5 text-sm text-strong placeholder:text-faint outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/10";
 
 const labelClass =
-  "mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500";
+  "mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-subtle";
 
 export function WikiEditorModal({
   page,
@@ -278,15 +278,15 @@ export function WikiEditorModal({
   return (
     <div
       id="wiki-editor-modal"
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#191F28] text-zinc-100"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#F4F3ED] text-heading"
     >
       {/* HEADER */}
-      <header className="relative z-20 flex min-h-[68px] shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-white/[0.07] bg-[#1D222D] px-3 py-2 sm:h-[68px] sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
+      <header className="relative z-20 flex min-h-[68px] shrink-0 flex-wrap items-center gap-x-2 gap-y-2 border-b border-[#E7E4D9] bg-white px-3 py-2 sm:h-[68px] sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
         <button
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="Fermer"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-[#F8F7F2] hover:text-[#16241D]"
         >
           <X className="h-[18px] w-[18px]" />
         </button>
@@ -295,8 +295,8 @@ export function WikiEditorModal({
           <BookOpen className="h-[17px] w-[17px] text-emerald-400" />
         </div>
 
-        <div className="order-3 w-full min-w-0 border-t border-white/[0.06] pt-2 sm:order-none sm:w-auto sm:flex-1 sm:border-0 sm:pt-0">
-          <div className="mb-0.5 hidden text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-600 sm:block">
+        <div className="order-3 w-full min-w-0 border-t border-[#E7E4D9] pt-2 sm:order-none sm:w-auto sm:flex-1 sm:border-0 sm:pt-0">
+          <div className="mb-0.5 hidden text-[10px] font-medium uppercase tracking-[0.16em] text-faint sm:block">
             Lekki / Wiki
           </div>
 
@@ -306,12 +306,12 @@ export function WikiEditorModal({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Titre de la fiche…"
-            className="w-full min-w-0 bg-transparent text-base font-semibold text-zinc-100 outline-none placeholder:text-zinc-600 sm:text-base"
+            className="w-full min-w-0 bg-transparent text-base font-semibold text-heading outline-none placeholder:text-faint sm:text-base"
           />
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-          <span className="text-[11px] text-zinc-600">
+          <span className="text-[11px] text-faint">
             {page ? "Modification" : "Nouvelle fiche"}
           </span>
         </div>
@@ -320,7 +320,7 @@ export function WikiEditorModal({
           type="button"
           onClick={() => setSidebarOpen((previous) => !previous)}
           title={sidebarOpen ? "Masquer les sources" : "Afficher les sources"}
-          className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/[0.06] hover:text-zinc-200 lg:flex"
+          className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg text-subtle transition hover:bg-[#F8F7F2] hover:text-strong lg:flex"
         >
           {sidebarOpen ? (
             <PanelRightClose className="h-4 w-4" />
@@ -333,7 +333,7 @@ export function WikiEditorModal({
           type="button"
           onClick={() => setMobileSourcesOpen(true)}
           aria-label={`Ouvrir les sources et relations (${selectedDocIds.length + selectedWikiIds.length} associées)`}
-          className="order-2 ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 text-xs font-medium text-zinc-300 transition hover:bg-white/[0.07] lg:hidden"
+          className="order-2 ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] px-3 text-xs font-medium text-body transition hover:bg-[#F8F7F2] lg:hidden"
         >
           <Link2 className="h-4 w-4 text-emerald-400" />
           <span>Sources</span>
@@ -349,7 +349,7 @@ export function WikiEditorModal({
           form="wiki-editor-form"
           disabled={saving || !title.trim()}
           aria-label={saving ? "Publication en cours" : page ? "Enregistrer la page" : "Publier la page"}
-          className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#192128] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
+          className="order-2 flex h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-3 text-xs font-semibold text-[#F1F0E9] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40 sm:order-none sm:h-9 sm:rounded-lg sm:px-4"
         >
           {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           <span>
@@ -378,31 +378,31 @@ export function WikiEditorModal({
                   setShowOrganization((previous) => !previous)
                 }
                 aria-expanded={showOrganization}
-                className="group flex w-full items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#1D222D] p-3.5 text-left transition hover:border-emerald-500/20 hover:bg-[#1F282F] sm:p-4"
+                className="group flex w-full items-center gap-3 rounded-2xl border border-[#E7E4D9] bg-white p-3.5 text-left transition hover:border-emerald-500/20 hover:bg-[#FFFFFF] sm:p-4"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07]">
                   <FolderTree className="h-4 w-4 text-emerald-400" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-zinc-200">
+                  <p className="text-xs font-semibold text-strong">
                     Rangement
                   </p>
 
-                  <p className={`mt-1 truncate text-[11px] ${finalTopic && section ? "text-zinc-500" : "text-amber-400/80"}`}>
+                  <p className={`mt-1 truncate text-[11px] ${finalTopic && section ? "text-subtle" : "text-amber-700/80"}`}>
                     {finalTopic || "Matière ou thème à choisir"} · {section || "Chapitre à choisir"}
                   </p>
                 </div>
 
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
+                  className={`h-4 w-4 shrink-0 text-subtle transition-transform ${
                     showOrganization ? "rotate-180 text-emerald-400" : ""
                   }`}
                 />
               </button>
 
               {showOrganization && (
-                <div className="mt-3 grid gap-4 rounded-2xl border border-white/[0.07] bg-[#1D222D] p-3.5 sm:grid-cols-2 sm:p-4">
+                <div className="mt-3 grid gap-4 rounded-2xl border border-[#E7E4D9] bg-white p-3.5 sm:grid-cols-2 sm:p-4">
                   <div>
                     <label className={labelClass}>Matière ou thème</label>
 
@@ -447,17 +447,17 @@ export function WikiEditorModal({
             </section>
 
             {/* EDITOR TOOLBAR */}
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-3">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#E7E4D9] pb-3">
               <div>
-                <h2 className="text-xs font-semibold text-zinc-200">
+                <h2 className="text-xs font-semibold text-strong">
                   Contenu
                 </h2>
-                <p className="mt-1 text-[11px] text-zinc-600">
+                <p className="mt-1 text-[11px] text-faint">
                   Écris ce que la promo doit retenir.
                 </p>
               </div>
 
-              <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#1E252F] p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-[#E7E4D9] bg-[#F5F4EE] p-1">
                 <button
                   type="button"
                   onClick={() => setMode("edit")}
@@ -465,7 +465,7 @@ export function WikiEditorModal({
                   className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
                     mode === "edit"
                       ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      : "text-subtle hover:text-body"
                   }`}
                 >
                   <Edit3 className="h-3 w-3" />
@@ -479,7 +479,7 @@ export function WikiEditorModal({
                   className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition ${
                     previewMode
                       ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      : "text-subtle hover:text-body"
                   }`}
                 >
                   <Eye className="h-3 w-3" />
@@ -493,7 +493,7 @@ export function WikiEditorModal({
                   className={`hidden min-h-9 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition lg:flex ${
                     mode === "split"
                       ? "bg-emerald-500/15 text-emerald-300 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      : "text-subtle hover:text-body"
                   }`}
                 >
                   <Columns2 className="h-3 w-3" />
@@ -505,14 +505,14 @@ export function WikiEditorModal({
             {/* EDITING AREA */}
             {(() => {
               const preview = (
-                <div className="rounded-2xl border border-white/[0.07] bg-[#1D222D] px-4 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
-                  <h1 className="mb-4 text-xl font-semibold tracking-tight text-zinc-100 sm:mb-6 sm:text-2xl">
+                <div className="rounded-2xl border border-[#E7E4D9] bg-white px-4 py-4 sm:min-h-[55vh] sm:rounded-xl sm:px-8 sm:py-8">
+                  <h1 className="mb-4 text-xl font-semibold tracking-tight text-heading sm:mb-6 sm:text-2xl">
                     {title || "Sans titre"}
                   </h1>
                   {content.trim() ? (
                     <MarkdownContent content={content} title={title} className="text-sm leading-7" />
                   ) : (
-                    <p className="text-sm italic text-zinc-600">Aucun contenu pour le moment.</p>
+                    <p className="text-sm italic text-faint">Aucun contenu pour le moment.</p>
                   )}
                 </div>
               );
@@ -536,16 +536,16 @@ export function WikiEditorModal({
               return editor;
             })()}
 
-            <p className="mt-2 hidden text-[11px] text-zinc-600 sm:block">
+            <p className="mt-2 hidden text-[11px] text-faint sm:block">
               Markdown : **gras**, _italique_, ## titre, - liste, $formule$, $$formule centrée$$. Ctrl+S pour enregistrer.
             </p>
 
             {/* EDIT HISTORY */}
             {page && (
-              <section className="mt-8 border-t border-white/[0.07] pt-5">
+              <section className="mt-8 border-t border-[#E7E4D9] pt-5">
                 <label className={labelClass}>
                   Commentaire de modification
-                  <span className="ml-2 normal-case tracking-normal text-zinc-700">
+                  <span className="ml-2 normal-case tracking-normal text-subtle">
                     Facultatif
                   </span>
                 </label>
@@ -559,15 +559,15 @@ export function WikiEditorModal({
               </section>
             )}
 
-            <div className="mt-8 flex items-center justify-between gap-4 border-t border-white/[0.07] pt-4">
-              <span className="text-[10px] text-zinc-600">
+            <div className="mt-8 flex items-center justify-between gap-4 border-t border-[#E7E4D9] pt-4">
+              <span className="text-[10px] text-faint">
                 Markdown pris en charge
               </span>
 
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="text-xs text-zinc-500 transition hover:text-zinc-200"
+                className="text-xs text-subtle transition hover:text-strong"
               >
                 Annuler
               </button>
@@ -587,7 +587,7 @@ export function WikiEditorModal({
               />
             )}
             <aside
-              className={`${mobileSourcesOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] animate-in slide-in-from-bottom duration-200 rounded-t-3xl border-x border-t shadow-2xl" : "hidden"} w-full shrink-0 flex-col border-white/[0.07] bg-[#1D222D] lg:static lg:z-auto lg:max-h-none lg:w-[310px] lg:animate-none lg:rounded-none lg:border-x-0 lg:border-y-0 lg:border-l lg:shadow-none xl:w-[350px] ${sidebarOpen ? "lg:flex" : "lg:hidden"}`}
+              className={`${mobileSourcesOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[85dvh] animate-in slide-in-from-bottom duration-200 rounded-t-3xl border-x border-t shadow-2xl" : "hidden"} w-full shrink-0 flex-col border-[#E7E4D9] bg-white lg:static lg:z-auto lg:max-h-none lg:w-[310px] lg:animate-none lg:rounded-none lg:border-x-0 lg:border-y-0 lg:border-l lg:shadow-none xl:w-[350px] ${sidebarOpen ? "lg:flex" : "lg:hidden"}`}
             >
             {/* SIDEBAR HEADER */}
             <div className="shrink-0 px-5 pb-4 pt-2 lg:pt-5">
@@ -595,42 +595,42 @@ export function WikiEditorModal({
               <div className="flex items-center gap-2">
                 <Link2 className="h-4 w-4 text-emerald-400" />
 
-                <h2 className="text-xs font-semibold text-zinc-200">
+                <h2 className="text-xs font-semibold text-strong">
                   Sources et relations
                 </h2>
 
-                <span className="ml-auto rounded-md bg-white/[0.05] px-2 py-1 text-[10px] text-zinc-400">
+                <span className="ml-auto rounded-md bg-[#F8F7F2] px-2 py-1 text-[10px] text-muted">
                   {selectedDocIds.length + selectedWikiIds.length}
                 </span>
                 <button
                   type="button"
                   onClick={() => setMobileSourcesOpen(false)}
                   aria-label="Fermer les sources"
-                  className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-white lg:hidden"
+                  className="rounded-lg p-2 text-subtle transition hover:bg-[#F8F7F2] hover:text-[#16241D] lg:hidden"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+              <p className="mt-2 text-[11px] leading-relaxed text-subtle">
                 Relie cette fiche aux cours et aux sujets qui s’y rapportent.
               </p>
             </div>
 
             {/* SELECTED SOURCES */}
             <div className="shrink-0 px-5 pb-4">
-              <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-600">
+              <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-faint">
                 Éléments associés
               </p>
 
               {selectedDocIds.length === 0 &&
               selectedWikiIds.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-white/[0.09] px-3 py-4 text-center">
-                  <Link2 className="mx-auto mb-2 h-4 w-4 text-zinc-600" />
-                  <p className="text-[11px] text-zinc-500">
+                <div className="rounded-lg border border-dashed border-[#E7E4D9] px-3 py-4 text-center">
+                  <Link2 className="mx-auto mb-2 h-4 w-4 text-faint" />
+                  <p className="text-[11px] text-subtle">
                     Aucune relation pour le moment
                   </p>
-                  <p className="mt-1 text-[10px] text-zinc-600">
+                  <p className="mt-1 text-[10px] text-faint">
                     Ajoute des sources ci-dessous.
                   </p>
                 </div>
@@ -650,7 +650,7 @@ export function WikiEditorModal({
                       >
                         <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
 
-                        <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-body">
                           {file.name}
                         </span>
 
@@ -658,7 +658,7 @@ export function WikiEditorModal({
                           type="button"
                           onClick={() => toggleDoc(id)}
                           aria-label={`Retirer ${file.name}`}
-                          className="shrink-0 p-1 text-zinc-600 transition hover:text-red-400"
+                          className="shrink-0 p-1 text-faint transition hover:text-red-700"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -676,11 +676,11 @@ export function WikiEditorModal({
                     return (
                       <div
                         key={`wiki-${id}`}
-                        className="flex min-w-0 items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-2"
+                        className="flex min-w-0 items-center gap-2 rounded-lg border border-[#E7E4D9] bg-[#F8F7F2] px-2.5 py-2"
                       >
-                        <BookOpen className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                        <BookOpen className="h-3.5 w-3.5 shrink-0 text-muted" />
 
-                        <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-body">
                           {linkedPage.title}
                         </span>
 
@@ -688,7 +688,7 @@ export function WikiEditorModal({
                           type="button"
                           onClick={() => toggleWikiPage(id)}
                           aria-label={`Retirer ${linkedPage.title}`}
-                          className="shrink-0 p-1 text-zinc-600 transition hover:text-red-400"
+                          className="shrink-0 p-1 text-faint transition hover:text-red-700"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -700,14 +700,14 @@ export function WikiEditorModal({
             </div>
 
             {/* SOURCE TYPE TABS */}
-            <div className="flex shrink-0 items-center gap-1 border-y border-white/[0.07] px-4 py-2">
+            <div className="flex shrink-0 items-center gap-1 border-y border-[#E7E4D9] px-4 py-2">
               <button
                 type="button"
                 onClick={() => setActiveSourceTab("documents")}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md px-2 py-2 text-[11px] font-medium transition ${
                   activeSourceTab === "documents"
-                    ? "bg-white/[0.07] text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-[#F8F7F2] text-heading"
+                    : "text-subtle hover:text-body"
                 }`}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -719,8 +719,8 @@ export function WikiEditorModal({
                 onClick={() => setActiveSourceTab("pages")}
                 className={`flex flex-1 items-center justify-center gap-2 rounded-md px-2 py-2 text-[11px] font-medium transition ${
                   activeSourceTab === "pages"
-                    ? "bg-white/[0.07] text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-300"
+                    ? "bg-[#F8F7F2] text-heading"
+                    : "text-subtle hover:text-body"
                 }`}
               >
                 <BookOpen className="h-3.5 w-3.5" />
@@ -731,7 +731,7 @@ export function WikiEditorModal({
             {/* SEARCH */}
             <div className="shrink-0 px-4 py-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-600" />
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-faint" />
 
                 <input
                   value={linkSearch}
@@ -741,7 +741,7 @@ export function WikiEditorModal({
                       ? "Rechercher un document..."
                       : "Rechercher une page..."
                   }
-                  className="w-full rounded-lg border border-white/[0.07] bg-[#191F28] py-3 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
+                  className="w-full rounded-lg border border-[#E7E4D9] bg-[#F4F3ED] py-3 pl-9 pr-3 text-xs text-strong outline-none transition-colors placeholder:text-faint focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10"
                 />
               </div>
             </div>
@@ -757,25 +757,25 @@ export function WikiEditorModal({
                           key={file.id}
                           type="button"
                           onClick={() => toggleDoc(file.id)}
-                          className="group flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-white/[0.045]"
+                          className="group flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-[#F8F7F2]"
                         >
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-400/[0.07]">
                             <FileText className="h-4 w-4 text-emerald-400" />
                           </div>
 
-                          <span className="min-w-0 flex-1 truncate text-xs text-zinc-300">
+                          <span className="min-w-0 flex-1 truncate text-xs text-body">
                             {file.name}
                           </span>
 
-                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-emerald-400" />
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-faint transition group-hover:text-emerald-400" />
                         </button>
                       ))}
                     </div>
                   ) : (
                     <div className="px-4 py-8 text-center">
-                      <FileText className="mx-auto mb-3 h-5 w-5 text-zinc-700" />
+                      <FileText className="mx-auto mb-3 h-5 w-5 text-subtle" />
 
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-subtle">
                         {normalizedSearch
                           ? "Aucun document trouvé"
                             : workspaceFiles.length === 0
@@ -794,33 +794,33 @@ export function WikiEditorModal({
                           key={linkedPage.id}
                           type="button"
                           onClick={() => toggleWikiPage(linkedPage.id)}
-                          className="group flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-white/[0.045]"
+                          className="group flex w-full min-w-0 items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-[#F8F7F2]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
-                            <BookOpen className="h-4 w-4 text-zinc-400" />
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F8F7F2]">
+                            <BookOpen className="h-4 w-4 text-muted" />
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs text-zinc-300">
+                            <p className="truncate text-xs text-body">
                               {linkedPage.title}
                             </p>
 
-                            <p className="mt-1 truncate text-[10px] text-zinc-600">
+                            <p className="mt-1 truncate text-[10px] text-faint">
                               {[linkedPage.topic, linkedPage.section]
                                 .filter(Boolean)
                                 .join(" · ") || "Page Wiki"}
                             </p>
                           </div>
 
-                          <Plus className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition group-hover:text-emerald-400" />
+                          <Plus className="h-3.5 w-3.5 shrink-0 text-faint transition group-hover:text-emerald-400" />
                         </button>
                       ))}
                     </div>
                   ) : (
                     <div className="px-4 py-8 text-center">
-                      <BookOpen className="mx-auto mb-3 h-5 w-5 text-zinc-700" />
+                      <BookOpen className="mx-auto mb-3 h-5 w-5 text-subtle" />
 
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-subtle">
                         {normalizedSearch
                           ? "Aucune page trouvée"
                             : potentialLinkedWikis.length === 0
@@ -834,8 +834,8 @@ export function WikiEditorModal({
             </div>
 
             {/* SIDEBAR FOOTER */}
-            <div className="shrink-0 border-t border-white/[0.07] px-5 py-3">
-              <p className="text-[10px] leading-relaxed text-zinc-600">
+            <div className="shrink-0 border-t border-[#E7E4D9] px-5 py-3">
+              <p className="text-[10px] leading-relaxed text-faint">
                 Les liens permettent de passer d’une fiche
                 à ses cours et à ses sujets.
               </p>

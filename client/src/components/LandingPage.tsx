@@ -1,206 +1,426 @@
 import React from "react";
 import { Link } from "wouter";
 import {
-  ArrowRight, BookOpen, FileCheck2, GraduationCap, Quote, Smartphone, Sparkles, Users,
-  FolderUp, KeyRound, MessageSquareText,
+  ArrowRight,
+  AudioLines,
+  BookOpen,
+  ChevronDown,
+  FileCheck2,
+  FileText,
+  FolderUp,
+  GraduationCap,
+  KeyRound,
+  ListChecks,
+  MessageSquareText,
+  Network,
+  Quote,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import { LekkiMark } from "@/components/auth/AuthLayout";
 
-const steps = [
+const outputs = [
   {
-    icon: KeyRound,
-    title: "Crée l’espace",
-    text: "Une promo, un club ou un groupe d’étude. Tes camarades le rejoignent avec un code.",
+    icon: FileText,
+    title: "Fiches de révision",
+    text: "Un chapitre entier résumé, structuré et relié aux pages du cours.",
+    tint: "bg-[#E7F1E9]",
   },
   {
-    icon: FolderUp,
-    title: "Importe le dossier",
-    text: "Cours, TD, anciens sujets : importe le dossier entier, ses sous-dossiers sont conservés.",
+    icon: ListChecks,
+    title: "Quiz",
+    text: "Des questions générées depuis tes documents, avec la correction et la source.",
+    tint: "bg-[#fef7e0]",
   },
   {
-    icon: MessageSquareText,
-    title: "Révise et pose tes questions",
-    text: "Lekki répond à partir des documents de la promo, cite le cours et la page, et t’interroge.",
+    icon: Network,
+    title: "Cartes mentales",
+    text: "Les notions d’un module vues d’ensemble, chapitre par chapitre.",
+    tint: "bg-[#e6f4ea]",
   },
-];
-
-const features = [
   {
     icon: FileCheck2,
-    title: "Anciens sujets reconnus",
-    text: "Examen, rattrapage, CC, année et filière détectés depuis le nom du fichier. Un clic pour une proposition de correction.",
+    title: "Anciens sujets",
+    text: "Examen, rattrapage, CC : reconnus depuis le nom du fichier, avec une correction proposée.",
+    tint: "bg-[#fce8e6]",
   },
   {
-    icon: Quote,
-    title: "Des réponses sourcées",
-    text: "Chaque réponse cite le document d’origine. Tu peux l’ouvrir et vérifier : pas de réponse inventée.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Mode révision",
-    text: "Quiz générés à partir d’un chapitre, avec l’explication et la source de chaque réponse.",
+    icon: AudioLines,
+    title: "Résumés à écouter",
+    text: "La synthèse d’un cours en lecture audio, pour réviser en marchant.",
+    tint: "bg-[#f3e8fd]",
   },
   {
     icon: BookOpen,
     title: "Wiki de la promo",
-    text: "Fiches de révision écrites à plusieurs, historisées et vérifiées par les référents.",
-  },
-  {
-    icon: Users,
-    title: "Promo, club, groupe",
-    text: "Chaque espace est privé : seuls ses membres voient ses documents. La passation entre bureaux devient simple.",
-  },
-  {
-    icon: Smartphone,
-    title: "Sur ton téléphone",
-    text: "Lekki s’installe comme une application, directement depuis le navigateur.",
+    text: "Des fiches écrites à plusieurs, historisées et relues par les référents.",
+    tint: "bg-[#E7F1E9]",
   },
 ];
 
-export function LandingPage() {
+const steps = [
+  {
+    icon: KeyRound,
+    title: "Crée l’espace de ta promo",
+    text: "Une promo, un club, un groupe d’étude. Tes camarades rejoignent avec un code, et chacun arrive au bon endroit.",
+  },
+  {
+    icon: FolderUp,
+    title: "Importe les documents",
+    text: "Cours, TD, anciens sujets : dépose le dossier entier. Les sous-dossiers sont conservés et chaque fichier est indexé.",
+  },
+  {
+    icon: MessageSquareText,
+    title: "Pose ta question",
+    text: "Lekki répond à partir des documents de l’espace, cite le cours et la page, puis t’interroge pour vérifier.",
+  },
+];
+
+const faq = [
+  {
+    q: "D’où viennent les réponses de Lekki ?",
+    a: "Uniquement des documents importés dans ton espace. Chaque réponse affiche le document, le chapitre et la page d’où elle vient, pour que tu puisses vérifier en un clic.",
+  },
+  {
+    q: "Qui peut voir les documents de ma promo ?",
+    a: "Seuls les membres de l’espace. Un espace est privé par défaut : personne d’autre ne voit ses fichiers, et chaque membre n’accède qu’aux espaces qu’il a rejoints.",
+  },
+  {
+    q: "Quels fichiers puis-je importer ?",
+    a: "PDF, Word, PowerPoint et fichiers texte. Les documents scannés sont lus par OCR, et les dossiers importés gardent leur arborescence.",
+  },
+  {
+    q: "Faut-il un serveur ou une installation ?",
+    a: "Non. Lekki s’ouvre dans le navigateur et s’installe comme une application sur ton téléphone. Tes documents restent sur ton espace.",
+  },
+];
+
+function NotebookMock() {
   return (
-    <div className="h-screen overflow-y-auto bg-[#1B1F25] text-zinc-100">
-      <div className="relative min-h-full">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-[-8rem] h-[28rem] w-[42rem] -translate-x-1/2 rounded-full bg-emerald-500/12 blur-3xl" />
-          <div className="absolute right-[-8rem] bottom-24 h-80 w-80 rounded-full bg-teal-500/10 blur-3xl" />
+    <div className="relative mx-auto mt-14 w-full max-w-5xl">
+      <div className="pointer-events-none absolute -inset-x-10 -top-10 bottom-0 rounded-[3rem] bg-[radial-gradient(60%_60%_at_20%_10%,#D6E8D7_0%,transparent_70%),radial-gradient(55%_55%_at_85%_20%,#fef7e0_0%,transparent_72%)] blur-2xl" />
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-[#E5E9DC] bg-white shadow-[0_30px_80px_-40px_rgba(60,64,67,0.25)]">
+        {/* Barre de fenêtre */}
+        <div className="flex items-center gap-2 border-b border-[#F1F0E9] px-4 py-3">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#E5E9DC]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#E5E9DC]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#E5E9DC]" />
+          <span className="ml-3 truncate text-[11px] font-medium text-[#5C6B62]">
+            ITT2 · Travail du signal · 14 documents
+          </span>
         </div>
 
-        <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-6">
-          <Link href="/" className="flex items-center gap-3">
+        <div className="grid md:grid-cols-[0.9fr_1.5fr_0.9fr]">
+          {/* Sources */}
+          <aside className="border-b border-[#F1F0E9] p-4 md:border-b-0 md:border-r">
+            <p className="eyebrow text-[#5C6B62]">Sources</p>
+            <ul className="mt-3 space-y-1.5">
+              {[
+                { name: "Cours TS · chap. 3", meta: "34 pages" },
+                { name: "TD 4 · échantillonnage", meta: "6 pages" },
+                { name: "Examen 2024", meta: "4 pages" },
+                { name: "Rattrapage 2023", meta: "3 pages" },
+              ].map((source, index) => (
+                <li
+                  key={source.name}
+                  className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] ${
+                    index === 0 ? "bg-[#E7F1E9] text-[#2E7D5B]" : "text-[#3E4641]"
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-[#2E7D5B]" />
+                  <span className="truncate">{source.name}</span>
+                  <span className="ml-auto shrink-0 text-[10px] text-[#8A968E]">{source.meta}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-dashed border-[#D9DFD2] px-2 py-1.5 text-[11px] text-[#5C6B62]">
+              <FolderUp className="h-3.5 w-3.5" /> Importer un dossier
+            </div>
+          </aside>
+
+          {/* Conversation */}
+          <div className="p-4 sm:p-5">
+            <div className="flex items-center gap-2 text-[11px] text-[#5C6B62]">
+              <Sparkles className="h-3.5 w-3.5 text-[#2E7D5B]" /> Lekki AI
+            </div>
+            <div className="mt-3 ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-[#2E7D5B] px-3.5 py-2 text-[12.5px] text-white">
+              Énonce le théorème de Shannon. Il tombe souvent ?
+            </div>
+            <div className="mt-3 space-y-2 rounded-2xl rounded-bl-md border border-[#F1F0E9] bg-[#FBFAF6] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#3E4641]">
+              <p>
+                Pour reconstruire un signal de bande <b>B</b>, il faut échantillonner à{" "}
+                <b>fe ≥ 2B</b>. Sinon, les répliques du spectre se chevauchent : c’est le repliement.
+              </p>
+              <p className="text-[#5C6B62]">
+                Il est demandé dans l’examen 2024 et dans le rattrapage 2023.
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {["Cours TS · p. 12", "Examen 2024 · p. 2", "Rattrapage 2023 · p. 1"].map((cite) => (
+                  <span
+                    key={cite}
+                    className="inline-flex items-center gap-1 rounded-md bg-[#E7F1E9] px-1.5 py-0.5 text-[10.5px] font-medium text-[#2E7D5B]"
+                  >
+                    <Quote className="h-2.5 w-2.5" /> {cite}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#F1F0E9] px-3 py-2 text-[11.5px] text-[#8A968E]">
+              <Search className="h-3.5 w-3.5" /> Poser une autre question…
+            </div>
+          </div>
+
+          {/* Studio */}
+          <aside className="border-t border-[#F1F0E9] p-4 md:border-t-0 md:border-l">
+            <p className="eyebrow text-[#5C6B62]">Studio</p>
+            <ul className="mt-3 space-y-1.5">
+              {[
+                { icon: FileText, label: "Fiche de révision" },
+                { icon: ListChecks, label: "Quiz · 10 questions" },
+                { icon: Network, label: "Carte mentale" },
+                { icon: AudioLines, label: "Résumé audio" },
+              ].map(({ icon: Icon, label }) => (
+                <li
+                  key={label}
+                  className="flex items-center gap-2 rounded-lg border border-[#F1F0E9] px-2 py-1.5 text-[11.5px] text-[#3E4641]"
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-[#2E7D5B]" />
+                  <span className="truncate">{label}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function LandingPage() {
+  return (
+    <div className="h-screen overflow-y-auto bg-[#FBFAF6] text-[#16241D]">
+      <div className="relative min-h-full overflow-hidden">
+        {/* Halos pastel, comme la page de NotebookLM */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[46rem]">
+          <div className="absolute left-1/2 top-[-14rem] h-[34rem] w-[52rem] -translate-x-1/2 rounded-full bg-[#D6E8D7]/70 blur-[110px]" />
+          <div className="absolute right-[-6rem] top-10 h-72 w-72 rounded-full bg-[#fef7e0]/50 blur-[100px]" />
+          <div className="absolute left-[-8rem] top-40 h-72 w-72 rounded-full bg-[#E7F1E9]/50 blur-[100px]" />
+        </div>
+
+        <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
             <LekkiMark size="sm" />
-            <span className="font-bold tracking-[0.18em] text-sm bg-clip-text text-transparent bg-gradient-to-r from-zinc-100 to-zinc-400">
-              LEKKI
+            <span className="font-display text-lg font-medium tracking-tight text-[#16241D]">
+              Lekki
             </span>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-3">
+
+          <nav className="hidden items-center gap-1 md:flex">
+            {[
+              { href: "#comment", label: "Comment ça marche" },
+              { href: "#studio", label: "Ce que tu peux créer" },
+              { href: "#faq", label: "FAQ" },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-[#3E4641] transition-colors hover:bg-[#16241D]/[0.05] hover:text-[#16241D]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/70 transition-colors"
+              className="rounded-full px-3 py-2 text-sm font-medium text-[#3E4641] transition-colors hover:bg-[#16241D]/[0.05] hover:text-[#16241D]"
             >
-              Connexion
+              Se connecter
             </Link>
             <Link
               href="/register"
-              className="rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-3 py-2 text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#2E7D5B] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#246147]"
             >
-              Créer un compte
+              Essayer
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </nav>
+          </div>
         </header>
 
-        <main className="relative z-10 mx-auto max-w-6xl px-5 pb-20 pt-6 sm:px-6 sm:pt-14">
-          <section className="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
-            <div className="space-y-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
-                Pour les promos, les clubs et les groupes d’étude
-              </p>
-              <h1 className="text-[2.6rem] sm:text-6xl font-extrabold tracking-tight leading-[1.04]">
-                La <span className="text-emerald-400">mémoire collective</span> de ta promo.
-              </h1>
-              <p className="max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-                Cours, TD et anciens sujets se perdent dans les groupes WhatsApp, et chaque nouvelle
-                promo recommence à zéro. Lekki les rassemble au même endroit et répond à tes questions
-                en citant le cours et la page.
-              </p>
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-5 py-3 text-sm font-semibold transition-colors shadow-[0_8px_28px_rgba(16,185,129,0.22)]"
-                >
-                  Créer l’espace de ma promo
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 px-5 py-3 text-sm font-medium text-zinc-200 transition-colors"
-                >
-                  <KeyRound className="h-4 w-4 text-zinc-400" />
-                  J’ai un code d’invitation
-                </Link>
-              </div>
+        <main className="relative z-10 px-5 pb-20 sm:px-8">
+          {/* Hero : centré, une seule promesse, un seul geste */}
+          <section className="mx-auto max-w-3xl pt-10 text-center sm:pt-16">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#D9DFD2] bg-white/70 px-3.5 py-1.5 text-[12px] font-medium text-[#3E4641] backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 text-[#2E7D5B]" />
+              Ton partenaire de révision, ancré dans tes cours
+            </span>
+            <h1 className="mt-6 font-display text-[2.75rem] font-medium leading-[1.03] tracking-[-0.03em] text-[#16241D] sm:text-[4.25rem]">
+              Comprends tout,
+              <br />
+              à partir de <em className="italic text-[#2E7D5B]">tes cours</em>.
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-[1.0625rem] leading-relaxed text-[#3E4641]">
+              Lekki réunit les cours, TD et anciens sujets de ta promo, et répond à tes questions en
+              citant le document et la page. Pas d’invention : seulement ce que vous avez écrit.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-full bg-[#2E7D5B] px-6 py-3.5 text-sm font-medium text-white shadow-[0_6px_20px_-8px_rgba(26,115,232,0.6)] transition-colors hover:bg-[#246147]"
+              >
+                Essayer Lekki
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-2 rounded-full border border-[#D9DFD2] bg-white/70 px-5 py-3.5 text-sm font-medium text-[#3E4641] backdrop-blur transition-colors hover:bg-white"
+              >
+                <KeyRound className="h-4 w-4 text-[#5C6B62]" />
+                J’ai un code d’invitation
+              </Link>
             </div>
-
-            {/* Exemple d'échange : ce que Lekki fait, montré plutôt que décrit */}
-            <figure aria-label="Exemple de réponse de Lekki AI" className="relative">
-              <div className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/90 p-4 shadow-2xl sm:p-5">
-                <div className="flex items-center justify-between text-[11px] text-zinc-500">
-                  <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Lekki AI · ITT2</span>
-                  <span>Exemple</span>
-                </div>
-                <div className="mt-4 ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-emerald-500/15 px-3.5 py-2.5 text-sm text-emerald-50">
-                  Énonce le théorème de Shannon. Il tombe souvent ?
-                </div>
-                <div className="mt-3 max-w-[95%] space-y-2 rounded-2xl rounded-bl-md bg-zinc-900 px-3.5 py-3 text-sm leading-relaxed text-zinc-200 ring-1 ring-inset ring-white/[0.04]">
-                  <p>
-                    Pour reconstruire un signal de bande <b>B</b>, il faut échantillonner à{" "}
-                    <b>fe ≥ 2B</b>. Sinon, les répliques du spectre se chevauchent : c’est le repliement{" "}
-                    <span className="text-emerald-300">(Cours TS, chap. 3)</span>.
-                  </p>
-                  <p>
-                    Oui : il est demandé dans <b>l’examen 2024</b> et dans <b>le rattrapage 2023</b>{" "}
-                    <span className="text-emerald-300">(TS Examen CL 2024, TS RAT ALT 2023)</span>.
-                  </p>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {["Cours TS · chap. 3 · p. 12", "TS Examen CL 2024", "TS RAT ALT 2023"].map((source) => (
-                    <span key={source} className="rounded-md border border-zinc-800 bg-zinc-900/80 px-2 py-1 text-[11px] text-zinc-400">
-                      {source}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </figure>
+            <p className="mt-4 text-[12px] text-[#5C6B62]">
+              Gratuit pour une promo · Aucune carte bancaire
+            </p>
           </section>
 
-          <section className="mt-20">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Comment ça marche</h2>
-            <ol className="mt-5 grid gap-4 sm:grid-cols-3">
+          <NotebookMock />
+
+          {/* Comment ça marche */}
+          <section id="comment" className="mx-auto mt-28 max-w-5xl scroll-mt-20">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="eyebrow text-[#5C6B62]">Comment ça marche</p>
+              <h2 className="mt-3 font-display text-3xl font-medium tracking-[-0.02em] sm:text-4xl">
+                Vos documents, une seule mémoire.
+              </h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-[#3E4641]">
+                Chaque nouvelle promo repart de zéro, et les cours se perdent dans les groupes de
+                discussion. Lekki garde ce que la promo a déjà produit, et le rend interrogeable.
+              </p>
+            </div>
+
+            <ol className="mt-10 grid gap-4 sm:grid-cols-3">
               {steps.map(({ icon: Icon, title, text }, index) => (
-                <li key={title} className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/80 p-5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-xs font-bold text-emerald-300">
+                <li
+                  key={title}
+                  className="rounded-2xl border border-[#E5E9DC] bg-white/80 p-5 backdrop-blur"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E7F1E9] text-[11px] font-bold text-[#2E7D5B]">
                       {index + 1}
                     </span>
-                    <Icon className="h-4 w-4 text-zinc-500" />
+                    <Icon className="h-4 w-4 text-[#5C6B62]" />
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-zinc-100">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{text}</p>
+                  <h3 className="mt-4 text-[15px] font-medium text-[#16241D]">{title}</h3>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#5C6B62]">{text}</p>
                 </li>
               ))}
             </ol>
           </section>
 
-          <section className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ icon: Icon, title, text }) => (
-              <article key={title} className="rounded-2xl border border-zinc-800/80 bg-[#1F242F]/60 p-5">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-semibold text-zinc-100">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{text}</p>
-              </article>
-            ))}
+          {/* Ce que tu peux créer */}
+          <section id="studio" className="mx-auto mt-24 max-w-5xl scroll-mt-20">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="eyebrow text-[#5C6B62]">Le studio</p>
+              <h2 className="mt-3 font-display text-3xl font-medium tracking-[-0.02em] sm:text-4xl">
+                D’un dossier à de quoi réviser.
+              </h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-[#3E4641]">
+                À partir des mêmes documents, Lekki produit les formats dont tu as besoin la veille
+                d’un contrôle — chaque élément renvoie à sa source.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {outputs.map(({ icon: Icon, title, text, tint }) => (
+                <article
+                  key={title}
+                  className="rounded-2xl border border-[#E5E9DC] bg-white/80 p-5 backdrop-blur transition-shadow hover:shadow-[0_6px_24px_-16px_rgba(60,64,67,0.3)]"
+                >
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tint}`}>
+                    <Icon className="h-5 w-5 text-[#2E7D5B]" />
+                  </div>
+                  <h3 className="mt-4 text-[15px] font-medium text-[#16241D]">{title}</h3>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#5C6B62]">{text}</p>
+                </article>
+              ))}
+            </div>
           </section>
 
-          <section className="mt-16 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-6 sm:p-8">
-            <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-xl font-bold text-zinc-100 sm:text-2xl">Ta promo a déjà les documents.</h2>
-                <p className="mt-1 text-sm text-zinc-400">Il leur manque un endroit où on les retrouve, et quelqu’un à qui poser la question.</p>
+          {/* Confidentialité */}
+          <section className="mx-auto mt-24 max-w-5xl">
+            <div className="flex flex-col items-start gap-5 rounded-2xl border border-[#E5E9DC] bg-[#E7F1E9]/50 p-6 sm:flex-row sm:items-center sm:p-8">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white">
+                <ShieldCheck className="h-6 w-6 text-[#2E7D5B]" />
               </div>
+              <div>
+                <h2 className="font-display text-xl font-medium tracking-[-0.01em]">
+                  Un espace privé, pour ta promo seulement.
+                </h2>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-[#3E4641]">
+                  Les documents d’un espace ne sont visibles que par ses membres. Ni publicité, ni
+                  revente : vos cours restent vos cours.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section id="faq" className="mx-auto mt-24 max-w-3xl scroll-mt-20">
+            <h2 className="text-center font-display text-3xl font-medium tracking-[-0.02em] sm:text-4xl">
+              Questions fréquentes
+            </h2>
+            <div className="mt-8 divide-y divide-[#E5E9DC] border-y border-[#E5E9DC]">
+              {faq.map((item) => (
+                <details key={item.q} className="group py-4">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-[#16241D]">
+                    {item.q}
+                    <ChevronDown className="h-4 w-4 shrink-0 text-[#5C6B62] transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="mt-3 max-w-2xl text-[14px] leading-relaxed text-[#5C6B62]">
+                    {item.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          {/* Dernier appel */}
+          <section className="mx-auto mt-20 max-w-5xl">
+            <div className="relative overflow-hidden rounded-[1.75rem] bg-[#2E7D5B] px-6 py-14 text-center sm:px-10">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_70%_at_50%_0%,rgba(255,255,255,0.15),transparent_70%)]" />
+              <h2 className="relative font-display text-3xl font-medium tracking-[-0.02em] text-white sm:text-4xl">
+                Ta promo a déjà les documents.
+              </h2>
+              <p className="relative mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-white/80">
+                Il leur manque un endroit où on les retrouve, et quelqu’un à qui poser la question.
+              </p>
               <Link
                 href="/register"
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 px-5 py-3 text-sm font-semibold transition-colors"
+                className="relative mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-[#2E7D5B] transition-colors hover:bg-[#FBFAF6]"
               >
-                Commencer gratuitement <ArrowRight className="h-4 w-4" />
+                Créer l’espace de ma promo
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </section>
         </main>
 
-        <footer className="relative z-10 border-t border-zinc-800/80 px-6 py-6 text-center text-xs text-zinc-600">
-          © {new Date().getFullYear()} Lekki · Né à SUP’PTIC, Yaoundé · Par des étudiants, pour les étudiants.
+        <footer className="relative z-10 border-t border-[#E5E9DC] px-6 py-7">
+          <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 text-[12px] text-[#5C6B62] sm:flex-row">
+            <span>© {new Date().getFullYear()} Lekki · Né à SUP’PTIC, Yaoundé</span>
+            <span className="inline-flex items-center gap-4">
+              <span className="inline-flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5" /> Par des étudiants, pour les étudiants
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Promos · clubs · groupes
+              </span>
+            </span>
+          </div>
         </footer>
       </div>
     </div>
@@ -209,9 +429,9 @@ export function LandingPage() {
 
 export function AuthSplash() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#1B1F25] text-zinc-100 gap-4">
+    <div className="h-screen flex flex-col items-center justify-center bg-[#FBFAF6] text-[#16241D] gap-4">
       <LekkiMark size="lg" />
-      <p className="text-xs font-semibold tracking-[0.22em] text-zinc-500">LEKKI</p>
+      <p className="text-xs font-medium tracking-[0.18em] text-[#5C6B62]">LEKKI</p>
     </div>
   );
 }

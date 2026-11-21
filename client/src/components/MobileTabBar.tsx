@@ -63,7 +63,7 @@ export function MobileTabBar({
   return (
     <nav
       aria-label="Navigation principale"
-      className="lg:hidden shrink-0 border-t border-white/[0.07] bg-[#1B1F25]/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      className="lg:hidden shrink-0 border-t border-[#E7E4D9] bg-[#FBFAF6]/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="flex">
         {tabs.map(({ key, label, icon: Icon, active, onPress }) => (
@@ -72,11 +72,11 @@ export function MobileTabBar({
               type="button"
               onClick={onPress}
               aria-current={active ? "page" : undefined}
-              className={`flex h-14 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium outline-none transition-colors focus-visible:bg-white/[0.04] ${
-                active ? "text-emerald-400" : "text-zinc-500 active:text-zinc-200"
+              className={`flex h-14 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium outline-none transition-colors focus-visible:bg-[#F8F7F2] ${
+                active ? "text-emerald-300" : "text-subtle active:text-strong"
               }`}
             >
-              <span className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-emerald-400/12" : ""}`}>
+              <span className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-emerald-400/[0.12]" : ""}`}>
                 <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.3 : 1.9} />
               </span>
               {label}

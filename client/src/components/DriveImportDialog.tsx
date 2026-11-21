@@ -196,30 +196,30 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
         role="dialog"
         aria-modal="true"
         aria-labelledby="drive-import-title"
-        className={`flex w-full flex-col ${step === "supdocs" ? "h-[92dvh]" : "max-h-[92dvh]"} overflow-hidden rounded-t-2xl bg-[#222731] sm:h-auto sm:max-h-[85vh] sm:max-w-xl sm:rounded-2xl sm:border sm:border-white/[0.09]`}
+        className={`flex w-full flex-col ${step === "supdocs" ? "h-[92dvh]" : "max-h-[92dvh]"} overflow-hidden rounded-t-2xl bg-[#FFFFFF] sm:h-auto sm:max-h-[85vh] sm:max-w-xl sm:rounded-2xl sm:border sm:border-[#E7E4D9]`}
       >
-        <header className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-3 sm:px-5 sm:py-4">
+        <header className="flex items-center gap-2 border-b border-[#E7E4D9] px-3 py-3 sm:px-5 sm:py-4">
           {step === "supdocs" && (
             <button
               type="button"
               onClick={() => (path.length > 1 ? void browse(path[path.length - 2].id) : setStep("source"))}
               aria-label="Retour"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.06]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-[#F8F7F2]"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
           <div className="min-w-0 flex-1 px-1">
-            <h2 id="drive-import-title" className="text-[15px] font-semibold text-zinc-100">
+            <h2 id="drive-import-title" className="text-[15px] font-semibold text-heading">
               Importer depuis Google Drive
             </h2>
-            <p className="mt-0.5 truncate text-xs text-zinc-400">Vers « {destination} »</p>
+            <p className="mt-0.5 truncate text-xs text-muted">Vers « {destination} »</p>
           </div>
           <button
             type="button"
             onClick={() => (working ? onClose() : void finish())}
             aria-label="Fermer"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.06]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-[#F8F7F2]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -229,7 +229,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
         {step === "source" && (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5">
             {!config ? (
-              <div className="flex justify-center py-10 text-zinc-500">
+              <div className="flex justify-center py-10 text-subtle">
                 <LoaderCircle className="h-5 w-5 animate-spin" />
               </div>
             ) : (
@@ -253,7 +253,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
                   onClick={() => void importFromMyDrive()}
                 />
                 {!isPromo && (
-                  <p className="px-1 text-xs leading-5 text-zinc-500">
+                  <p className="px-1 text-xs leading-5 text-subtle">
                     SUP'DOCS s'importe dans un espace de promo (un espace avec un programme d'études).
                   </p>
                 )}
@@ -265,15 +265,15 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
         {/* 2. Parcourir SUP'DOCS */}
         {step === "supdocs" && (
           <>
-            <nav ref={crumbs} aria-label="Chemin" className="flex gap-1 overflow-x-auto border-b border-white/[0.06] px-4 py-2 text-xs [scrollbar-width:none] sm:px-5">
+            <nav ref={crumbs} aria-label="Chemin" className="flex gap-1 overflow-x-auto border-b border-[#E7E4D9] px-4 py-2 text-xs [scrollbar-width:none] sm:px-5">
               {path.map((crumb, index) => (
                 <React.Fragment key={crumb.id}>
-                  {index > 0 && <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-zinc-600" />}
+                  {index > 0 && <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-faint" />}
                   <button
                     type="button"
                     onClick={() => void browse(crumb.id)}
                     disabled={index === path.length - 1}
-                    className="shrink-0 rounded px-1.5 py-1 text-zinc-400 hover:text-zinc-100 disabled:font-medium disabled:text-zinc-100"
+                    className="shrink-0 rounded px-1.5 py-1 text-muted hover:text-heading disabled:font-medium disabled:text-heading"
                   >
                     {crumb.name}
                   </button>
@@ -282,13 +282,13 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
             </nav>
             <div className="min-h-0 flex-1 overflow-y-auto">
               {loading ? (
-                <div className="flex justify-center py-12 text-zinc-500">
+                <div className="flex justify-center py-12 text-subtle">
                   <LoaderCircle className="h-5 w-5 animate-spin" />
                 </div>
               ) : items.length === 0 ? (
-                <p className="px-5 py-12 text-center text-sm text-zinc-500">Ce dossier est vide.</p>
+                <p className="px-5 py-12 text-center text-sm text-subtle">Ce dossier est vide.</p>
               ) : (
-                <ul className="divide-y divide-white/[0.04]">
+                <ul className="divide-y divide-[#E7E4D9]">
                   {selectable.length > 1 && (
                     <li>
                       <button
@@ -322,7 +322,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
                         >
                           <span
                             className={`flex h-5 w-5 items-center justify-center rounded border ${
-                              checked ? "border-emerald-400 bg-emerald-400 text-zinc-950" : "border-zinc-600"
+                              checked ? "border-emerald-400 bg-emerald-400 text-on-primary" : "border-[#CFCBBB]"
                             }`}
                           >
                             {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
@@ -333,12 +333,12 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
                           onClick={() => (item.kind === "folder" ? void browse(item.id) : item.importable && toggle(item))}
                           className="flex min-h-14 min-w-0 flex-1 items-center gap-3 pr-4 text-left sm:pr-5"
                         >
-                          <Icon className={`h-5 w-5 shrink-0 ${item.kind === "folder" ? "text-amber-300/80" : "text-zinc-500"}`} />
-                          <span className={`min-w-0 flex-1 truncate text-sm ${item.importable ? "text-zinc-200" : "text-zinc-600"}`}>
+                          <Icon className={`h-5 w-5 shrink-0 ${item.kind === "folder" ? "text-amber-700/80" : "text-subtle"}`} />
+                          <span className={`min-w-0 flex-1 truncate text-sm ${item.importable ? "text-strong" : "text-faint"}`}>
                             {item.name}
                           </span>
-                          {item.kind === "folder" && <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />}
-                          {!item.importable && <span className="shrink-0 text-[11px] text-zinc-600">format non lu</span>}
+                          {item.kind === "folder" && <ChevronRight className="h-4 w-4 shrink-0 text-faint" />}
+                          {!item.importable && <span className="shrink-0 text-[11px] text-faint">format non lu</span>}
                         </button>
                       </li>
                     );
@@ -346,8 +346,8 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
                 </ul>
               )}
             </div>
-            <footer className="flex items-center gap-3 border-t border-white/[0.06] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
-              <p className="min-w-0 flex-1 text-xs text-zinc-400">
+            <footer className="flex items-center gap-3 border-t border-[#E7E4D9] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
+              <p className="min-w-0 flex-1 text-xs text-muted">
                 {selected.size === 0
                   ? "Coche des dossiers ou des fichiers."
                   : `${selected.size} élément${selected.size > 1 ? "s" : ""} : sous-dossiers compris.`}
@@ -356,7 +356,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
                 type="button"
                 disabled={selected.size === 0}
                 onClick={() => void importSupdocs()}
-                className="h-11 shrink-0 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-zinc-950 hover:bg-emerald-300 disabled:opacity-40"
+                className="h-11 shrink-0 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-on-primary hover:bg-emerald-300 disabled:opacity-40"
               >
                 Importer
               </button>
@@ -370,62 +370,62 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
             {!job || job.state === "preparing" ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <LoaderCircle className="h-6 w-6 animate-spin text-emerald-400" />
-                <p className="text-sm text-zinc-300">Lecture des dossiers sur Google Drive…</p>
+                <p className="text-sm text-body">Lecture des dossiers sur Google Drive…</p>
               </div>
             ) : job.state === "importing" ? (
               <div className="space-y-4 py-4">
                 <div className="flex items-baseline justify-between text-sm">
-                  <span className="font-medium text-zinc-100">Import en cours</span>
-                  <span className="tabular-nums text-zinc-400">
+                  <span className="font-medium text-heading">Import en cours</span>
+                  <span className="tabular-nums text-muted">
                     {job.processed} / {job.total}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-2 overflow-hidden rounded-full bg-[#F8F7F2]">
                   <div
                     className="h-full rounded-full bg-emerald-400 transition-[width] duration-500"
                     style={{ width: `${job.total ? Math.round((job.processed / job.total) * 100) : 0}%` }}
                   />
                 </div>
-                {job.current && <p className="truncate text-xs text-zinc-500">{job.current}</p>}
-                <p className="text-xs leading-5 text-zinc-500">
+                {job.current && <p className="truncate text-xs text-subtle">{job.current}</p>}
+                <p className="text-xs leading-5 text-subtle">
                   Tu peux fermer cette fenêtre : l'import continue et les documents apparaîtront dans « {destination} ».
                 </p>
               </div>
             ) : job.state === "failed" ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <AlertTriangle className="h-7 w-7 text-amber-400" />
-                <p className="text-sm text-zinc-200">{job.error || "L'import n'a pas pu aboutir."}</p>
-                {job.imported > 0 && <p className="text-xs text-zinc-500">{job.imported} document(s) importé(s) avant l'arrêt.</p>}
+                <AlertTriangle className="h-7 w-7 text-amber-700" />
+                <p className="text-sm text-strong">{job.error || "L'import n'a pas pu aboutir."}</p>
+                {job.imported > 0 && <p className="text-xs text-subtle">{job.imported} document(s) importé(s) avant l'arrêt.</p>}
               </div>
             ) : (
               <div className="space-y-4 py-4">
                 <div className="flex flex-col items-center gap-2 text-center">
                   <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-                  <p className="text-[15px] font-semibold text-zinc-100">
+                  <p className="text-[15px] font-semibold text-heading">
                     {job.imported} document{job.imported > 1 ? "s" : ""} importé{job.imported > 1 ? "s" : ""}
                   </p>
                   {job.folders_created > 0 && (
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted">
                       {job.folders_created} dossier{job.folders_created > 1 ? "s" : ""} créé{job.folders_created > 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
                 {job.skipped_count > 0 && (
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                  <div className="rounded-xl border border-[#E7E4D9] bg-[#F8F7F2]">
                     <button
                       type="button"
                       onClick={() => setShowSkipped((value) => !value)}
-                      className="flex w-full items-center justify-between px-4 py-3 text-left text-xs text-zinc-300"
+                      className="flex w-full items-center justify-between px-4 py-3 text-left text-xs text-body"
                     >
                       {job.skipped_count} fichier{job.skipped_count > 1 ? "s" : ""} non importé{job.skipped_count > 1 ? "s" : ""}
                       <ChevronRight className={`h-4 w-4 transition ${showSkipped ? "rotate-90" : ""}`} />
                     </button>
                     {showSkipped && (
-                      <ul className="max-h-48 space-y-2 overflow-y-auto border-t border-white/[0.06] px-4 py-3">
+                      <ul className="max-h-48 space-y-2 overflow-y-auto border-t border-[#E7E4D9] px-4 py-3">
                         {job.skipped.map((entry, index) => (
                           <li key={`${entry.name}-${index}`} className="text-xs">
-                            <span className="text-zinc-300">{entry.name}</span>
-                            <span className="block text-zinc-500">{entry.reason}</span>
+                            <span className="text-body">{entry.name}</span>
+                            <span className="block text-subtle">{entry.reason}</span>
                           </li>
                         ))}
                       </ul>
@@ -438,7 +438,7 @@ export function DriveImportDialog({ open, onClose, workspace, folderId, folderNa
               <button
                 type="button"
                 onClick={() => void finish()}
-                className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+                className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-sm font-semibold text-on-primary hover:bg-emerald-300"
               >
                 {job.imported ? "Voir les documents" : "Fermer"}
               </button>
@@ -470,16 +470,16 @@ function SourceCard({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex w-full items-start gap-3.5 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-left transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.04] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.02]"
+      className="flex w-full items-start gap-3.5 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-4 text-left transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.04] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[#E7E4D9] disabled:hover:bg-[#F8F7F2]"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-zinc-100">{title}</span>
-        <span className="mt-1 block text-xs leading-5 text-zinc-400">{disabled ? disabledText : text}</span>
+        <span className="block text-sm font-semibold text-heading">{title}</span>
+        <span className="mt-1 block text-xs leading-5 text-muted">{disabled ? disabledText : text}</span>
       </span>
-      {!disabled && <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-zinc-500" />}
+      {!disabled && <ChevronRight className="mt-2.5 h-4 w-4 shrink-0 text-subtle" />}
     </button>
   );
 }

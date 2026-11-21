@@ -239,18 +239,18 @@ export function WorkspaceAdminDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="workspace-admin-title"
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#222731] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#E7E4D9] bg-[#FFFFFF] shadow-[0_24px_100px_rgba(0,0,0,0.55)] animate-in fade-in zoom-in-95 duration-150"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-5 sm:px-6">
+        <header className="flex items-start justify-between gap-4 border-b border-[#E7E4D9] px-5 py-5 sm:px-6">
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-300/10">
               <Settings2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h2 id="workspace-admin-title" className="text-[15px] font-semibold tracking-tight text-zinc-100">
+              <h2 id="workspace-admin-title" className="text-[15px] font-semibold tracking-tight text-heading">
                 Espace « {selectedWorkspace?.name || "Inconnu"} »
               </h2>
-              <p className="mt-1 max-w-xl text-xs leading-relaxed text-zinc-400">
+              <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted">
                 Gestion des membres et des invitations de cet espace.
               </p>
             </div>
@@ -259,7 +259,7 @@ export function WorkspaceAdminDialog({
             type="button"
             onClick={closeIfIdle}
             aria-label="Fermer"
-            className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-zinc-200"
+            className="rounded-lg p-2 text-subtle transition hover:bg-[#F8F7F2] hover:text-strong"
           >
             <X className="h-4 w-4" />
           </button>
@@ -267,11 +267,11 @@ export function WorkspaceAdminDialog({
 
         {manageableWorkspaces.length === 0 ? (
           <div className="p-6">
-            <div className="flex gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-              <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-zinc-500" />
+            <div className="flex gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-4">
+              <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-subtle" />
               <div>
-                <p className="text-sm font-medium text-zinc-200">Aucun espace à administrer</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                <p className="text-sm font-medium text-strong">Aucun espace à administrer</p>
+                <p className="mt-1 text-xs leading-relaxed text-subtle">
                   Il faut être admin ou propriétaire d’un espace pour gérer ses membres et ses invitations.
                 </p>
               </div>
@@ -279,15 +279,15 @@ export function WorkspaceAdminDialog({
           </div>
         ) : (
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-            <section className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 sm:p-5">
+            <section className="rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-4 sm:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
                     <KeyRound className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-zinc-100">Code d’invitation</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                    <h3 className="text-sm font-medium text-heading">Code d’invitation</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-subtle">
                       Toute personne possédant ce code peut demander à rejoindre cet espace.
                     </p>
                   </div>
@@ -296,14 +296,14 @@ export function WorkspaceAdminDialog({
                   type="button"
                   onClick={handleRotateCode}
                   disabled={!joinCode || loading || codeLoading}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/[0.09] px-2.5 py-2 text-[11px] font-medium text-zinc-300 transition hover:bg-white/[0.05] hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#E7E4D9] px-2.5 py-2 text-[11px] font-medium text-body transition hover:bg-[#F8F7F2] hover:text-heading disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${codeLoading ? "animate-spin" : ""}`} />
                   <span className="hidden sm:inline">Renouveler</span>
                 </button>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-[#1A2029] p-2">
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] p-2">
                 <code className="min-w-0 flex-1 truncate px-2 py-1 text-center font-mono text-lg tracking-[0.18em] text-emerald-200 sm:text-xl">
                   {loading ? "Chargement…" : joinCode || "Indisponible"}
                 </code>
@@ -312,12 +312,12 @@ export function WorkspaceAdminDialog({
                   onClick={handleCopyCode}
                   disabled={!joinCode || loading}
                   aria-label="Copier le code d’invitation"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-zinc-300 transition hover:bg-white/[0.1] hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F8F7F2] text-body transition hover:bg-[#F1F0E9] hover:text-[#16241D] disabled:cursor-not-allowed disabled:opacity-35"
                 >
                   {copied ? <Check className="h-4 w-4 text-emerald-300" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-2 flex items-center gap-1.5 text-[10px] text-zinc-600">
+              <p className="mt-2 flex items-center gap-1.5 text-[10px] text-faint">
                 <AlertTriangle className="h-3 w-3" />
                 Renouveler le code invalide l’ancien.
               </p>
@@ -327,38 +327,38 @@ export function WorkspaceAdminDialog({
               <ProgrammeSection key={selectedWorkspace.id} workspace={selectedWorkspace} />
             )}
 
-            <section className="overflow-hidden rounded-xl border border-white/[0.07]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
+            <section className="overflow-hidden rounded-xl border border-[#E7E4D9]">
+              <div className="flex items-center justify-between gap-3 border-b border-[#E7E4D9] px-4 py-3.5 sm:px-5">
                 <div className="flex items-center gap-2.5">
-                  <Users className="h-4 w-4 text-zinc-400" />
-                  <h3 className="text-sm font-medium text-zinc-100">Membres</h3>
-                  <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-400">
+                  <Users className="h-4 w-4 text-muted" />
+                  <h3 className="text-sm font-medium text-heading">Membres</h3>
+                  <span className="rounded-md bg-[#F8F7F2] px-1.5 py-0.5 text-[10px] tabular-nums text-muted">
                     {loading ? "…" : members.length}
                   </span>
                 </div>
-                {loading && <LoaderCircle className="h-4 w-4 animate-spin text-zinc-500" />}
+                {loading && <LoaderCircle className="h-4 w-4 animate-spin text-subtle" />}
               </div>
 
               {loading ? (
                 <div className="space-y-3 p-4 sm:p-5">
                   {[0, 1, 2].map((item) => (
                     <div key={item} className="flex animate-pulse items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-white/[0.06]" />
+                      <div className="h-9 w-9 rounded-full bg-[#F8F7F2]" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-2.5 w-1/3 rounded bg-white/[0.06]" />
-                        <div className="h-2 w-1/2 rounded bg-white/[0.04]" />
+                        <div className="h-2.5 w-1/3 rounded bg-[#F8F7F2]" />
+                        <div className="h-2 w-1/2 rounded bg-[#F8F7F2]" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : members.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <Users className="mx-auto h-6 w-6 text-zinc-600" />
-                  <p className="mt-2 text-xs font-medium text-zinc-300">Aucun membre pour le moment</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">Partage le code d’invitation pour accueillir tes camarades.</p>
+                  <Users className="mx-auto h-6 w-6 text-faint" />
+                  <p className="mt-2 text-xs font-medium text-body">Aucun membre pour le moment</p>
+                  <p className="mt-1 text-[11px] text-subtle">Partage le code d’invitation pour accueillir tes camarades.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/[0.05]">
+                <div className="divide-y divide-[#E7E4D9]">
                   {members.map((member) => {
                     const isEditing = editingRoleId === member.user_id;
                     const isMemberOwner = member.role === "owner";
@@ -367,14 +367,14 @@ export function WorkspaceAdminDialog({
                     return (
                       <div
                         key={member.id}
-                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.02] sm:px-5"
+                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-[#F8F7F2] sm:px-5"
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-zinc-300">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F8F7F2] text-[11px] font-semibold text-body">
                           {getInitials(member.name)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium text-zinc-200">{member.name}</p>
-                          <p className="mt-0.5 truncate text-[11px] text-zinc-500">{member.email}</p>
+                          <p className="truncate text-xs font-medium text-strong">{member.name}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-subtle">{member.email}</p>
                         </div>
 
                         {isEditing ? (
@@ -383,7 +383,7 @@ export function WorkspaceAdminDialog({
                               value={newRole}
                               onChange={(event) => setNewRole(event.target.value)}
                               disabled={loading}
-                              className="rounded-lg border border-white/[0.08] bg-[#1A2029] px-2 py-2 text-xs text-zinc-200 outline-none focus:border-emerald-400/50 disabled:opacity-50"
+                              className="rounded-lg border border-[#E7E4D9] bg-[#F4F3ED] px-2 py-2 text-xs text-strong outline-none focus:border-emerald-400/50 disabled:opacity-50"
                             >
                               {Object.entries(roleLabels).map(([role, label]) => (
                                 <option key={role} value={role}>{label}</option>
@@ -393,7 +393,7 @@ export function WorkspaceAdminDialog({
                               type="button"
                               onClick={() => handleConfirmRole(member)}
                               disabled={loading}
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-400 text-zinc-950 hover:bg-emerald-300 transition disabled:opacity-50"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-400 text-on-primary hover:bg-emerald-300 transition disabled:opacity-50"
                               title="Confirmer le rôle"
                             >
                               <Check className="h-4 w-4" />
@@ -402,7 +402,7 @@ export function WorkspaceAdminDialog({
                               type="button"
                               onClick={handleCancelRole}
                               disabled={loading}
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200 transition disabled:opacity-50"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-subtle hover:bg-[#F8F7F2] hover:text-strong transition disabled:opacity-50"
                               title="Annuler"
                             >
                               <X className="h-4 w-4" />
@@ -413,10 +413,10 @@ export function WorkspaceAdminDialog({
                             <span
                               className={`hidden shrink-0 rounded-md px-2 py-1 text-[10px] sm:inline-flex ${
                                 member.role === "owner"
-                                  ? "bg-amber-300/10 text-amber-200"
+                                  ? "bg-amber-300/10 text-amber-700"
                                   : member.role === "admin"
                                     ? "bg-emerald-300/10 text-emerald-200"
-                                    : "bg-white/[0.05] text-zinc-400"
+                                    : "bg-[#F8F7F2] text-muted"
                               }`}
                             >
                               {roleLabels[member.role] || member.role}
@@ -438,7 +438,7 @@ export function WorkspaceAdminDialog({
                               disabled={Boolean(removingUserId) || member.role === "owner" || deleting || loading}
                               aria-label={`Retirer ${member.name}`}
                               title={member.role === "owner" ? "Le propriétaire ne peut pas être retiré ici" : "Retirer ce membre"}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-red-400/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-25"
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-subtle transition hover:bg-red-400/10 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-25"
                             >
                               {removingUserId === member.user_id
                                 ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
@@ -456,12 +456,12 @@ export function WorkspaceAdminDialog({
             {isOwner && (
               <section className="flex flex-col gap-4 rounded-xl border border-red-400/15 bg-red-400/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                 <div className="flex gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-400/10 text-red-300">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-400/10 text-red-700">
                     <Trash2 className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-red-200">Supprimer cet espace</h3>
-                    <p className="mt-1 max-w-md text-xs leading-relaxed text-zinc-500">
+                    <h3 className="text-sm font-medium text-red-700">Supprimer cet espace</h3>
+                    <p className="mt-1 max-w-md text-xs leading-relaxed text-subtle">
                       Les documents, le wiki et la liste des membres seront supprimés. Cette action est irréversible.
                     </p>
                   </div>
@@ -470,7 +470,7 @@ export function WorkspaceAdminDialog({
                   type="button"
                   onClick={handleDeleteWorkspace}
                   disabled={deleting || loading || codeLoading}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-3.5 py-2.5 text-xs font-semibold text-red-200 transition hover:border-red-400/35 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-3.5 py-2.5 text-xs font-semibold text-red-700 transition hover:border-red-400/35 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {deleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                   {deleting ? "Suppression…" : "Supprimer l’espace"}
@@ -506,9 +506,9 @@ function ProgrammeSection({ workspace }: { workspace: Workspace }) {
   };
 
   return (
-    <section className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 sm:p-5">
-      <h3 className="text-sm font-medium text-zinc-100">Programme d’études</h3>
-      <p className="mb-3 mt-1 text-xs leading-relaxed text-zinc-500">
+    <section className="rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-4 sm:p-5">
+      <h3 className="text-sm font-medium text-heading">Programme d’études</h3>
+      <p className="mb-3 mt-1 text-xs leading-relaxed text-subtle">
         Sert à ranger les cours et les anciens sujets par matière.
       </p>
       <AcademicFields value={value} onChange={setValue} />
@@ -518,7 +518,7 @@ function ProgrammeSection({ workspace }: { workspace: Workspace }) {
             type="button"
             onClick={() => void save()}
             disabled={saving}
-            className="rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-45"
+            className="rounded-lg bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-on-primary transition hover:bg-emerald-300 disabled:opacity-45"
           >
             {saving ? "Enregistrement…" : "Enregistrer le programme"}
           </button>

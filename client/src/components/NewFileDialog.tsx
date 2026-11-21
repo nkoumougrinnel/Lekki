@@ -214,29 +214,29 @@ export function NewFileDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="new-file-dialog-title"
-        className="flex max-h-[90vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-[#1F2631] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="flex max-h-[90vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-[#E7E4D9] bg-[#FFFFFF] shadow-2xl animate-in fade-in zoom-in-95 duration-150"
       >
         {/* EN-TÊTE */}
 
-        <header className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-5 py-4">
+        <header className="flex shrink-0 items-center justify-between border-b border-[#E7E4D9] px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/10">
               {createdFile ? (
-                <CheckCircle2 className="h-[18px] w-[18px] text-sky-300" />
+                <CheckCircle2 className="h-[18px] w-[18px] text-emerald-700" />
               ) : (
-                <FilePlus className="h-[18px] w-[18px] text-sky-300" />
+                <FilePlus className="h-[18px] w-[18px] text-emerald-700" />
               )}
             </div>
 
             <div>
               <h2
                 id="new-file-dialog-title"
-                className="text-sm font-semibold text-zinc-100"
+                className="text-sm font-semibold text-heading"
               >
                 {createdFile ? "Document ajouté" : "Ajouter un document"}
               </h2>
 
-              <p className="mt-0.5 text-[11px] text-zinc-500">
+              <p className="mt-0.5 text-[11px] text-subtle">
                 {createdFile
                   ? "Le document est ajouté."
                   : "Ajoute un cours, un TD ou un ancien sujet."}
@@ -249,7 +249,7 @@ export function NewFileDialog({
             onClick={handleClose}
             disabled={creating}
             aria-label="Fermer"
-            className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-lg p-2 text-subtle transition-colors hover:bg-[#F8F7F2] hover:text-strong disabled:cursor-not-allowed disabled:opacity-30"
           >
             <X className="h-4 w-4" />
           </button>
@@ -280,34 +280,34 @@ export function NewFileDialog({
                 onDrop={handleFileDrop}
                 className={`flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors ${
                   isDragOver
-                    ? "border-sky-400 bg-sky-400/[0.07]"
-                    : "border-white/[0.12] bg-white/[0.015] hover:border-white/[0.2]"
+                    ? "border-emerald-400 bg-emerald-400/[0.07]"
+                    : "border-[#E7E4D9] bg-[#F8F7F2] hover:border-[#CFCBBB]"
                 }`}
               >
                 <div
                   className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${
                     isDragOver
-                      ? "bg-sky-400/15 text-sky-300"
-                      : "bg-white/[0.05] text-zinc-400"
+                      ? "bg-emerald-400/15 text-emerald-700"
+                      : "bg-[#F8F7F2] text-muted"
                   }`}
                 >
                   <UploadCloud className="h-6 w-6" />
                 </div>
 
-                <p className="text-sm font-medium text-zinc-200">
+                <p className="text-sm font-medium text-strong">
                   {isDragOver
                     ? "Dépose le fichier ici"
                     : "Glisse le document ici"}
                 </p>
 
-                <p className="mt-1.5 text-xs text-zinc-500">
+                <p className="mt-1.5 text-xs text-subtle">
                   ou choisis-le sur ton appareil
                 </p>
 
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
-                  className="mt-5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:bg-white/[0.08]"
+                  className="mt-5 rounded-lg border border-[#E7E4D9] bg-[#F8F7F2] px-4 py-2 text-xs font-medium text-strong transition-colors hover:bg-[#F8F7F2]"
                 >
                   Parcourir les fichiers
                 </button>
@@ -320,7 +320,7 @@ export function NewFileDialog({
                   onChange={handleManualFileSelect}
                 />
 
-                <p className="mt-5 text-[10px] text-zinc-600">
+                <p className="mt-5 text-[10px] text-faint">
                   PDF, DOCX, PPTX, TXT, MD
                 </p>
               </div>
@@ -331,24 +331,24 @@ export function NewFileDialog({
             {selectedFile && !createdFile && (
               <div className="space-y-5">
                 <div>
-                  <p className="mb-3 text-xs font-medium text-zinc-400">
+                  <p className="mb-3 text-xs font-medium text-muted">
                     Document sélectionné
                   </p>
 
-                  <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-400/10">
+                  <div className="flex items-center gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10">
                       <DocumentTypeIcon extension={extension} className="h-7 w-6" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <p
                         title={selectedFile.name}
-                        className="truncate text-sm font-medium text-zinc-100"
+                        className="truncate text-sm font-medium text-heading"
                       >
                         {selectedFile.name}
                       </p>
 
-                      <p className="mt-1 text-[11px] text-zinc-500">
+                      <p className="mt-1 text-[11px] text-subtle">
                         {extension.toUpperCase()} ·{" "}
                         {formatFileSize(selectedFile.size)}
                       </p>
@@ -360,30 +360,30 @@ export function NewFileDialog({
                       disabled={creating}
                       title="Retirer ce fichier"
                       aria-label="Retirer ce fichier"
-                      className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200 disabled:opacity-30"
+                      className="rounded-lg p-2 text-subtle transition-colors hover:bg-[#F8F7F2] hover:text-strong disabled:opacity-30"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/[0.07] px-3.5 py-3">
+                <div className="rounded-xl border border-[#E7E4D9] px-3.5 py-3">
                   <div className="flex items-center gap-3">
-                    <Folder className="h-4 w-4 shrink-0 text-zinc-500" />
+                    <Folder className="h-4 w-4 shrink-0 text-subtle" />
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-zinc-500">
+                      <p className="text-[11px] text-subtle">
                         Destination
                       </p>
 
-                      <p className="mt-0.5 truncate text-xs font-medium text-zinc-200">
+                      <p className="mt-0.5 truncate text-xs font-medium text-strong">
                         {destination}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-[11px] leading-relaxed text-zinc-500">
+                <p className="text-[11px] leading-relaxed text-subtle">
                   Astuce : nomme-le comme « TS_Examen_CL_2024 » ou « Antennes_TD_1 »,
                   Lekki le rangera sous la bonne matière.
                 </p>
@@ -394,21 +394,21 @@ export function NewFileDialog({
 
             {createdFile && (
               <div className="space-y-5">
-                <div className="flex items-start gap-3 rounded-xl border border-sky-400/15 bg-sky-400/[0.045] p-4">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-400/10">
-                    <CheckCircle2 className="h-5 w-5 text-sky-300" />
+                <div className="flex items-start gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.045] p-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-700" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-100">
+                    <p className="text-sm font-medium text-heading">
                       Dépôt réussi
                     </p>
 
-                    <p className="mt-1 break-words text-xs leading-relaxed text-zinc-400">
+                    <p className="mt-1 break-words text-xs leading-relaxed text-muted">
                       {createdFile.name}
                     </p>
 
-                    <p className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <p className="mt-2 flex items-center gap-1.5 text-[11px] text-subtle">
                       <Folder className="h-3 w-3" />
                       {destination}
                     </p>
@@ -419,12 +419,12 @@ export function NewFileDialog({
 
                 <section>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-xs font-medium text-zinc-300">
+                    <h3 className="text-xs font-medium text-body">
                       Structure du document
                     </h3>
 
                     {createdFile.index_meta?.total_chunks != null && (
-                      <span className="shrink-0 rounded-md bg-white/[0.05] px-2 py-1 text-[10px] text-zinc-500">
+                      <span className="shrink-0 rounded-md bg-[#F8F7F2] px-2 py-1 text-[10px] text-subtle">
                         {createdFile.index_meta.total_chunks} passage
                         {createdFile.index_meta.total_chunks > 1 ? "s" : ""}{" "}
                         indexé
@@ -433,7 +433,7 @@ export function NewFileDialog({
                     )}
                   </div>
 
-                  <p className="mb-3 text-[11px] leading-relaxed text-zinc-500">
+                  <p className="mb-3 text-[11px] leading-relaxed text-subtle">
                     {createdFile.extension === "pdf" &&
                     pageCount != null
                       ? `${pageCount} page${pageCount === 1 ? "" : "s"} détectée${pageCount === 1 ? "" : "s"}.`
@@ -450,22 +450,22 @@ export function NewFileDialog({
                   {/* Chapitres détectés : nouveau format prioritaire */}
 
                   {detectedChapters && detectedChapters.length > 0 ? (
-                    <div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-white/[0.07] p-3">
+                    <div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-[#E7E4D9] p-3">
                       {detectedChapters.slice(0, 12).map((chapter, index) => (
                         <div
                           key={`${chapter.number}-${chapter.title}`}
                           className="flex items-start gap-3 py-1.5"
                         >
-                          <span className="mt-0.5 shrink-0 text-[10px] text-zinc-600">
+                          <span className="mt-0.5 shrink-0 text-[10px] text-faint">
                             {chapter.number || String(index + 1).padStart(2, "0")}
                           </span>
 
-                          <span className="min-w-0 flex-1 break-words text-xs leading-relaxed text-zinc-400">
+                          <span className="min-w-0 flex-1 break-words text-xs leading-relaxed text-muted">
                             {chapter.title}
                           </span>
 
                           {chapter.location && (
-                            <span className="shrink-0 text-[10px] text-zinc-600">
+                            <span className="shrink-0 text-[10px] text-faint">
                               {chapter.location}
                             </span>
                           )}
@@ -473,7 +473,7 @@ export function NewFileDialog({
                       ))}
 
                       {detectedChapters.length > 12 && (
-                        <p className="pt-2 text-[10px] text-zinc-600">
+                        <p className="pt-2 text-[10px] text-faint">
                           + {detectedChapters.length - 12} autres sections
                         </p>
                       )}
@@ -481,30 +481,30 @@ export function NewFileDialog({
                   ) : indexedChapters && indexedChapters.length > 0 ? (
                     /* Compatibilité avec l'ancien format */
 
-                    <div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-white/[0.07] p-3">
+                    <div className="max-h-52 space-y-1 overflow-y-auto rounded-xl border border-[#E7E4D9] p-3">
                       {indexedChapters.slice(0, 12).map((chapter, index) => (
                         <div
                           key={`${chapter}-${index}`}
                           className="flex items-start gap-2.5 py-1.5"
                         >
-                          <span className="mt-0.5 text-[10px] text-zinc-600">
+                          <span className="mt-0.5 text-[10px] text-faint">
                             {String(index + 1).padStart(2, "0")}
                           </span>
 
-                          <span className="break-words text-xs leading-relaxed text-zinc-400">
+                          <span className="break-words text-xs leading-relaxed text-muted">
                             {chapter}
                           </span>
                         </div>
                       ))}
 
                       {indexedChapters.length > 12 && (
-                        <p className="pt-2 text-[10px] text-zinc-600">
+                        <p className="pt-2 text-[10px] text-faint">
                           + {indexedChapters.length - 12} autres sections
                         </p>
                       )}
                     </div>
                   ) : (
-                    <p className="rounded-xl border border-white/[0.07] px-3.5 py-3 text-xs leading-relaxed text-zinc-500">
+                    <p className="rounded-xl border border-[#E7E4D9] px-3.5 py-3 text-xs leading-relaxed text-subtle">
                       Aucun chapitre n'a été détecté dans les informations
                       retournées par le serveur.
                     </p>
@@ -516,14 +516,14 @@ export function NewFileDialog({
 
           {/* ACTIONS */}
 
-          <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/[0.07] bg-white/[0.015] px-5 py-3.5">
+          <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[#E7E4D9] bg-[#F8F7F2] px-5 py-3.5">
             <div>
               {!createdFile && selectedFile && (
                 <button
                   type="button"
                   onClick={handleAddAnother}
                   disabled={creating}
-                  className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-200 disabled:opacity-30"
+                  className="inline-flex items-center gap-1.5 text-xs text-subtle transition-colors hover:text-strong disabled:opacity-30"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Changer de fichier
@@ -537,7 +537,7 @@ export function NewFileDialog({
                   type="button"
                   onClick={handleClose}
                   disabled={creating}
-                  className="rounded-lg px-3.5 py-2 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-200 disabled:opacity-30"
+                  className="rounded-lg px-3.5 py-2 text-xs font-medium text-muted transition-colors hover:bg-[#F8F7F2] hover:text-strong disabled:opacity-30"
                 >
                   Annuler
                 </button>
@@ -548,7 +548,7 @@ export function NewFileDialog({
                   <button
                     type="button"
                     onClick={handleAddAnother}
-                    className="inline-flex items-center gap-2 rounded-lg border border-white/[0.1] px-3.5 py-2 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.05]"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#E7E4D9] px-3.5 py-2 text-xs font-medium text-body transition-colors hover:bg-[#F8F7F2]"
                   >
                     <FilePlus className="h-3.5 w-3.5" />
                     Ajouter un autre
@@ -557,7 +557,7 @@ export function NewFileDialog({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#1D232C] transition-colors hover:bg-sky-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2 text-xs font-semibold text-[#FBFAF6] transition-colors hover:bg-emerald-300"
                   >
                     Terminer
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -567,7 +567,7 @@ export function NewFileDialog({
                 <button
                   type="submit"
                   disabled={!selectedFile || creating}
-                  className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-[#1D232C] transition-colors hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2 text-xs font-semibold text-[#FBFAF6] transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {creating ? (
                     <>

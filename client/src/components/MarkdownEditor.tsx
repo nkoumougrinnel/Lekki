@@ -171,15 +171,15 @@ export function MarkdownEditor({ value, onChange, placeholder, onSave, className
   };
 
   return (
-    <div className={`overflow-clip rounded-2xl border border-white/[0.07] bg-[#1D222D] focus-within:border-emerald-500/40 sm:rounded-xl ${className}`}>
+    <div className={`overflow-clip rounded-2xl border border-[#E7E4D9] bg-white focus-within:border-emerald-500/40 sm:rounded-xl ${className}`}>
       <div
         role="toolbar"
         aria-label="Mise en forme"
-        className="sticky top-0 z-10 flex gap-0.5 overflow-x-auto border-b border-white/[0.06] bg-[#1F2630]/95 px-1.5 py-1.5 backdrop-blur [scrollbar-width:none] sm:px-3"
+        className="sticky top-0 z-10 flex gap-0.5 overflow-x-auto border-b border-[#E7E4D9] bg-[#FFFFFF]/95 px-1.5 py-1.5 backdrop-blur [scrollbar-width:none] sm:px-3"
       >
         {actions.map(({ label, shortcut, icon: Icon, run }, index) => (
           <React.Fragment key={label}>
-            {(index === 3 || index === 5) && <span aria-hidden className="mx-1 my-2 w-px shrink-0 bg-white/[0.07]" />}
+            {(index === 3 || index === 5) && <span aria-hidden className="mx-1 my-2 w-px shrink-0 bg-[#F8F7F2]" />}
             <button
               type="button"
               aria-label={label}
@@ -187,7 +187,7 @@ export function MarkdownEditor({ value, onChange, placeholder, onSave, className
               // Garde le clavier du téléphone ouvert et la sélection en place.
               onPointerDown={(event) => event.preventDefault()}
               onClick={run}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-white/[0.06] hover:text-zinc-100 active:bg-emerald-500/15 active:text-emerald-300 sm:h-9 sm:w-9"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-[#F8F7F2] hover:text-heading active:bg-emerald-500/15 active:text-emerald-300 sm:h-9 sm:w-9"
             >
               <Icon className="h-[17px] w-[17px]" />
             </button>
@@ -202,7 +202,7 @@ export function MarkdownEditor({ value, onChange, placeholder, onSave, className
         placeholder={placeholder}
         spellCheck
         autoCapitalize="sentences"
-        className="block min-h-[45dvh] w-full resize-none overflow-hidden bg-transparent p-4 font-mono text-[13px] leading-7 text-zinc-300 outline-none placeholder:text-zinc-700 sm:min-h-[55vh] sm:p-7"
+        className="block min-h-[45dvh] w-full resize-none overflow-hidden bg-transparent p-4 font-mono text-[13px] leading-7 text-body outline-none placeholder:text-subtle sm:min-h-[55vh] sm:p-7"
       />
     </div>
   );

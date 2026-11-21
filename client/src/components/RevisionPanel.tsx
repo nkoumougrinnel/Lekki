@@ -142,27 +142,27 @@ export function RevisionPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby="revision-title"
-        className="flex h-full w-full flex-col overflow-hidden bg-[#222731] sm:h-[min(760px,92vh)] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-white/[0.09] sm:shadow-[0_24px_100px_rgba(0,0,0,0.55)]"
+        className="flex h-full w-full flex-col overflow-hidden bg-[#FFFFFF] sm:h-[min(760px,92vh)] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-[#E7E4D9] sm:shadow-[0_24px_100px_rgba(0,0,0,0.55)]"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-4 sm:px-6">
+        <header className="flex items-start justify-between gap-4 border-b border-[#E7E4D9] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300 ring-1 ring-inset ring-emerald-300/10">
               <GraduationCap className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h2 id="revision-title" className="text-[15px] font-semibold tracking-tight text-zinc-100">Mode révision</h2>
-              <p className="mt-0.5 truncate text-xs text-zinc-400">
+              <h2 id="revision-title" className="text-[15px] font-semibold tracking-tight text-heading">Mode révision</h2>
+              <p className="mt-0.5 truncate text-xs text-muted">
                 Lekki AI t’interroge à partir des documents de {spaceName ? `« ${spaceName} »` : "ton espace"}, et rien d’autre.
               </p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[0.06] hover:text-zinc-200">
+          <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-2 text-subtle transition hover:bg-[#F8F7F2] hover:text-strong">
             <X className="h-4 w-4" />
           </button>
         </header>
 
         <div className="px-5 pt-4 sm:px-6">
-          <div className="grid grid-cols-2 rounded-xl bg-black/25 p-1 ring-1 ring-inset ring-white/[0.05]">
+          <div className="grid grid-cols-2 rounded-xl bg-[#F1F0E9] p-1 ring-1 ring-inset ring-black/[0.05]">
             {([
               ["quiz", "S’entraîner (quiz)", Sparkles],
               ["correction", "Corriger un sujet", FileCheck2],
@@ -173,7 +173,7 @@ export function RevisionPanel({
                 onClick={() => setMode(value)}
                 aria-pressed={mode === value}
                 className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium transition ${
-                  mode === value ? "bg-zinc-800 text-zinc-100 shadow-sm ring-1 ring-inset ring-white/[0.07]" : "text-zinc-500 hover:text-zinc-300"
+                  mode === value ? "bg-[#F1F0E9] text-heading shadow-sm ring-1 ring-inset ring-black/[0.07]" : "text-subtle hover:text-body"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
@@ -206,17 +206,17 @@ export function RevisionPanel({
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-medium text-zinc-200">1. Sur quoi veux-tu être interrogé ?</p>
-                      <span className="text-[11px] tabular-nums text-zinc-500">{selected.length}/5</span>
+                      <p className="text-xs font-medium text-strong">1. Sur quoi veux-tu être interrogé ?</p>
+                      <span className="text-[11px] tabular-nums text-subtle">{selected.length}/5</span>
                     </div>
                     {courses.length > 6 && (
                       <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle" />
                         <input
                           value={filter}
                           onChange={(event) => setFilter(event.target.value)}
                           placeholder="Filtrer les documents…"
-                          className="w-full rounded-lg border border-white/[0.08] bg-[#1A2029] py-2 pl-8 pr-3 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/50"
+                          className="w-full rounded-lg border border-[#E7E4D9] bg-[#F4F3ED] py-2 pl-8 pr-3 text-xs text-heading outline-none placeholder:text-faint focus:border-emerald-400/50"
                         />
                       </div>
                     )}
@@ -239,16 +239,16 @@ export function RevisionPanel({
                                 onClick={() => toggle(file.id)}
                                 aria-pressed={checked}
                                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                                  checked ? "border-emerald-400/40 bg-emerald-400/[0.07]" : "border-white/[0.06] bg-white/[0.015] hover:border-white/[0.14]"
+                                  checked ? "border-emerald-400/40 bg-emerald-400/[0.07]" : "border-[#E7E4D9] bg-[#F8F7F2] hover:border-[#E7E4D9]"
                                 }`}
                               >
-                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-emerald-400 bg-emerald-400 text-zinc-950" : "border-zinc-600"}`}>
+                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-emerald-400 bg-emerald-400 text-on-primary" : "border-[#CFCBBB]"}`}>
                                   {checked && <Check className="h-3 w-3" />}
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
+                                  <span className="block truncate text-xs text-strong">{prettyName(file.name)}</span>
                                   {!subjectId && subject && (
-                                    <span className="block truncate text-[10px] text-zinc-500">{subject.title}</span>
+                                    <span className="block truncate text-[10px] text-subtle">{subject.title}</span>
                                   )}
                                 </span>
                                 <StudentDocBadge info={info} compact />
@@ -262,17 +262,17 @@ export function RevisionPanel({
 
                   <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
                     <label className="space-y-2">
-                      <span className="block text-xs font-medium text-zinc-200">2. Un chapitre ou une notion précise ? <span className="font-normal text-zinc-500">(facultatif)</span></span>
+                      <span className="block text-xs font-medium text-strong">2. Un chapitre ou une notion précise ? <span className="font-normal text-subtle">(facultatif)</span></span>
                       <input
                         value={focus}
                         onChange={(event) => setFocus(event.target.value)}
                         maxLength={200}
                         placeholder="Ex. théorème de Shannon, formule de Friis…"
-                        className="w-full rounded-xl border border-white/[0.09] bg-[#1A2029] px-3.5 py-2.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
+                        className="w-full rounded-xl border border-[#E7E4D9] bg-[#F4F3ED] px-3.5 py-2.5 text-sm text-heading outline-none placeholder:text-faint focus:border-emerald-400/60"
                       />
                     </label>
                     <div className="space-y-2">
-                      <span className="block text-xs font-medium text-zinc-200">3. Combien ?</span>
+                      <span className="block text-xs font-medium text-strong">3. Combien ?</span>
                       <div className="flex gap-1.5">
                         {[5, 8, 10].map((value) => (
                           <button
@@ -281,7 +281,7 @@ export function RevisionPanel({
                             onClick={() => setCount(value)}
                             aria-pressed={count === value}
                             className={`h-[42px] w-12 rounded-xl border text-sm font-medium transition ${
-                              count === value ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+                              count === value ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-[#E7E4D9] text-muted hover:text-strong"
                             }`}
                           >
                             {value}
@@ -319,7 +319,7 @@ export function RevisionPanel({
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/10 text-2xl font-bold text-emerald-300 ring-1 ring-inset ring-emerald-300/15">
                     {quiz.score}/{quiz.questions.length}
                   </div>
-                  <p className="max-w-sm text-sm text-zinc-300">
+                  <p className="max-w-sm text-sm text-body">
                     {quiz.score === quiz.questions.length
                       ? "Sans faute. Tu peux passer à un ancien sujet."
                       : quiz.score >= quiz.questions.length / 2
@@ -327,10 +327,10 @@ export function RevisionPanel({
                         : "Il y a des notions à revoir. Rouvre le cours, puis refais le quiz."}
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
-                    <button onClick={() => void startQuiz()} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-4 py-2.5 text-xs font-medium text-zinc-200 hover:bg-white/[0.05]">
+                    <button onClick={() => void startQuiz()} className="inline-flex items-center gap-2 rounded-lg border border-[#E7E4D9] px-4 py-2.5 text-xs font-medium text-strong hover:bg-[#F8F7F2]">
                       <RotateCcw className="h-3.5 w-3.5" /> Nouvelles questions
                     </button>
-                    <button onClick={() => setMode("correction")} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-300">
+                    <button onClick={() => setMode("correction")} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-on-primary hover:bg-emerald-300">
                       <FileCheck2 className="h-3.5 w-3.5" /> Passer à un ancien sujet
                     </button>
                   </div>
@@ -350,12 +350,12 @@ export function RevisionPanel({
         </div>
 
         {mode === "quiz" && quiz.step === "setup" && (
-          <footer className="flex items-center justify-between gap-3 border-t border-white/[0.06] bg-black/15 px-5 py-4 sm:px-6">
-            <p className="hidden text-[11px] text-zinc-500 sm:block">Chaque réponse est justifiée par le document d’origine.</p>
+          <footer className="flex items-center justify-between gap-3 border-t border-[#E7E4D9] bg-[#F1F0E9] px-5 py-4 sm:px-6">
+            <p className="hidden text-[11px] text-subtle sm:block">Chaque réponse est justifiée par le document d’origine.</p>
             <button
               onClick={() => void startQuiz()}
               disabled={selected.length === 0}
-              className="ml-auto inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-45"
+              className="ml-auto inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-on-primary transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Sparkles className="h-3.5 w-3.5" /> Lancer le quiz
             </button>
@@ -389,23 +389,23 @@ function QuizPlayer({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 text-[11px] text-zinc-500">
+      <div className="flex items-center justify-between gap-3 text-[11px] text-subtle">
         <span>Question {state.index + 1} sur {state.questions.length}</span>
         <span className="truncate">{state.degraded ? "Fiches générées sans IA" : state.provider ? `Généré par ${state.provider}` : ""}</span>
       </div>
-      <div className="h-1 overflow-hidden rounded-full bg-zinc-800">
+      <div className="h-1 overflow-hidden rounded-full bg-[#F1F0E9]">
         <div className="h-full bg-emerald-400 transition-all" style={{ width: `${(state.index / state.questions.length) * 100}%` }} />
       </div>
 
-      <h3 className="text-base font-semibold leading-snug text-zinc-100">{question.question}</h3>
+      <h3 className="text-base font-semibold leading-snug text-heading">{question.question}</h3>
 
       {isFlashcard ? (
         state.revealed ? (
-          <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-sm leading-relaxed text-zinc-200">
+          <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-sm leading-relaxed text-strong">
             {question.answer}
           </div>
         ) : (
-          <button onClick={onReveal} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-4 py-2.5 text-xs font-medium text-zinc-200 hover:bg-white/[0.05]">
+          <button onClick={onReveal} className="inline-flex items-center gap-2 rounded-lg border border-[#E7E4D9] px-4 py-2.5 text-xs font-medium text-strong hover:bg-[#F8F7F2]">
             <Eye className="h-3.5 w-3.5" /> Réfléchis, puis affiche la réponse
           </button>
         )
@@ -415,25 +415,25 @@ function QuizPlayer({
             const isAnswer = index === question.answer_index;
             const isPicked = index === state.picked;
             const tone = !state.revealed
-              ? "border-white/[0.08] hover:border-white/[0.18] hover:bg-white/[0.03]"
+              ? "border-[#E7E4D9] hover:border-[#E7E4D9] hover:bg-[#F8F7F2]"
               : isAnswer
                 ? "border-emerald-400/50 bg-emerald-400/[0.08]"
                 : isPicked
                   ? "border-rose-400/50 bg-rose-400/[0.08]"
-                  : "border-white/[0.05] opacity-60";
+                  : "border-[#E7E4D9] opacity-60";
             return (
               <li key={index}>
                 <button
                   onClick={() => onPick(index)}
                   disabled={state.revealed}
-                  className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm text-zinc-200 transition ${tone}`}
+                  className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm text-strong transition ${tone}`}
                 >
-                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-zinc-800 text-[11px] font-semibold text-zinc-400">
+                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#F1F0E9] text-[11px] font-semibold text-muted">
                     {String.fromCharCode(65 + index)}
                   </span>
                   <span className="flex-1">{choice}</span>
                   {state.revealed && isAnswer && <Check className="h-4 w-4 shrink-0 text-emerald-400" />}
-                  {state.revealed && isPicked && !isAnswer && <XCircle className="h-4 w-4 shrink-0 text-rose-400" />}
+                  {state.revealed && isPicked && !isAnswer && <XCircle className="h-4 w-4 shrink-0 text-rose-700" />}
                 </button>
               </li>
             );
@@ -442,32 +442,32 @@ function QuizPlayer({
       )}
 
       {state.revealed && (question.explanation || question.source_title) && !isFlashcard && (
-        <div className="rounded-xl bg-black/25 p-4 text-xs leading-relaxed text-zinc-300 ring-1 ring-inset ring-white/[0.05]">
+        <div className="rounded-xl bg-[#F1F0E9] p-4 text-xs leading-relaxed text-body ring-1 ring-inset ring-black/[0.05]">
           {question.explanation && <p>{question.explanation}</p>}
           {question.source_title && (
-            <p className="mt-2 flex items-center gap-1.5 text-zinc-500">
+            <p className="mt-2 flex items-center gap-1.5 text-subtle">
               <BookOpen className="h-3 w-3" /> Source : {prettyName(question.source_title)}
             </p>
           )}
         </div>
       )}
       {state.revealed && isFlashcard && question.source_title && (
-        <p className="flex items-center gap-1.5 text-xs text-zinc-500"><BookOpen className="h-3 w-3" /> Source : {prettyName(question.source_title)}</p>
+        <p className="flex items-center gap-1.5 text-xs text-subtle"><BookOpen className="h-3 w-3" /> Source : {prettyName(question.source_title)}</p>
       )}
 
       {state.revealed && (
         <div className="flex justify-end gap-2">
           {isFlashcard ? (
             <>
-              <button onClick={() => onSelfAssess(false)} className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] px-4 py-2.5 text-xs font-medium text-zinc-300 hover:bg-white/[0.05]">
+              <button onClick={() => onSelfAssess(false)} className="inline-flex items-center gap-2 rounded-lg border border-[#E7E4D9] px-4 py-2.5 text-xs font-medium text-body hover:bg-[#F8F7F2]">
                 <ThumbsDown className="h-3.5 w-3.5" /> À revoir
               </button>
-              <button onClick={() => onSelfAssess(true)} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-300">
+              <button onClick={() => onSelfAssess(true)} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-on-primary hover:bg-emerald-300">
                 <ThumbsUp className="h-3.5 w-3.5" /> Je savais
               </button>
             </>
           ) : (
-            <button onClick={onNext} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-300">
+            <button onClick={onNext} className="inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-xs font-semibold text-on-primary hover:bg-emerald-300">
               {last ? "Voir mon score" : "Question suivante"} <ArrowRight className="h-3.5 w-3.5" />
             </button>
           )}
@@ -494,38 +494,38 @@ function CorrectionView({
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-zinc-500">Correction proposée</p>
-            <h3 className="truncate text-sm font-semibold text-zinc-100">{prettyName(result.subject_title)}</h3>
+            <p className="text-[11px] uppercase tracking-wider text-subtle">Correction proposée</p>
+            <h3 className="truncate text-sm font-semibold text-heading">{prettyName(result.subject_title)}</h3>
           </div>
           <button onClick={onBack} className="text-xs text-emerald-400 hover:underline">Choisir un autre sujet</button>
         </div>
         {result.degraded && (
-          <p className="rounded-lg bg-amber-400/[0.07] px-3 py-2 text-xs text-amber-200 ring-1 ring-inset ring-amber-300/15">
+          <p className="rounded-lg bg-amber-400/[0.07] px-3 py-2 text-xs text-amber-700 ring-1 ring-inset ring-amber-300/15">
             L’IA ne répond pas en ce moment : voici les passages de cours liés à chaque question.
           </p>
         )}
-        <div className="rounded-xl bg-black/20 p-4 ring-1 ring-inset ring-white/[0.05] sm:p-5">
+        <div className="rounded-xl bg-[#F1F0E9] p-4 ring-1 ring-inset ring-black/[0.05] sm:p-5">
           <MarkdownContent content={result.answer} className="text-sm" />
         </div>
         {result.sources.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-zinc-300">Cours utilisés</p>
+            <p className="text-xs font-medium text-body">Cours utilisés</p>
             {result.sources.map((source) => (
               <button
                 key={source.id}
                 onClick={() => onOpenDoc(source.id)}
-                className="flex w-full items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 text-left transition hover:border-white/[0.14]"
+                className="flex w-full items-start gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] p-3 text-left transition hover:border-[#E7E4D9]"
               >
                 <FileText className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                 <span className="min-w-0">
-                  <span className="block truncate text-xs font-medium text-zinc-200">{prettyName(source.title)}</span>
-                  <span className="mt-0.5 block line-clamp-2 text-[11px] text-zinc-500">{source.excerpt}</span>
+                  <span className="block truncate text-xs font-medium text-strong">{prettyName(source.title)}</span>
+                  <span className="mt-0.5 block line-clamp-2 text-[11px] text-subtle">{source.excerpt}</span>
                 </span>
               </button>
             ))}
           </div>
         )}
-        <p className="text-[11px] text-zinc-600">
+        <p className="text-[11px] text-faint">
           Une correction proposée par l’IA peut contenir des erreurs : vérifie-la avec le cours et ton enseignant.
           {result.provider ? ` · ${result.provider}` : ""}
         </p>
@@ -541,21 +541,21 @@ function CorrectionView({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-zinc-400">Choisis un ancien sujet : Lekki AI propose une correction appuyée sur les cours de l’espace.</p>
+      <p className="text-xs text-muted">Choisis un ancien sujet : Lekki AI propose une correction appuyée sur les cours de l’espace.</p>
       <ul className="space-y-1.5">
         {exams.map(({ file, info, subject }) => (
           <li key={file.id}>
             <button
               onClick={() => onPick(file.id)}
-              className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3 py-3 text-left transition hover:border-emerald-400/30 hover:bg-emerald-400/[0.04]"
+              className="flex w-full items-center gap-3 rounded-xl border border-[#E7E4D9] bg-[#F8F7F2] px-3 py-3 text-left transition hover:border-emerald-400/30 hover:bg-emerald-400/[0.04]"
             >
-              <FileCheck2 className="h-4 w-4 shrink-0 text-rose-300" />
+              <FileCheck2 className="h-4 w-4 shrink-0 text-rose-700" />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs text-zinc-200">{prettyName(file.name)}</span>
-                {subject && <span className="block truncate text-[10px] text-zinc-500">{subject.title}</span>}
+                <span className="block truncate text-xs text-strong">{prettyName(file.name)}</span>
+                {subject && <span className="block truncate text-[10px] text-subtle">{subject.title}</span>}
               </span>
               <StudentDocBadge info={info} />
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-faint" />
             </button>
           </li>
         ))}
@@ -571,7 +571,7 @@ function SubjectChip({ selected, onClick, children }: { selected: boolean; onCli
       onClick={onClick}
       aria-pressed={selected}
       className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition sm:min-h-0 sm:text-[11px] ${
-        selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+        selected ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-200" : "border-[#E7E4D9] text-muted hover:text-strong"
       }`}
     >
       {children}
@@ -583,13 +583,13 @@ function Loading({ text }: { text: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <LoaderCircle className="h-6 w-6 animate-spin text-emerald-400" />
-      <p className="max-w-xs text-sm text-zinc-400">{text}</p>
+      <p className="max-w-xs text-sm text-muted">{text}</p>
     </div>
   );
 }
 
 function EmptyHint({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-xs leading-relaxed text-zinc-500">{text}</div>
+    <div className="rounded-xl border border-dashed border-line p-6 text-center text-xs leading-relaxed text-subtle">{text}</div>
   );
 }
