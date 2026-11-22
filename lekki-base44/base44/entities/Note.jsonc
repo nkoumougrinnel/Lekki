@@ -1,0 +1,75 @@
+{
+  "name": "Note",
+  "type": "object",
+  "properties": {
+    "espace_id": {
+      "type": "string",
+      "title": "Espace"
+    },
+    "title": {
+      "type": "string",
+      "title": "Titre"
+    },
+    "content": {
+      "type": "string",
+      "title": "Contenu"
+    },
+    "source_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Sources li\u00e9es"
+    },
+    "pinned": {
+      "type": "boolean",
+      "title": "\u00c9pingl\u00e9e",
+      "default": false
+    }
+  },
+  "required": [
+    "espace_id",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

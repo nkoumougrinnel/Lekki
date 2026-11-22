@@ -1,0 +1,309 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Identité Lekki — structure NotebookLM, palette de la marque.
+ * Crème #FBFAF6 · encre forêt #16241D · vert #2E7D5B · sable #E7E4D9
+ */
+@layer base {
+  :root {
+    --background: 48 38% 97%;
+    --foreground: 150 24% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 24% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 24% 11%;
+    --primary: 154 46% 34%;
+    --primary-foreground: 48 38% 97%;
+    --secondary: 47 23% 92%;
+    --secondary-foreground: 150 24% 11%;
+    --muted: 47 23% 94%;
+    --muted-foreground: 144 8% 39%;
+    --accent: 123 30% 94%;
+    --accent-foreground: 154 46% 26%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 47 23% 88%;
+    --input: 47 23% 88%;
+    --ring: 154 46% 34%;
+    --chart-1: 154 46% 34%;
+    --chart-2: 40 72% 62%;
+    --chart-3: 123 30% 55%;
+    --chart-4: 190 30% 45%;
+    --chart-5: 25 60% 55%;
+    --radius: 0.9rem;
+    --font-heading: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    --sidebar-background: 48 38% 97%;
+    --sidebar-foreground: 150 24% 11%;
+    --sidebar-primary: 154 46% 34%;
+    --sidebar-primary-foreground: 48 38% 97%;
+    --sidebar-accent: 47 23% 92%;
+    --sidebar-accent-foreground: 150 24% 11%;
+    --sidebar-border: 47 23% 88%;
+    --sidebar-ring: 154 46% 34%;
+  }
+
+  .dark {
+    --background: 150 20% 8%;
+    --foreground: 48 30% 95%;
+    --card: 150 18% 11%;
+    --card-foreground: 48 30% 95%;
+    --popover: 150 18% 11%;
+    --popover-foreground: 48 30% 95%;
+    --primary: 145 40% 55%;
+    --primary-foreground: 150 24% 9%;
+    --secondary: 150 14% 16%;
+    --secondary-foreground: 48 30% 95%;
+    --muted: 150 14% 16%;
+    --muted-foreground: 120 8% 65%;
+    --accent: 150 14% 18%;
+    --accent-foreground: 145 40% 75%;
+    --destructive: 0 55% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 12% 20%;
+    --input: 150 12% 20%;
+    --ring: 145 40% 55%;
+    --sidebar-background: 150 20% 8%;
+    --sidebar-foreground: 48 30% 95%;
+    --sidebar-border: 150 12% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(46, 125, 91, 0.18);
+    color: #16241d;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d8d4c6 transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background: #d8d4c6 content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #c3bdaa content-box;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .display-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .lekki-glow {
+    background-image:
+      radial-gradient(70% 60% at 85% -10%, rgba(216, 234, 217, 0.75), transparent 70%),
+      radial-gradient(55% 55% at 8% 8%, rgba(246, 231, 200, 0.6), transparent 72%);
+  }
+
+  .lekki-grid {
+    background-image:
+      linear-gradient(to right, rgba(231, 228, 217, 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(231, 228, 217, 0.7) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+}
+
+/* Réponses de l'IA et notes — rendu markdown sobre, lisible. */
+.lekki-prose {
+  color: #3c4a41;
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.lekki-prose > :first-child {
+  margin-top: 0;
+}
+
+.lekki-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.lekki-prose h1,
+.lekki-prose h2,
+.lekki-prose h3 {
+  color: #16241d;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.lekki-prose h1 {
+  margin: 1.6rem 0 0.7rem;
+  font-size: 1.35rem;
+}
+
+.lekki-prose h2 {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.15rem;
+}
+
+.lekki-prose h3 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.lekki-prose p {
+  margin: 0.7rem 0;
+}
+
+.lekki-prose strong {
+  color: #16241d;
+  font-weight: 600;
+}
+
+.lekki-prose a {
+  color: #2e7d5b;
+  text-decoration: underline;
+  text-decoration-color: rgba(46, 125, 91, 0.35);
+  text-underline-offset: 3px;
+}
+
+.lekki-prose ul,
+.lekki-prose ol {
+  margin: 0.7rem 0;
+  padding-left: 1.35rem;
+}
+
+.lekki-prose ul {
+  list-style: disc;
+}
+
+.lekki-prose ol {
+  list-style: decimal;
+}
+
+.lekki-prose li {
+  margin: 0.25rem 0;
+}
+
+.lekki-prose li::marker {
+  color: #2e7d5b;
+}
+
+.lekki-prose blockquote {
+  margin: 1rem 0;
+  border-left: 3px solid rgba(46, 125, 91, 0.45);
+  border-radius: 0 0.6rem 0.6rem 0;
+  background: rgba(234, 242, 231, 0.7);
+  padding: 0.4rem 0.9rem;
+  color: #3c4a41;
+}
+
+.lekki-prose code {
+  border: 1px solid #e7e4d9;
+  border-radius: 0.35rem;
+  background: #f5f3ec;
+  padding: 0.1rem 0.32rem;
+  color: #256a4c;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+.lekki-prose pre {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border: 1px solid #e7e4d9;
+  border-radius: 0.75rem;
+  background: #f5f3ec;
+  padding: 0.9rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.lekki-prose pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.lekki-prose table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.lekki-prose th,
+.lekki-prose td {
+  border: 1px solid #e7e4d9;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.lekki-prose th {
+  background: #f5f3ec;
+  color: #16241d;
+  font-weight: 600;
+}
+
+.lekki-prose hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid #e7e4d9;
+}
+
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

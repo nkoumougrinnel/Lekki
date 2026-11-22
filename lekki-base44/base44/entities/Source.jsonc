@@ -1,0 +1,142 @@
+{
+  "name": "Source",
+  "type": "object",
+  "properties": {
+    "espace_id": {
+      "type": "string",
+      "title": "Espace"
+    },
+    "name": {
+      "type": "string",
+      "title": "Nom du document"
+    },
+    "kind": {
+      "type": "string",
+      "title": "Type",
+      "enum": [
+        "pdf",
+        "docx",
+        "pptx",
+        "txt",
+        "md",
+        "note"
+      ],
+      "enumColors": [
+        "red",
+        "blue",
+        "yellow",
+        "gray",
+        "gray",
+        "green"
+      ],
+      "default": "pdf"
+    },
+    "size_bytes": {
+      "type": "number",
+      "title": "Taille"
+    },
+    "page_count": {
+      "type": "number",
+      "title": "Nombre de pages"
+    },
+    "summary": {
+      "type": "string",
+      "title": "R\u00e9sum\u00e9"
+    },
+    "content": {
+      "type": "string",
+      "title": "Contenu extrait"
+    },
+    "key_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Points cl\u00e9s"
+    },
+    "chapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "page": {
+            "type": "number"
+          }
+        }
+      },
+      "title": "Chapitres"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "Fichier"
+    },
+    "status": {
+      "type": "string",
+      "title": "\u00c9tat",
+      "enum": [
+        "indexing",
+        "ready",
+        "error"
+      ],
+      "enumColors": [
+        "yellow",
+        "green",
+        "red"
+      ],
+      "default": "ready"
+    },
+    "starred": {
+      "type": "boolean",
+      "title": "Favori",
+      "default": false
+    }
+  },
+  "required": [
+    "espace_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

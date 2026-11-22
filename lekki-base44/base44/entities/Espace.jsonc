@@ -1,0 +1,85 @@
+{
+  "name": "Espace",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Nom de l'espace"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "emoji": {
+      "type": "string",
+      "title": "Emoji",
+      "default": "\ud83d\udcda"
+    },
+    "accent": {
+      "type": "string",
+      "title": "Couleur d'accent",
+      "enum": [
+        "sage",
+        "amber",
+        "clay",
+        "sky"
+      ],
+      "enumColors": [
+        "green",
+        "yellow",
+        "red",
+        "blue"
+      ],
+      "default": "sage"
+    },
+    "last_opened_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Derni\u00e8re ouverture"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

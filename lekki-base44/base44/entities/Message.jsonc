@@ -1,0 +1,104 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "espace_id": {
+      "type": "string",
+      "title": "Espace"
+    },
+    "conversation_id": {
+      "type": "string",
+      "title": "Conversation"
+    },
+    "role": {
+      "type": "string",
+      "title": "R\u00f4le",
+      "enum": [
+        "user",
+        "assistant"
+      ],
+      "enumColors": [
+        "gray",
+        "green"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "title": "Contenu"
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "source_name": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Citations"
+    },
+    "follow_ups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Suggestions"
+    }
+  },
+  "required": [
+    "espace_id",
+    "role",
+    "content"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
